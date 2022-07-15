@@ -1,0 +1,3 @@
+# Project exclude paths
+/wechat-generator/target/
+/wechat-server/target/
