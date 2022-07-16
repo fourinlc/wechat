@@ -12,9 +12,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @MapperScan("com.xxx.server.mapper")
-public class wechatApplication {
+public class WechatApplication {
     public static void main(String[] args) {
         //
-        SpringApplication.run(wechatApplication.class,args);
+        SpringApplication.run(WechatApplication.class,args);
     }
 }

@@ -45,6 +45,7 @@ public class WeixinBaseInfo implements Serializable {
     private Integer chatRoomCount;
 
     @ApiModelProperty(value = "登录返回的key")
+    @TableField("`key`")
     private String key;
 
     @ApiModelProperty(value = "登录返回的uuid")

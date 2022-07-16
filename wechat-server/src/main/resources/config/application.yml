@@ -23,6 +23,9 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
 
+wechat:
+  rootUrl: http://120.77.218.220:18080
+
 logging:
   level:
     com.xxx.server.mapper: debug
