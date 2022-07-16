@@ -3,8 +3,8 @@ server:
   port: 8081
 spring:
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://120.77.218.220:3306/wechat?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://120.77.218.220:3306/wechat_mmtls?useUnicode=true&useSSL=false&characterEncoding=utf8
     username: root
     password: 12345678
     hikari:
