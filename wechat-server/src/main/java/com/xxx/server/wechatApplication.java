@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @MapperScan("com.xxx.server.mapper")
 public class wechatApplication {
     public static void main(String[] args) {
+        //
         SpringApplication.run(wechatApplication.class,args);
     }
 }
