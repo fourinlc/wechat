@@ -3,6 +3,7 @@ package com.xxx.server.enums;
 import com.xxx.server.util.RestClient;
 import com.xxx.server.util.SpringUtils;
 import org.springframework.http.HttpMethod;
+import org.springframework.util.MultiValueMap;
 
 /**
  * 微信枚举信息
@@ -24,12 +25,12 @@ public enum WechatApiHelper {
     private static final RestClient restclient = SpringUtils.getBean(RestClient.class);
 
     // 通用调用参数处理
-    public Object invoke(Object object){
+    public Object invoke(Object param, MultiValueMap multiValueMap){
         switch (getHttpMethod()){
             case POST:
-                return restclient.postJson(getCode(), object);
+                return restclient.postJson(getCode(), param, multiValueMap);
             case GET:
-                return restclient.getForm(getCode(), object);
+                return restclient.getForm(getCode(), param, multiValueMap);
             default:
                 return null;
         }

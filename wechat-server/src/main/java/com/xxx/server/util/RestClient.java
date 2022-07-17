@@ -4,13 +4,11 @@ import com.alibaba.fastjson2.JSONObject;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -90,30 +88,27 @@ public class RestClient {
     }
 
 
-    // TODO
-    public JSONObject getForm(String reqUrl, Object reqFormPara) {
-        if(reqFormPara instanceof Map){
-            // 校验是否带有query链接,默认约定参数
-            Object query = ((Map<?, ?>) reqFormPara).get("queryVO");
-            // 默认按照MultiValueMap格式传参
-            if(query instanceof List){
-                ((Map<?, ?>) reqFormPara).remove("queryVO");
-                reqUrl = UriComponentsBuilder
-                        .fromUriString(reqUrl)
-                        .queryParams((MultiValueMap)query)
-                        .build()
-                        .toUriString();
-            }
-        }
+    /**
+     * 普通get请求
+     * @param reqUrl 请求链接
+     * @param param 请求参数
+     * @param query 请求Query参数
+     * @return
+     */
+    public JSONObject getForm(String reqUrl, Object param, MultiValueMap<String,String> query) {
         //设置 Header
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
         // 校验是否存在,构造M
         //设置参数
-        HttpEntity<Object> requestEntity = new HttpEntity<>(reqFormPara, httpHeaders);
+        HttpEntity<Object> requestEntity = new HttpEntity<>(param, httpHeaders);
         //执行请求
         ResponseEntity<JSONObject> resp = restTemplate
-                .exchange(reqUrl, HttpMethod.GET, requestEntity, JSONObject.class);
+                .exchange(UriComponentsBuilder
+                        .fromUriString(reqUrl)
+                        .queryParams(query)
+                        .build()
+                        .toUriString(), HttpMethod.GET, requestEntity, JSONObject.class);
         //返回请求返回值
         return resp.getBody();
     }

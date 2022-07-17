@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * <p>
@@ -40,19 +38,17 @@ public class WeixinBaseInfoController{
         /*jsonObject.put("Proxy","");
         log.info("获取二维码测试:{}",WechatApiHelper.GET_LOGIN_QRCODE_NEW.invoke(jsonObject));*/
 
-        /*jsonObject.put("CurrentWxcontactSeq", 1);
+        jsonObject.put("CurrentWxcontactSeq", 1);
         jsonObject.put("CurrentChatRoomContactSeq ", 5);
         LinkedMultiValueMap<Object, Object> objectObjectLinkedMultiValueMap = new LinkedMultiValueMap<>();
         objectObjectLinkedMultiValueMap.add("key","de16191a-c633-418f-9458-a9af51b99d0e");
-        jsonObject.put("queryVO", objectObjectLinkedMultiValueMap);
-        log.info("分页获取联系人:{}",WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject));*/
+        // jsonObject.put("queryVO", objectObjectLinkedMultiValueMap);
+        // log.info("分页获取联系人:{}",WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject, objectObjectLinkedMultiValueMap));
 
         // jsonObject.put("key", "de16191a-c633-418f-9458-a9af51b99d0e");
         MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
-        MultiValueMap<String,Object> map2 = new LinkedMultiValueMap<>();
         map.add("key", "de16191a-c633-418f-9458-a9af51b99d0e");
-        map2.add("queryVO", map);
-        log.info("获取个人信息:{}",WechatApiHelper.GET_PROFILE.invoke(map2));
+        log.info("获取个人信息:{}",WechatApiHelper.GET_PROFILE.invoke(null, map));
     }
 
 }
