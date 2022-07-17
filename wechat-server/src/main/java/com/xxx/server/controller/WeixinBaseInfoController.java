@@ -2,18 +2,23 @@ package com.xxx.server.controller;
 
 
 import com.alibaba.fastjson2.JSONObject;
+import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinBaseInfoMapper;
 import com.xxx.server.util.RestClient;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
- *  前端控制器
+ *  微信基础操作
  * </p>
  *
  * @author lc
@@ -23,7 +28,7 @@ import javax.annotation.PostConstruct;
 @RequestMapping("/weixin-base-info")
 @AllArgsConstructor
 @Slf4j
-public class WeixinBaseInfoController {
+public class WeixinBaseInfoController{
 
     private WeixinBaseInfoMapper weixinBaseInfoMapper;
 
@@ -32,8 +37,22 @@ public class WeixinBaseInfoController {
     @PostConstruct
     public void test(){
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("Proxy","");
-        log.info("获取二维码测试:{}", restClient.postJson("/v1/login/GetLoginQrCodeNew", jsonObject));
+        /*jsonObject.put("Proxy","");
+        log.info("获取二维码测试:{}",WechatApiHelper.GET_LOGIN_QRCODE_NEW.invoke(jsonObject));*/
+
+        /*jsonObject.put("CurrentWxcontactSeq", 1);
+        jsonObject.put("CurrentChatRoomContactSeq ", 5);
+        LinkedMultiValueMap<Object, Object> objectObjectLinkedMultiValueMap = new LinkedMultiValueMap<>();
+        objectObjectLinkedMultiValueMap.add("key","de16191a-c633-418f-9458-a9af51b99d0e");
+        jsonObject.put("queryVO", objectObjectLinkedMultiValueMap);
+        log.info("分页获取联系人:{}",WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject));*/
+
+        // jsonObject.put("key", "de16191a-c633-418f-9458-a9af51b99d0e");
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        MultiValueMap<String,Object> map2 = new LinkedMultiValueMap<>();
+        map.add("key", "de16191a-c633-418f-9458-a9af51b99d0e");
+        map2.add("queryVO", map);
+        log.info("获取个人信息:{}",WechatApiHelper.GET_PROFILE.invoke(map2));
     }
 
 }
