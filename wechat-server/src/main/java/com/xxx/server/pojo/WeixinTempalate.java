@@ -41,6 +41,14 @@ public class WeixinTempalate implements Serializable {
     @TableField("template_content")
     private String templateContent;
 
+    @ApiModelProperty(value = "模板类型")
+    @TableField("template_type")
+    private String templateType;
+
+    @ApiModelProperty(value = "消息类型")
+    @TableField("msg_type")
+    private String msgType;
+
     @ApiModelProperty(value = "单条模板状态")
     @TableField("template_status")
     private Integer templateStatus;
