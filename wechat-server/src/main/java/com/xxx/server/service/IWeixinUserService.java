@@ -1,7 +1,10 @@
 package com.xxx.server.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinUser;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * <p>
@@ -13,4 +16,5 @@ import com.xxx.server.pojo.WeixinUser;
  */
 public interface IWeixinUserService extends IService<WeixinUser> {
 
+    RespBean login(String userName, String passWord, HttpServletRequest request);
 }
