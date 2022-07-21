@@ -1,15 +1,22 @@
 package com.xxx.server.service.impl;
 
+import com.xxx.server.config.security.JwtTokenUtil;
 import com.xxx.server.mapper.WeixinUserMapper;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinUser;
 import com.xxx.server.service.IWeixinUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -21,10 +28,32 @@ import javax.servlet.http.HttpServletRequest;
  */
 @Service
 public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinUser> implements IWeixinUserService {
-
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+    @Value("${jwt.tokenHead}")
+    private String tokenHead;
     @Override
     public RespBean login(String userName, String passWord, HttpServletRequest request){
-
-        return null;
+        //登录
+        UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
+        if (null == userDetails || passwordEncoder.matches(passWord,userDetails.getPassword())){
+            return RespBean.error("用户名或密码不正确");
+        }
+        if (!userDetails.isEnabled()){
+            return RespBean.error("账号被禁用");
+        }
+        //更新security登录用户对象
+//        UsernamePasswordAuthenticationToken authenticationToken =
+//                new UsernamePasswordAuthenticationToken()
+        //生成token
+        String token = jwtTokenUtil.generateToken(userDetails);
+        Map<String,String> tokenMap = new HashMap<>();
+        tokenMap.put("token",token);
+        tokenMap.put("tokenHead",tokenHead);
+        return RespBean.sucess("登录成功",tokenMap);
     }
 }
