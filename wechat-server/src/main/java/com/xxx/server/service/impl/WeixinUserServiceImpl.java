@@ -1,5 +1,6 @@
 package com.xxx.server.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.xxx.server.config.security.JwtTokenUtil;
 import com.xxx.server.mapper.WeixinUserMapper;
 import com.xxx.server.pojo.RespBean;
@@ -9,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +31,8 @@ import java.util.Map;
 @Service
 public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinUser> implements IWeixinUserService {
     @Autowired
+    private WeixinUserMapper weixinUserMapper;
+    @Autowired
     private UserDetailsService userDetailsService;
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -47,13 +51,19 @@ public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinU
             return RespBean.error("账号被禁用");
         }
         //更新security登录用户对象
-//        UsernamePasswordAuthenticationToken authenticationToken =
-//                new UsernamePasswordAuthenticationToken()
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         //生成token
         String token = jwtTokenUtil.generateToken(userDetails);
         Map<String,String> tokenMap = new HashMap<>();
         tokenMap.put("token",token);
         tokenMap.put("tokenHead",tokenHead);
         return RespBean.sucess("登录成功",tokenMap);
+    }
+
+    @Override
+    public WeixinUser getWeixinUserByUserName(String userName) {
+        return weixinUserMapper.selectOne(new QueryWrapper<WeixinUser>().eq("user_name",userName));
     }
 }

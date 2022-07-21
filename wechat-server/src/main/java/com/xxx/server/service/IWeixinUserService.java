@@ -17,4 +17,6 @@ import javax.servlet.http.HttpServletRequest;
 public interface IWeixinUserService extends IService<WeixinUser> {
 
     RespBean login(String userName, String passWord, HttpServletRequest request);
+
+    WeixinUser getWeixinUserByUserName(String userName);
 }
