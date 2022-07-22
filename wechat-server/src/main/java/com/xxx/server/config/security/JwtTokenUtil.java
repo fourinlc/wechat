@@ -21,6 +21,7 @@ public class JwtTokenUtil {
 
     public String generateToken(UserDetails userDetails){
         Map<String,Object> claims = new HashMap<>();
+        System.out.println("username : "+userDetails.getUsername());
         claims.put(CLAIM_KEY_USERNAME,userDetails.getUsername());
         claims.put(CLAIM_KEY_CREATED,new Date());
         return generateToken(claims);
@@ -79,7 +80,7 @@ public class JwtTokenUtil {
         return Jwts.builder()
                 .setClaims(claims)
                 .setExpiration(generateExpirationDate())
-                .signWith(SignatureAlgorithm.ES512,secret)
+                .signWith(SignatureAlgorithm.HS512,secret)
                 .compact();
     }
 

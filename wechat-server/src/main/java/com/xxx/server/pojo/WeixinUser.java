@@ -72,12 +72,12 @@ public class WeixinUser implements Serializable, UserDetails {
 
     @Override
     public String getPassword() {
-        return null;
+        return userPassWord;
     }
 
     @Override
     public String getUsername() {
-        return null;
+        return userName;
     }
 
     @Override
