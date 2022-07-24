@@ -40,7 +40,8 @@ public class Securityconfig extends WebSecurityConfigurerAdapter{
     public void configure(WebSecurity web) throws Exception {
         web.ignoring().antMatchers(
                 "/login",
-                "logout",
+                "/logout",
+                "/register",
                 "/css/**",
                 "/js/**",
                 "index.html",
