@@ -46,15 +46,15 @@ public class WeixinBaseInfoController{
         return weixinBaseInfoService.getLoginQrcode();
     }
 
-    @PostConstruct
+    // @PostConstruct
     public void test(){
         JSONObject jsonObject = new JSONObject();
-        /*jsonObject.put("Proxy","");
-        log.info("获取二维码测试:{}",WechatApiHelper.GET_LOGIN_QRCODE_NEW.invoke(jsonObject));*/
+        jsonObject.put("Proxy","");
+        log.info("获取二维码测试:{}",WechatApiHelper.GET_LOGIN_QRCODE_NEW.invoke(jsonObject, null));
 
-        jsonObject.put("CurrentWxcontactSeq", 1);
+        /*jsonObject.put("CurrentWxcontactSeq", 1);
         jsonObject.put("CurrentChatRoomContactSeq ", 5);
-        LinkedMultiValueMap<Object, Object> objectObjectLinkedMultiValueMap = new LinkedMultiValueMap<>();
+        LinkedMultiValueMap<String, String> objectObjectLinkedMultiValueMap = new LinkedMultiValueMap<>();
         objectObjectLinkedMultiValueMap.add("key","de16191a-c633-418f-9458-a9af51b99d0e");
         // jsonObject.put("queryVO", objectObjectLinkedMultiValueMap);
         // log.info("分页获取联系人:{}",WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject, objectObjectLinkedMultiValueMap));
@@ -62,6 +62,6 @@ public class WeixinBaseInfoController{
         // jsonObject.put("key", "de16191a-c633-418f-9458-a9af51b99d0e");
         MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
         map.add("key", "de16191a-c633-418f-9458-a9af51b99d0e");
-        log.info("获取个人信息:{}",WechatApiHelper.GET_PROFILE.invoke(null, map));
+        log.info("获取个人信息:{}",WechatApiHelper.GET_PROFILE.invoke(null, map));*/
     }
 }

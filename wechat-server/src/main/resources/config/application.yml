@@ -25,6 +25,8 @@ mybatis-plus:
 
 wechat:
   rootUrl: http://120.77.218.220:18080
+  file:
+    basePath: D:/
 
 logging:
   level:
