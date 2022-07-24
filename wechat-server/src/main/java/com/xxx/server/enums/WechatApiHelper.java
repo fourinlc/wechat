@@ -13,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 public enum WechatApiHelper {
 
     GET_LOGIN_QRCODE_NEW("获取二维码", "/v1/login/GetLoginQrCodeNew", HttpMethod.POST),
+    CHECK_LOGIN_STATUS("登錄檢測", "/v1/login/CheckLoginStatus", HttpMethod.GET),
     WAKEUP_LOGIN("唤醒登录", "/v1/login/WakeUpLogin", HttpMethod.POST),
     GET_CONTACT_LIST("分页获取联系人", "/v1/user/GetContactList", HttpMethod.POST),
     GET_PROFILE("获取个人信息", "/v1/user/GetProfile", HttpMethod.GET),

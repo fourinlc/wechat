@@ -8,6 +8,8 @@ import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.util.Map;
 
@@ -32,6 +34,20 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             return RespBean.sucess("获取登录二维码成功",obj);
         } else {
             return RespBean.error("获取登录二维码失败",obj);
+        }
+    }
+
+    @Override
+    public RespBean checkLoginStatus(String key, String uuid) {
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("key", key);
+        map.add("uuid", uuid);
+        Object obj = WechatApiHelper.CHECK_LOGIN_STATUS.invoke(null,map);
+        Map entity = (Map)obj;
+        if (entity.get("Code").equals(200)){
+            return RespBean.sucess("登錄成功",obj);
+        } else {
+            return RespBean.error("還未登錄",obj);
         }
     }
 }

@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinBaseInfoMapper;
 import com.xxx.server.pojo.RespBean;
+import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import com.xxx.server.util.RestClient;
 import io.swagger.annotations.ApiOperation;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -44,6 +46,12 @@ public class WeixinBaseInfoController{
     @PostMapping("/getLoginQrcode")
     RespBean getLoginQrcode(){
         return weixinBaseInfoService.getLoginQrcode();
+    }
+
+    @ApiOperation(value = "登錄檢測")
+    @PostMapping("/checkLoginStatus")
+    RespBean checkLoginStatus(@RequestBody WeixinBaseInfo weixinBaseInfo){
+        return weixinBaseInfoService.checkLoginStatus(weixinBaseInfo.getKey(),weixinBaseInfo.getUuid());
     }
 
     @PostConstruct

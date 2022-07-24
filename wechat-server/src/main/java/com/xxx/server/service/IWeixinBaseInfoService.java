@@ -15,4 +15,6 @@ import com.xxx.server.pojo.WeixinBaseInfo;
 public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
 
     RespBean getLoginQrcode();
+
+    RespBean checkLoginStatus(String key, String uuid);
 }
