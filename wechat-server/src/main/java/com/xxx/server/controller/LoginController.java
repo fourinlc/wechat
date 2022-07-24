@@ -52,4 +52,10 @@ public class LoginController {
         return RespBean.sucess("注销成功");
     }
 
+    @ApiOperation(value = "用户注册")
+    @PostMapping("/register")
+    public RespBean register(@RequestBody WeixinUserLoginParam userLoginParam){
+        return weixinUserService.register(userLoginParam.getUserName(),userLoginParam.getPassWord());
+    }
+
 }
