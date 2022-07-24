@@ -5,7 +5,7 @@ import com.xxx.server.pojo.WeixinGroupLinkDetail;
 
 /**
  * <p>
- *  服务类
+ *
  * </p>
  *
  * @author lc

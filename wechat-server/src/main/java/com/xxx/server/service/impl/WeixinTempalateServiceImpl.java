@@ -21,10 +21,10 @@ import java.util.List;
 
 /**
  * <p>
- *  微信AB话术类
+ * 微信AB话术类
  * </p>
  *
- * @author lc
+ * @author xxx
  * @since 2022-07-16
  */
 @Service
@@ -32,23 +32,24 @@ import java.util.List;
 @Slf4j
 public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMapper, WeixinTempalate> implements IWeixinTempalateService {
 
-    //TODO 设置间隔时间
+    //TODO 设置间隔群聊时间，群群间隔时间
     private String time;
+
     // 单用户组相互群聊
-    public void chatHandler(String chatRoomName, String keyA, String keyB, String templateName){
+    public void chatHandler(String chatRoomName, String keyA, String keyB, String templateName) {
         // step one 遍历模板列表
         List<WeixinTempalate> weixinTempalates = baseMapper
                 .selectList(Wrappers.<WeixinTempalate>lambdaQuery()
-                        .eq(WeixinTempalate::getTemplateName,templateName)
+                        .eq(WeixinTempalate::getTemplateName, templateName)
                         .orderByAsc(WeixinTempalate::getTemplateOrder));
         Assert.isTrue(!weixinTempalates.isEmpty(), "模板信息有误");
         JSONObject param = JSONObject.of("ToUserName", chatRoomName, "Delay", true);
-        MultiValueMap<String,String> query = new LinkedMultiValueMap<>();
+        MultiValueMap<String, String> query = new LinkedMultiValueMap<>();
         for (WeixinTempalate weixinTempalate : weixinTempalates) {
             // 构造模板参数
             query.add("key", "A".equals(weixinTempalate.getTemplateType()) ? keyA : keyB);
             // 1默认为普通文字消息
-            if("1".equals(weixinTempalate.getMsgType())){
+            if ("1".equals(weixinTempalate.getMsgType())) {
                 param.put("AtWxIDList", null);
                 param.put("MsgType", 1);
                 param.put("TextContent", weixinTempalate.getTemplateContent());
@@ -56,7 +57,40 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
                 // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
                 log.info("模拟用户群聊：用户名：{}，{}", weixinTempalate.getTemplateType(), weixinTempalate.getTemplateContent());
                 // Object res = WechatApiHelper.SEND_TEXT_MESSAGE.invoke(param, query);
-            }else {
+            } else {
+                param.put("TextContent", "");
+                param.put("ImageContent", weixinTempalate.getTemplateContent());
+                WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
+            }
+            // 清空param、query参数
+            param.clear();
+            query.clear();
+        }
+    }
+
+    // 增加自定义图片或者二维码列表信息
+    public void chatHandler(String chatRoomName, String keyA, String keyB, String templateName, List<String> urls) {
+        // step one 遍历模板列表
+        List<WeixinTempalate> weixinTempalates = baseMapper
+                .selectList(Wrappers.<WeixinTempalate>lambdaQuery()
+                        .eq(WeixinTempalate::getTemplateName, templateName)
+                        .orderByAsc(WeixinTempalate::getTemplateOrder));
+        Assert.isTrue(!weixinTempalates.isEmpty(), "模板信息有误");
+        JSONObject param = JSONObject.of("ToUserName", chatRoomName, "Delay", true);
+        MultiValueMap<String, String> query = new LinkedMultiValueMap<>();
+        for (WeixinTempalate weixinTempalate : weixinTempalates) {
+            // 构造模板参数
+            query.add("key", "A".equals(weixinTempalate.getTemplateType()) ? keyA : keyB);
+            // 1默认为普通文字消息
+            if ("1".equals(weixinTempalate.getMsgType())) {
+                param.put("AtWxIDList", null);
+                param.put("MsgType", 1);
+                param.put("TextContent", weixinTempalate.getTemplateContent());
+                // 发送文字信息
+                // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
+                log.info("模拟用户群聊：用户名：{}，{}", weixinTempalate.getTemplateType(), weixinTempalate.getTemplateContent());
+                // Object res = WechatApiHelper.SEND_TEXT_MESSAGE.invoke(param, query);
+            } else {
                 param.put("TextContent", "");
                 param.put("ImageContent", weixinTempalate.getTemplateContent());
                 WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
