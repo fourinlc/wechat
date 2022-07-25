@@ -3,6 +3,7 @@ package com.xxx.server.controller;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinUser;
 import com.xxx.server.pojo.WeixinUserLoginParam;
+import com.xxx.server.pojo.WeixinUserRegisterParam;
 import com.xxx.server.service.IWeixinUserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -54,8 +55,8 @@ public class LoginController {
 
     @ApiOperation(value = "用户注册")
     @PostMapping("/register")
-    public RespBean register(@RequestBody WeixinUserLoginParam userLoginParam){
-        return weixinUserService.register(userLoginParam.getUserName(),userLoginParam.getPassWord());
+    public RespBean register(@RequestBody WeixinUserRegisterParam userRegisterParam){
+        return weixinUserService.register(userRegisterParam.getUserName(),userRegisterParam.getPassWord(),userRegisterParam.getUserType());
     }
 
 }

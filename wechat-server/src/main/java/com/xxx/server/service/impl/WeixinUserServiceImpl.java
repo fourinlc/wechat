@@ -68,10 +68,11 @@ public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinU
     }
 
     @Override
-    public RespBean register(String userName, String passWord) {
+    public RespBean register(String userName, String passWord, String userType) {
         WeixinUser weixinUser = new WeixinUser();
         weixinUser.setUserName(userName)
-                .setUserPassWord(passWord);
+                .setUserPassWord(passWord)
+                .setUserType(userType);
         if (weixinUserMapper.selectOne(new QueryWrapper<WeixinUser>().eq("user_name",userName)).getUsername()
                 .equals(weixinUser.getUsername())){
             return RespBean.error("注册失败:用户名已存在");
