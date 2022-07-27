@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "wechat.file.basePath",
+      "type": "java.lang.String",
+      "description": "文件存放服务器目录"
+    },
+    {
+      "name": "wechat.rootUrl",
+      "type": "java.lang.String",
+      "description": "微信服务根路径"
+    }
+  ]
+}

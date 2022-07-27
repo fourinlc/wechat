@@ -5,6 +5,8 @@
     <modules>
         <module>wechat-server</module>
         <module>wechat-generator</module>
+        <module>../rocketmq-spring-boot-starter</module>
+        <module>spring-boot-starter-rocketmq</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>

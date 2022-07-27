@@ -16,6 +16,9 @@ spring:
       max-lifetime: 180000
       connection-timeout: 3000
       connection-test-query: SELECT 1
+  rocketmq:
+    name-server-address: 180.76.163.53:9876
+    producer-group: guava-group
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml
@@ -26,7 +29,7 @@ mybatis-plus:
 wechat:
   rootUrl: http://120.77.218.220:18080
   file:
-    basePath: D:/
+    basePath: /home/lighthouse/wechat/image
 
 logging:
   level:

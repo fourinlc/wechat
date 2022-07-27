@@ -49,7 +49,7 @@ public class CodeGenerator {
         // 全局配置
         GlobalConfig gc = new GlobalConfig();
         String projectPath = System.getProperty("user.dir");
-        gc.setOutputDir(projectPath + "/wechat-generator/src/main/java");
+        gc.setOutputDir(projectPath + "/wechat-server/src/main/java");
         gc.setAuthor("lc");
         gc.setOpen(false);
         gc.setBaseResultMap(true);
@@ -68,7 +68,7 @@ public class CodeGenerator {
 
         // 包配置
         PackageConfig pc = new PackageConfig();
-        pc.setParent("com.xxx")
+        pc.setParent("com.xxx.server")
                 .setEntity("pojo")
                 .setMapper("mapper")
                 .setService("service")

@@ -38,7 +38,7 @@ public class WeixinFileController {
             @ApiImplicitParam(name="filePath", dataType = "string", value = "文件存放相对路径", paramType = "query",example = "111"),
     })
     public RespBean uploadFile(MultipartFile multipartFile, String filePath ) throws IOException {
-        return weixinFileService.uploadFile(multipartFile.getBytes(), filePath, multipartFile.getOriginalFilename());
+        return RespBean.sucess("上传文件成功", weixinFileService.uploadFile(multipartFile.getBytes(), filePath, multipartFile.getOriginalFilename()));
     }
 
     @GetMapping("dwonFile")
@@ -47,6 +47,6 @@ public class WeixinFileController {
             @ApiImplicitParam(name="fileId", dataType = "Long", value = "文件id", paramType = "query",example = "1"),
     })
     public RespBean dwonFile(Long fileId){
-        return weixinFileService.downFile(fileId);
+        return RespBean.sucess("下载成功", weixinFileService.downFile(fileId));
     }
 }
