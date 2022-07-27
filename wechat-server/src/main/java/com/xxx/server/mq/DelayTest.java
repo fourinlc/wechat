@@ -1,8 +1,6 @@
 package com.xxx.server.mq;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.dachen.starter.mq.base.MessageBuilder;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.time.DateUtils;

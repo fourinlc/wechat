@@ -1,10 +1,8 @@
 package com.dachen.starter.mq.config;
 
+import com.dachen.starter.mq.annotation.EnableMQConfiguration;
 import com.dachen.starter.mq.base.AbstractMQProducer;
 import com.dachen.starter.mq.base.AbstractMQPushConsumer;
-import com.dachen.starter.mq.annotation.EnableMQConfiguration;
-import com.dachen.starter.mq.custom.consumer.DelayMqConsumer;
-import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -14,7 +12,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 /**
  * Created by yipin on 2017/6/28.

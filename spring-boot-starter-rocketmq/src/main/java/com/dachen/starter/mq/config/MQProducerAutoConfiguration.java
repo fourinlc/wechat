@@ -1,9 +1,8 @@
 package com.dachen.starter.mq.config;
 
-import com.dachen.starter.mq.base.AbstractMQTransactionProducer;
 import com.dachen.starter.mq.annotation.MQProducer;
 import com.dachen.starter.mq.annotation.MQTransactionProducer;
-import com.dachen.starter.mq.custom.producer.DelayMqProducer;
+import com.dachen.starter.mq.base.AbstractMQTransactionProducer;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -11,8 +10,6 @@ import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;

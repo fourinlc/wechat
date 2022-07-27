@@ -1,5 +1,6 @@
 package com.dachen.starter.mq.config;
 
+import com.dachen.starter.mq.annotation.MQConsumer;
 import com.dachen.starter.mq.base.AbstractMQPushConsumer;
 import com.dachen.starter.mq.base.MessageExtConst;
 import com.dachen.starter.mq.custom.consumer.DelayMqConsumer;
@@ -8,7 +9,6 @@ import com.dachen.starter.mq.trace.common.OnsTraceConstants;
 import com.dachen.starter.mq.trace.dispatch.impl.AsyncTraceAppender;
 import com.dachen.starter.mq.trace.dispatch.impl.AsyncTraceDispatcher;
 import com.dachen.starter.mq.trace.tracehook.OnsConsumeMessageHookImpl;
-import com.dachen.starter.mq.annotation.MQConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -18,8 +18,8 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -34,6 +34,7 @@ import java.util.*;
 @Slf4j
 @Configuration
 @ConditionalOnBean(MQBaseAutoConfiguration.class)
+@Import({DelayMqProducer.class, DelayMqConsumer.class})
 public class MQConsumerAutoConfiguration extends MQBaseAutoConfiguration {
 
     private AsyncTraceDispatcher asyncTraceDispatcher;
