@@ -6,6 +6,8 @@ import com.xxx.server.annotation.valid.UpdateValid;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinTempalate;
 import com.xxx.server.service.IWeixinTempalateService;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import lombok.AllArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,11 +32,6 @@ public class WeixinTempalateController {
 
     private IWeixinTempalateService weixinTempalateService;
 
-    /*@GetMapping("test")
-    public void test(String chatRoomName, String keyA, String keyB, String templateName, List<Long> fileIds){
-        weixinTempalateService.chatHandler(chatRoomName, keyA, keyB, templateName, fileIds);
-    }*/
-
     @GetMapping("add")
     @Validated(AddValid.class)
     public RespBean add(@Valid WeixinTempalate weixinTempalate){
@@ -45,6 +42,16 @@ public class WeixinTempalateController {
     @Validated(UpdateValid.class)
     public RespBean update(@Valid WeixinTempalate weixinTempalate){
         return weixinTempalateService.updateById(weixinTempalate) ? RespBean.sucess("修改成功") : RespBean.error("修改失败");
+    }
+
+    @GetMapping("query")
+    @ApiImplicitParams(
+            {
+                    @ApiImplicitParam(value = "模板名称", name = "templateName", paramType = "query"),
+            }
+    )
+    public RespBean query(String templateName){
+        return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTempalate().setTemplateName(templateName)));
     }
 
 }

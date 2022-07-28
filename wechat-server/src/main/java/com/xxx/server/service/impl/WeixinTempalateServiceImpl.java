@@ -1,22 +1,28 @@
 package com.xxx.server.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.dachen.starter.mq.base.MessageBuilder;
+import com.dachen.starter.mq.custom.constant.GuavaRocketConstants;
+import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.enums.WechatApiHelper;
-import com.xxx.server.mapper.WeixinFileMapper;
 import com.xxx.server.mapper.WeixinTempalateMapper;
-import com.xxx.server.pojo.RespBean;
-import com.xxx.server.pojo.WeixinFile;
 import com.xxx.server.pojo.WeixinTempalate;
 import com.xxx.server.service.IWeixinFileService;
 import com.xxx.server.service.IWeixinTempalateService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.rocketmq.common.message.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import javax.annotation.Resource;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -34,12 +40,14 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
 
     //TODO 设置间隔群聊时间，群群间隔时间
     private String time;
-
+    @Resource
     private IWeixinFileService weixinFileService;
+    @Resource
+    private DelayMqProducer delayMqProducer;
 
     // AB话术相互群聊
     @Override
-    public void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) {
+    public void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) throws InterruptedException {
         // 获取待加入的图片列表
         List<JSONObject> weixinFiles = weixinFileService.downFile(fileIds);
         Assert.isTrue(weixinFiles.size() > 0, "图片模板有误");
@@ -52,8 +60,12 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
                             .eq(WeixinTempalate::getTemplateName, templateName)
                             .orderByAsc(WeixinTempalate::getTemplateOrder));
             Assert.isTrue(!weixinTempalates.isEmpty(), "模板信息有误");
+            // 发送延时消息至rocketmq
             JSONObject param = JSONObject.of("ToUserName", chatRoomName, "Delay", true);
             MultiValueMap<String, String> query = new LinkedMultiValueMap<>();
+            Date delay = new Date();
+            // 每隔两秒执行一次
+            String code = WechatApiHelper.SEND_TEXT_MESSAGE.getCode();
             for (WeixinTempalate weixinTempalate : weixinTempalates) {
                 // 构造模板参数
                 query.add("key", "A".equals(weixinTempalate.getTemplateType()) ? keyA : keyB);
@@ -63,13 +75,18 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
                     param.put("MsgType", 1);
                     param.put("TextContent", weixinTempalate.getTemplateContent());
                     // 发送文字信息
-                    // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
-                    WechatApiHelper.SEND_TEXT_MESSAGE.invoke(param, query);
+                    // WechatApiHelper.SEND_TEXT_MESSAGE.invoke(param, query);
                 } else {
                     param.put("TextContent", "");
                     param.put("ImageContent", weixinTempalate.getTemplateContent());
-                    WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
+                    code = WechatApiHelper.SEND_IMAGE_MESSAGE.getCode();
+                    // WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
                 }
+                // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
+                JSONObject msg = JSONObject.of("param", param, "query", query, "code", code);
+                Message message = MessageBuilder.of(JSON.toJSONBytes(msg)).topic(GuavaRocketConstants.PROXY_TOPIC).build();
+                delay = DateUtils.addSeconds(delay, 2);
+                delayMqProducer.sendDelay(message, delay);
                 // 清空param、query参数
                 param.clear();
                 query.clear();
@@ -80,8 +97,21 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
             query.add("key", keyA);
             param.put("TextContent", "");
             param.put("ImageContent", weixinFile.getString("dataContext"));
+
+            code = WechatApiHelper.SEND_IMAGE_MESSAGE.getCode();
+            JSONObject msg = JSONObject.of("param", param, "query", query, "code", code);
+            Message message = MessageBuilder.of(JSON.toJSONBytes(msg)).topic(GuavaRocketConstants.PROXY_TOPIC).build();
+            delay = DateUtils.addSeconds(delay, 2);
+            delayMqProducer.sendDelay(message, delay);
             // 此时单个群操作完毕
-            WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
+            // WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
         }
+    }
+
+    @Override
+    public List<WeixinTempalate> queryList(WeixinTempalate weixinTempalate) {
+        return baseMapper.selectList(Wrappers.<WeixinTempalate>lambdaQuery()
+                .like(StrUtil.isNotEmpty(weixinTempalate.getTemplateName()), WeixinTempalate::getTemplateName, weixinTempalate.getTemplateName())
+                .orderByDesc(WeixinTempalate::getTemplateOrder));
     }
 }

@@ -1,12 +1,9 @@
 package com.xxx.server.pojo;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableField;
-import java.io.Serializable;
-
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.xxx.server.annotation.valid.AddValid;
 import com.xxx.server.annotation.valid.RepeatValid;
 import com.xxx.server.annotation.valid.UpdateValid;
@@ -16,10 +13,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
 /**
- * <p>
- * 
- * </p>
  *
  * @author lc
  * @since 2022-07-16
@@ -36,14 +35,17 @@ public class WeixinTempalate implements Serializable {
 
     @ApiModelProperty(value = "模板id")
     @TableId(value = "template_id", type = IdType.AUTO)
+    @NotNull(groups = UpdateValid.class, message = "更新时模板id不能为空")
     private Long templateId;
 
     @ApiModelProperty(value = "模板名称【是否冗余】")
     @TableField("template_name")
+    @NotEmpty(groups = AddValid.class, message = "新增模板名称不能为空")
     private String templateName;
 
     @ApiModelProperty(value = "模板内容")
     @TableField("template_content")
+    @NotEmpty(groups = AddValid.class, message = "新增模板内容不能为空")
     private String templateContent;
 
     @ApiModelProperty(value = "模板类型")
