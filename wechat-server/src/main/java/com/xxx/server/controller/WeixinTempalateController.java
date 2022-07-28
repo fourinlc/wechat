@@ -3,6 +3,7 @@ package com.xxx.server.controller;
 
 import com.xxx.server.annotation.valid.AddValid;
 import com.xxx.server.annotation.valid.UpdateValid;
+import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinTempalate;
 import com.xxx.server.service.IWeixinTempalateService;
 import lombok.AllArgsConstructor;
@@ -36,14 +37,14 @@ public class WeixinTempalateController {
 
     @GetMapping("add")
     @Validated(AddValid.class)
-    public void add(@Valid WeixinTempalate weixinTempalate){
-        weixinTempalateService.save(weixinTempalate);
+    public RespBean add(@Valid WeixinTempalate weixinTempalate){
+        return weixinTempalateService.save(weixinTempalate) ? RespBean.sucess("新增成功") : RespBean.error("新增失败");
     }
 
     @GetMapping("update")
     @Validated(UpdateValid.class)
-    public void update(@Valid WeixinTempalate weixinTempalate){
-        weixinTempalateService.updateById(weixinTempalate);
+    public RespBean update(@Valid WeixinTempalate weixinTempalate){
+        return weixinTempalateService.updateById(weixinTempalate) ? RespBean.sucess("修改成功") : RespBean.error("修改失败");
     }
 
 }
