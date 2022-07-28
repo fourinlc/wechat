@@ -9,7 +9,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 全局异常处理器
@@ -27,7 +30,7 @@ public class GlobalExceptionHandler {
     }
 
 
-    /*@ExceptionHandler(ConstraintViolationException.class)
+    @ExceptionHandler(ConstraintViolationException.class)
     public RespBean validationBodyException(ConstraintViolationException exception) {
         Set<ConstraintViolation<?>> constraintViolations = exception.getConstraintViolations();
         StringBuilder stringBuilder = new StringBuilder();
@@ -35,7 +38,7 @@ public class GlobalExceptionHandler {
             stringBuilder.append(constraintViolation.getMessageTemplate());
         }
         return RespBean.error("请填写正确信息：" + stringBuilder);
-    }*/
+    }
 
     /**spring异常处理*/
     @ExceptionHandler(MethodArgumentNotValidException.class)

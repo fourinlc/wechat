@@ -6,6 +6,10 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableField;
 import java.io.Serializable;
+
+import com.xxx.server.annotation.valid.AddValid;
+import com.xxx.server.annotation.valid.RepeatValid;
+import com.xxx.server.annotation.valid.UpdateValid;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -24,7 +28,8 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("t_weixin_tempalate")
-@ApiModel(value="WeixinTempalate对象", description="")
+@ApiModel(value="WeixinTempalate对象")
+@RepeatValid(groups = {AddValid.class, UpdateValid.class}, message = "该模板名已存在",fieldName = "templateName")
 public class WeixinTempalate implements Serializable {
 
     private static final long serialVersionUID = 1L;

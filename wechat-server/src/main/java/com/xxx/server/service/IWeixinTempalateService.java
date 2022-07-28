@@ -16,4 +16,6 @@ import java.util.List;
 public interface IWeixinTempalateService extends IService<WeixinTempalate> {
 
     void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds);
+
+
 }
