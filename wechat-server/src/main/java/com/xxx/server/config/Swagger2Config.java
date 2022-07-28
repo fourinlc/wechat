@@ -38,7 +38,7 @@ public class Swagger2Config {
         return new ApiInfoBuilder()
                 .title("wechat api document")
                 .description("wechat api document")
-                .contact(new Contact("xxx","http:localhost:8081/doc.html","xxx@xxx.com"))
+                .contact(new Contact("xxx","http:localhost:8081/wechat/doc.html","xxx@xxx.com"))
                 .version("1.0")
                 .build();
     }

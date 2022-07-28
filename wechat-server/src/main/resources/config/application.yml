@@ -1,6 +1,9 @@
 server:
   # 端口
   port: 8081
+  servlet:
+    # 应用的访问路径
+    context-path: /wechat/
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

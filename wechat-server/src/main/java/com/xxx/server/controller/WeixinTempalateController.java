@@ -6,11 +6,14 @@ import com.xxx.server.annotation.valid.UpdateValid;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinTempalate;
 import com.xxx.server.service.IWeixinTempalateService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,22 +31,26 @@ import javax.validation.Valid;
 @RequestMapping("/weixin-tempalate")
 @AllArgsConstructor
 @Validated
+@Api(tags = "模板操作")
 public class WeixinTempalateController {
 
     private IWeixinTempalateService weixinTempalateService;
 
-    @GetMapping("add")
+    @ApiOperation("新增")
+    @PostMapping("add")
     @Validated(AddValid.class)
     public RespBean add(@Valid WeixinTempalate weixinTempalate){
         return weixinTempalateService.save(weixinTempalate) ? RespBean.sucess("新增成功") : RespBean.error("新增失败");
     }
 
-    @GetMapping("update")
+    @ApiOperation("更新")
+    @PostMapping("update")
     @Validated(UpdateValid.class)
     public RespBean update(@Valid WeixinTempalate weixinTempalate){
         return weixinTempalateService.updateById(weixinTempalate) ? RespBean.sucess("修改成功") : RespBean.error("修改失败");
     }
 
+    @ApiOperation("查询")
     @GetMapping("query")
     @ApiImplicitParams(
             {
