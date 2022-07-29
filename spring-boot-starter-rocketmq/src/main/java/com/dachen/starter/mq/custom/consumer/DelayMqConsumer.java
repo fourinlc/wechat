@@ -18,7 +18,7 @@ import java.util.Map;
 
 @Slf4j
 @AllArgsConstructor
-@MQConsumer(topic = GuavaRocketConstants.PROXY_TOPIC, consumerGroup = "guava-group")
+@MQConsumer(topic = "${spring.rocketmq.proxy-topic}", consumerGroup = "${spring.rocketmq.producer-group}")
 public class DelayMqConsumer extends AbstractMQPushConsumer<MessageExt> {
 
     private DelayMqProducer delayMqProducer;

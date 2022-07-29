@@ -1,5 +1,6 @@
 package com.xxx.server.enums;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.xxx.server.util.RestClient;
 import com.xxx.server.util.SpringUtils;
@@ -63,6 +64,15 @@ public enum WechatApiHelper {
         this.code = code;
         this.desc = desc;
         this.httpMethod = httpMethod;
+    }
+
+    public static WechatApiHelper getWechatApiHelper(String code){
+        for (WechatApiHelper wechatApiHelper : WechatApiHelper.values()) {
+            if (StrUtil.equals(code, wechatApiHelper.getCode())){
+                return wechatApiHelper;
+            }
+        }
+        return null;
     }
 
     public String getDesc() {

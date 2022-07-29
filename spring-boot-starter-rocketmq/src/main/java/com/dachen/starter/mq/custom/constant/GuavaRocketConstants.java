@@ -37,7 +37,7 @@ public class GuavaRocketConstants {
     /**
      * 代理的topic
      */
-    public static final String PROXY_TOPIC          = "guava_topic";
+    // public static final String PROXY_TOPIC          = "guava_topic";
 
     /**
      * 最后时间直接不走代理topic,定时直接处理

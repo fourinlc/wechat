@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -28,6 +29,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @MQProducer
 public class DelayMqProducer extends AbstractMQProducer {
+
+    @Value("${spring.rocketmq.proxy-topic}")
+    private String proxyTopic;
 
     /**
      * 1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h rocketMQ自动支持18个级别 等级全部转化为秒
@@ -88,7 +92,7 @@ public class DelayMqProducer extends AbstractMQProducer {
             msg.putUserProperty(GuavaRocketConstants.GUAVA_ORIGINAL_UUID, uuid);
         }
         msg.setDelayTimeLevel(level);
-        msg.setTopic(GuavaRocketConstants.PROXY_TOPIC);
+        msg.setTopic(proxyTopic);
         log.info("消息uuid {} 开发发送时间为{},延时等级本次建议为{}", uuid, String.format("%tF %<tT", new Date()), level);
     }
 

@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.assertj.core.util.Lists;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,6 +60,12 @@ public class WeixinTempalateController {
     )
     public RespBean query(String templateName){
         return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTempalate().setTemplateName(templateName)));
+    }
+
+    @GetMapping("ada")
+    public RespBean chatHandler() throws InterruptedException {
+        weixinTempalateService.chatHandler(Lists.newArrayList("开心", "快乐"), "广A", "广B", "test", null);
+        return RespBean.sucess("查询成功");
     }
 
 }

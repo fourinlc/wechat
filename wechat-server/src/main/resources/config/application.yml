@@ -21,7 +21,10 @@ spring:
       connection-test-query: SELECT 1
   rocketmq:
     name-server-address: 180.76.163.53:9876
-    producer-group: guava-group
+    producer-group: producer-wechat
+    proxy-topic: wechat-delay
+    consumer-topic: wechat
+    consumer-group: wechat
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml

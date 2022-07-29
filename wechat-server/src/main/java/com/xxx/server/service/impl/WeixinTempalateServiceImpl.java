@@ -49,8 +49,8 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
     @Override
     public void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) throws InterruptedException {
         // 获取待加入的图片列表
-        List<JSONObject> weixinFiles = weixinFileService.downFile(fileIds);
-        Assert.isTrue(weixinFiles.size() > 0, "图片模板有误");
+        /*List<JSONObject> weixinFiles = weixinFileService.downFile(fileIds);
+        Assert.isTrue(weixinFiles.size() > 0, "图片模板有误");*/
         // 获取对应文件信息
         for (int i = 0; i < chatRoomNames.size(); i++) {
             String chatRoomName = chatRoomNames.get(i);
@@ -84,7 +84,7 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
                 }
                 // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
                 JSONObject msg = JSONObject.of("param", param, "query", query, "code", code);
-                Message message = MessageBuilder.of(JSON.toJSONBytes(msg)).topic(GuavaRocketConstants.PROXY_TOPIC).build();
+                Message message = MessageBuilder.of(JSON.toJSONBytes(msg)).topic("GuavaRocketConstants.PROXY_TOPIC").build();
                 delay = DateUtils.addSeconds(delay, 2);
                 delayMqProducer.sendDelay(message, delay);
                 // 清空param、query参数
@@ -92,17 +92,16 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
                 query.clear();
             }
             // 最后添加自定义二维码信息数据
-            JSONObject weixinFile = weixinFiles.get(i / weixinFiles.size());
+            /*JSONObject weixinFile = weixinFiles.get(i / weixinFiles.size());
             // 默认为A角色发送
             query.add("key", keyA);
             param.put("TextContent", "");
             param.put("ImageContent", weixinFile.getString("dataContext"));
-
             code = WechatApiHelper.SEND_IMAGE_MESSAGE.getCode();
             JSONObject msg = JSONObject.of("param", param, "query", query, "code", code);
-            Message message = MessageBuilder.of(JSON.toJSONBytes(msg)).topic(GuavaRocketConstants.PROXY_TOPIC).build();
+            Message message = MessageBuilder.of(JSON.toJSONBytes(msg)).topic("GuavaRocketConstants.PROXY_TOPIC").build();
             delay = DateUtils.addSeconds(delay, 2);
-            delayMqProducer.sendDelay(message, delay);
+            delayMqProducer.sendDelay(message, delay);*/
             // 此时单个群操作完毕
             // WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
         }

@@ -9,6 +9,21 @@
       "name": "wechat.rootUrl",
       "type": "java.lang.String",
       "description": "微信服务根路径"
+    },
+    {
+      "name": "spring.rocketmq.proxy-topic",
+      "type": "java.lang.String",
+      "description": "延时消息队列代理主题"
+    },
+    {
+      "name": "spring.rocketmq.consumer-topic",
+      "type": "java.lang.String",
+      "description": "消费者主题信息，一个应用一般一个即可"
+    },
+    {
+      "name": "spring.rocketmq.consumer-group",
+      "type": "java.lang.String",
+      "description": "消费者组"
     }
   ]
 }

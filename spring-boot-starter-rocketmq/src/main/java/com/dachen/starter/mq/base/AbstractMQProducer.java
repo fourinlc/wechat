@@ -34,8 +34,7 @@ public abstract class AbstractMQProducer {
     public SendResult syncSend(Message message) throws MQException {
         try {
             SendResult sendResult = producer.send(message);
-            log.debug("send rocketmq message ,messageId : {}", sendResult.getMsgId());
-            // this.doAfterSyncSend(message, sendResult);
+            log.info("send rocketmq message ,messageId : {}", sendResult.getMsgId());
             return sendResult;
         } catch (Exception e) {
             log.error("消息发送失败，topic : {}, msgObj {}", message.getTopic(), message);
