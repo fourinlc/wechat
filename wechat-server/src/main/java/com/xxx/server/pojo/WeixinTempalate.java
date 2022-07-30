@@ -38,7 +38,7 @@ public class WeixinTempalate implements Serializable {
     @NotNull(groups = UpdateValid.class, message = "更新时模板id不能为空")
     private Long templateId;
 
-    @ApiModelProperty(value = "模板名称【是否冗余】")
+    @ApiModelProperty(value = "模板名称")
     @TableField("template_name")
     @NotEmpty(groups = AddValid.class, message = "新增模板名称不能为空")
     private String templateName;

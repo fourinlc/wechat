@@ -5,17 +5,16 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.dachen.starter.mq.base.MessageBuilder;
-import com.dachen.starter.mq.custom.constant.GuavaRocketConstants;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.enums.WechatApiHelper;
-import com.xxx.server.mapper.WeixinTempalateMapper;
+import com.xxx.server.mapper.WeixinTemplateMapper;
 import com.xxx.server.pojo.WeixinTempalate;
 import com.xxx.server.service.IWeixinFileService;
-import com.xxx.server.service.IWeixinTempalateService;
+import com.xxx.server.service.IWeixinTemplateService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.rocketmq.common.message.Message;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
@@ -36,14 +35,18 @@ import java.util.List;
 @Service
 //@AllArgsConstructor
 @Slf4j
-public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMapper, WeixinTempalate> implements IWeixinTempalateService {
+public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper, WeixinTempalate> implements IWeixinTemplateService {
 
-    //TODO 设置间隔群聊时间，群群间隔时间
-    private String time;
     @Resource
     private IWeixinFileService weixinFileService;
     @Resource
     private DelayMqProducer delayMqProducer;
+
+    @Value("${spring.rocketmq.consumer-topic}")
+    private String consumerTopic;
+
+    @Value("${spring.rocketmq.tags.qun}")
+    private String consumerQunTag;
 
     // AB话术相互群聊
     @Override
@@ -80,11 +83,11 @@ public class WeixinTempalateServiceImpl extends ServiceImpl<WeixinTempalateMappe
                     param.put("TextContent", "");
                     param.put("ImageContent", weixinTempalate.getTemplateContent());
                     code = WechatApiHelper.SEND_IMAGE_MESSAGE.getCode();
-                    // WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(param, query);
                 }
                 // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
                 JSONObject msg = JSONObject.of("param", param, "query", query, "code", code);
-                Message message = MessageBuilder.of(JSON.toJSONBytes(msg)).topic("GuavaRocketConstants.PROXY_TOPIC").build();
+                //TODO 是否有必要设置成异步消息,加快响应时间
+                Message message = new Message(consumerTopic, consumerQunTag, JSON.toJSONBytes(msg));
                 delay = DateUtils.addSeconds(delay, 2);
                 delayMqProducer.sendDelay(message, delay);
                 // 清空param、query参数

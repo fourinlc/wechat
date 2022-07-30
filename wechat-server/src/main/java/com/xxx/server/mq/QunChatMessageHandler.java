@@ -1,9 +1,11 @@
 package com.xxx.server.mq;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.google.gson.internal.LinkedTreeMap;
 import com.xxx.server.enums.WechatApiHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
@@ -23,7 +25,10 @@ public class QunChatMessageHandler implements MqMessageHandler{
             return true;
         }
         //TODO 发送消息，失败是否需要重试
-        wechatApiHelper.invoke(message.getJSONObject("param"), (MultiValueMap<String, String>) message.get("query"));
+        LinkedTreeMap query = (LinkedTreeMap)message.get("query");
+        JSONObject param = message.getJSONObject("param");
+        MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap(query);
+        wechatApiHelper.invoke(param, multiValueMap);
         return true;
     }
 }

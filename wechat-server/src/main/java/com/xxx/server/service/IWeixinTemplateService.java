@@ -13,7 +13,7 @@ import java.util.List;
  * @author lc
  * @since 2022-07-16
  */
-public interface IWeixinTempalateService extends IService<WeixinTempalate> {
+public interface IWeixinTemplateService extends IService<WeixinTempalate> {
 
     void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) throws InterruptedException;
 

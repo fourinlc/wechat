@@ -25,6 +25,8 @@ spring:
     proxy-topic: wechat-delay
     consumer-topic: wechat
     consumer-group: wechat
+    tags:
+      qun: qunChat
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml

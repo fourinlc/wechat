@@ -44,7 +44,7 @@ public class MQConsumerAutoConfiguration extends MQBaseAutoConfiguration {
     @PostConstruct
     public void init() throws Exception {
         Map<String, Object> beans = applicationContext.getBeansWithAnnotation(MQConsumer.class);
-        if(!CollectionUtils.isEmpty(beans) && mqProperties.getTraceEnabled()) {
+        if (!CollectionUtils.isEmpty(beans) && mqProperties.getTraceEnabled()) {
             initAsyncAppender();
         }
         validConsumerMap = new HashMap<>();
@@ -56,7 +56,7 @@ public class MQConsumerAutoConfiguration extends MQBaseAutoConfiguration {
     }
 
     private AsyncTraceDispatcher initAsyncAppender() {
-        if(asyncTraceDispatcher != null) {
+        if (asyncTraceDispatcher != null) {
             return asyncTraceDispatcher;
         }
         try {
@@ -91,14 +91,14 @@ public class MQConsumerAutoConfiguration extends MQBaseAutoConfiguration {
         String consumerGroup = environment.resolvePlaceholders(mqConsumer.consumerGroup());
         String topic = environment.resolvePlaceholders(mqConsumer.topic());
         String tags = "*";
-        if(mqConsumer.tag().length == 1) {
+        if (mqConsumer.tag().length == 1) {
             tags = environment.resolvePlaceholders(mqConsumer.tag()[0]);
-        } else if(mqConsumer.tag().length > 1) {
+        } else if (mqConsumer.tag().length > 1) {
             tags = StringUtils.join(mqConsumer.tag(), "||");
         }
 
         // 检查consumerGroup
-        if(!StringUtils.isEmpty(validConsumerMap.get(consumerGroup))) {
+        if (!StringUtils.isEmpty(validConsumerMap.get(consumerGroup))) {
             String exist = validConsumerMap.get(consumerGroup);
             throw new RuntimeException("消费组重复订阅，请新增消费组用于新的topic和tag组合: " + consumerGroup + "已经订阅了" + exist);
         } else {
@@ -106,37 +106,34 @@ public class MQConsumerAutoConfiguration extends MQBaseAutoConfiguration {
         }
 
         // 配置push consumer
-        if (AbstractMQPushConsumer.class.isAssignableFrom(bean.getClass())) {
-            DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
-            consumer.setNamesrvAddr(mqProperties.getNameServerAddress());
-            consumer.setMessageModel(MessageModel.valueOf(mqConsumer.messageMode()));
-            consumer.subscribe(topic, tags);
-            consumer.setInstanceName(UUID.randomUUID().toString());
-            consumer.setVipChannelEnabled(mqProperties.getVipChannelEnabled());
-            AbstractMQPushConsumer abstractMQPushConsumer = (AbstractMQPushConsumer) bean;
-            if (MessageExtConst.CONSUME_MODE_CONCURRENTLY.equals(mqConsumer.consumeMode())) {
-                consumer.registerMessageListener((List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext) ->
-                        abstractMQPushConsumer.dealMessage(list, consumeConcurrentlyContext));
-            } else if (MessageExtConst.CONSUME_MODE_ORDERLY.equals(mqConsumer.consumeMode())) {
-                consumer.registerMessageListener((List<MessageExt> list, ConsumeOrderlyContext consumeOrderlyContext) ->
-                        abstractMQPushConsumer.dealMessage(list, consumeOrderlyContext));
-            } else {
-                throw new RuntimeException("unknown consume mode ! only support CONCURRENTLY and ORDERLY");
-            }
-            abstractMQPushConsumer.setConsumer(consumer);
-
-            // 为Consumer增加消息轨迹回发模块
-            if (mqProperties.getTraceEnabled()) {
-                try {
-                    consumer.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(
-                            new OnsConsumeMessageHookImpl(asyncTraceDispatcher));
-                } catch (Throwable e) {
-                    log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
-                }
-            }
-
-            consumer.start();
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
+        consumer.setNamesrvAddr(mqProperties.getNameServerAddress());
+        consumer.setMessageModel(MessageModel.valueOf(mqConsumer.messageMode()));
+        consumer.subscribe(topic, tags);
+        consumer.setInstanceName(UUID.randomUUID().toString());
+        consumer.setVipChannelEnabled(mqProperties.getVipChannelEnabled());
+        AbstractMQPushConsumer abstractMQPushConsumer = (AbstractMQPushConsumer) bean;
+        if (MessageExtConst.CONSUME_MODE_CONCURRENTLY.equals(mqConsumer.consumeMode())) {
+            consumer.registerMessageListener((List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext) ->
+                    abstractMQPushConsumer.dealMessage(list, consumeConcurrentlyContext));
+        } else if (MessageExtConst.CONSUME_MODE_ORDERLY.equals(mqConsumer.consumeMode())) {
+            consumer.registerMessageListener((List<MessageExt> list, ConsumeOrderlyContext consumeOrderlyContext) ->
+                    abstractMQPushConsumer.dealMessage(list, consumeOrderlyContext));
+        } else {
+            throw new RuntimeException("unknown consume mode ! only support CONCURRENTLY and ORDERLY");
         }
+        abstractMQPushConsumer.setConsumer(consumer);
+
+        // 为Consumer增加消息轨迹回发模块
+        if (mqProperties.getTraceEnabled()) {
+            try {
+                consumer.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(
+                        new OnsConsumeMessageHookImpl(asyncTraceDispatcher));
+            } catch (Throwable e) {
+                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
+            }
+        }
+        consumer.start();
 
         log.info(String.format("%s is ready to subscribe message", bean.getClass().getName()));
     }

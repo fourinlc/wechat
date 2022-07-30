@@ -11,6 +11,6 @@ import com.xxx.server.pojo.WeixinTempalate;
  * @author lc
  * @since 2022-07-16
  */
-public interface WeixinTempalateMapper extends BaseMapper<WeixinTempalate> {
+public interface WeixinTemplateMapper extends BaseMapper<WeixinTempalate> {
 
 }

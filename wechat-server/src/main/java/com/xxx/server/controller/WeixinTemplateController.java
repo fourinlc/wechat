@@ -5,7 +5,7 @@ import com.xxx.server.annotation.valid.AddValid;
 import com.xxx.server.annotation.valid.UpdateValid;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinTempalate;
-import com.xxx.server.service.IWeixinTempalateService;
+import com.xxx.server.service.IWeixinTemplateService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -13,12 +13,10 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.assertj.core.util.Lists;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * <p>
@@ -33,15 +31,22 @@ import javax.validation.Valid;
 @AllArgsConstructor
 @Validated
 @Api(tags = "模板操作")
-public class WeixinTempalateController {
+public class WeixinTemplateController {
 
-    private IWeixinTempalateService weixinTempalateService;
+    private IWeixinTemplateService weixinTempalateService;
 
     @ApiOperation("新增")
     @PostMapping("add")
     @Validated(AddValid.class)
     public RespBean add(@Valid WeixinTempalate weixinTempalate){
         return weixinTempalateService.save(weixinTempalate) ? RespBean.sucess("新增成功") : RespBean.error("新增失败");
+    }
+
+    @ApiOperation("批量新增")
+    @PostMapping("batchAdd")
+    @Validated(AddValid.class)
+    public RespBean batchAdd(@Valid @RequestBody List<WeixinTempalate> weixinTempalates){
+        return weixinTempalateService.saveBatch(weixinTempalates) ? RespBean.sucess("批量新增成功") : RespBean.error("新增失败");
     }
 
     @ApiOperation("更新")
@@ -62,7 +67,7 @@ public class WeixinTempalateController {
         return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTempalate().setTemplateName(templateName)));
     }
 
-    @GetMapping("ada")
+    @GetMapping("chatHandler")
     public RespBean chatHandler() throws InterruptedException {
         weixinTempalateService.chatHandler(Lists.newArrayList("开心", "快乐"), "广A", "广B", "test", null);
         return RespBean.sucess("查询成功");
