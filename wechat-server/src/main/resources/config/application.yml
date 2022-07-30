@@ -35,9 +35,9 @@ mybatis-plus:
     map-underscore-to-camel-case: false
 
 wechat:
-  rootUrl: http://120.77.218.220:18080
+  rootUrl: http://27.151.13.31:18080
   file:
-    basePath: /home/lighthouse/wechat/image
+    basePath: /home/xieyi/xieyi/image
 
 logging:
   level:
