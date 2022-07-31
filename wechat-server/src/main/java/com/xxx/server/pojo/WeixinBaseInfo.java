@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.springframework.data.annotation.Id;
 
 /**
  * <p>
@@ -29,16 +30,17 @@ public class WeixinBaseInfo implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @ApiModelProperty(value = "微信id")
-    @TableId("weixin_id")
-    private String weixinId;
+    @TableId("wx_id")
+    @Id
+    private String wxId;
 
     @ApiModelProperty(value = "微信昵称")
-    @TableField("weixin_nick")
-    private String weixinNick;
+    @TableField("nick_name")
+    private String nickname;
 
     @ApiModelProperty(value = "登录状态")
-    @TableField("login_status")
-    private String loginStatus;
+    @TableField("state")
+    private String state;
 
     @ApiModelProperty(value = "群个数")
     @TableField("chat_room_count")

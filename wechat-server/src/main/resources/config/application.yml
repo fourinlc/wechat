@@ -27,6 +27,10 @@ spring:
     consumer-group: wechat
     tags:
       qun: qunChat
+  redis:
+    password: iseeyou_123
+    host: 120.77.218.220
+    database: 7
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml

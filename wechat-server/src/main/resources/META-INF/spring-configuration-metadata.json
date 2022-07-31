@@ -24,6 +24,11 @@
       "name": "spring.rocketmq.consumer-group",
       "type": "java.lang.String",
       "description": "消费者组"
+    },
+    {
+      "name": "spring.rocketmq.tags.qun",
+      "type": "java.lang.String",
+      "description": "群消费tag"
     }
   ]
 }

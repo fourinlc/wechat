@@ -1,7 +1,7 @@
 package com.xxx.server.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.xxx.server.pojo.WeixinGroupLinkDetail;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * <p>
@@ -9,7 +9,7 @@ import com.xxx.server.pojo.WeixinGroupLinkDetail;
  * </p>
  *
  * @author lc
- * @since 2022-07-16
+ * @since 2022-07-31
  */
 public interface WeixinGroupLinkDetailMapper extends BaseMapper<WeixinGroupLinkDetail> {
 
