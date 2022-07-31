@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 异步同步redis聊天消息
  */
-@Component
+/*@Component*/
 @AllArgsConstructor
 public class AsyncGroupLinkDetail implements CommandLineRunner {
 
