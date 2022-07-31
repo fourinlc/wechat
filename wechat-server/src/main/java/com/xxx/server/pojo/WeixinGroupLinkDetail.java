@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableField;
 import java.io.Serializable;
+import java.sql.Date;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -59,6 +61,10 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
 
     @TableField(exist = false)
     private Integer msgType;
+
+    @ApiModelProperty(value = "邀请时间")
+    @TableField("invitation_time")
+    private String invitationTime;
 
 
     @Override

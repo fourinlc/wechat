@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,7 +24,7 @@ public class RedisHelper {
                     .match(pattern)
                     .count(10000).build())) {
                 while (cursor.hasNext()) {
-                    keysTmp.add(new String(cursor.next(), "Utf-8"));
+                    keysTmp.add(new String(cursor.next(), StandardCharsets.UTF_8));
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
