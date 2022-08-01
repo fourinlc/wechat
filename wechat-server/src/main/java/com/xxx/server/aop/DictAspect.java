@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -61,7 +62,7 @@ public class DictAspect {
         if (result instanceof RespBean) {
             List<JSONObject> items = new ArrayList<>();
             RespBean respBean = (RespBean) result;
-            if (respBean.getObj() != null) {
+            if (respBean.getObj() != null && respBean.getObj() instanceof Collection) {
                 List<?> list = (List<?>) respBean.getObj();
                 for (Object record : list) {
                     ObjectMapper mapper = new ObjectMapper();
