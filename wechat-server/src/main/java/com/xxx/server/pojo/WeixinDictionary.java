@@ -41,6 +41,10 @@ public class WeixinDictionary implements Serializable {
     @TableField("dic_code")
     private String dicCode;
 
+    @ApiModelProperty(value = "key值")
+    @TableField("dic_key")
+    private String dicKey;
+
     @ApiModelProperty(value = "value值")
     @TableField("dic_value")
     private String dicValue;

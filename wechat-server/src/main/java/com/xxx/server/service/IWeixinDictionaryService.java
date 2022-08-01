@@ -3,6 +3,8 @@ package com.xxx.server.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xxx.server.pojo.WeixinDictionary;
 
+import java.util.List;
+
 /**
  * <p>
  *  服务类
@@ -13,4 +15,5 @@ import com.xxx.server.pojo.WeixinDictionary;
  */
 public interface IWeixinDictionaryService extends IService<WeixinDictionary> {
 
+    List<WeixinDictionary> query(WeixinDictionary weixinDictionary);
 }

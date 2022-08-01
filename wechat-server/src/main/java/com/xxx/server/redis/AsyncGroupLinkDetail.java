@@ -46,7 +46,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                log.info("开始定时处理群链接信息和在线好友信息");
+                log.debug("开始定时处理群链接信息和在线好友信息");
                 // 获取所有存活微信信息
                 // Set<String> stringSet = redisTemplate.keys("*" + SUFFIX);
                 Set<String> stringSet = RedisHelper.scan(redisTemplate, "*" + SUFFIX);
@@ -54,7 +54,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 List<WeixinGroupLinkDetail> datas = new LinkedList<>();
                 // 提取微信id列表
                 List<WeixinBaseInfo> weixinBaseInfos = Lists.newArrayList();
-                log.info("待处理消息列表：{}", stringSet);
+                log.debug("待处理消息列表：{}", stringSet);
                 for (String uuidTopic : stringSet) {
                     // 截取对应的uuid信息
                     String uuid = uuidTopic.replaceAll(SUFFIX, "");

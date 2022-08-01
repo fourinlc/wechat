@@ -5,6 +5,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 /**
  * @PackageName:com.xxx.server
@@ -16,6 +17,7 @@ import org.springframework.cache.annotation.EnableCaching;
 @MapperScan("com.xxx.server.mapper")
 @EnableMQConfiguration
 @EnableCaching
+@EnableAspectJAutoProxy
 public class WechatApplication {
     public static void main(String[] args) {
         SpringApplication.run(WechatApplication.class,args);
