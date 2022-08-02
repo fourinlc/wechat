@@ -17,7 +17,6 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.Node;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 异步同步redis聊天消息
  */
-@Component
+/*@Component*/
 @AllArgsConstructor
 @Slf4j
 public class AsyncGroupLinkDetail implements CommandLineRunner {
@@ -72,13 +71,15 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         weixinBaseInfos.add(weixinBaseInfo);
                         // 同步微信信息
                         while (true) {
-                            // 100毫秒没取出来，跳出循环
-                            Object data = redisTemplate.opsForList().leftPop(uuidTopic, 100, TimeUnit.MILLISECONDS);
-                            // List<Object> dataVo = redisTemplate.opsForList().range(uuidTopic, 0, 2);
-                            if (Objects.isNull(data)) break;
+                        // 100毫秒没取出来，跳出循环
+                         Object data = redisTemplate.opsForList().leftPop(uuidTopic, 100, TimeUnit.MILLISECONDS);
+                        // List<Object> dataVo = redisTemplate.opsForList().range(uuidTopic, 0, 14);
+                        if (Objects.isNull(data)) break;
+                       /* for (Object data : dataVo) {*/
                             if (data instanceof JSONObject) {
                                 // 校验数据是否是我们需要的类型
                                 JSONArray jsonArray = ((JSONObject) data).getJSONArray(MSGS);
+                                if(jsonArray == null) continue;
                                 // 通常只有一条信息
                                 for (Object o1 : jsonArray) {
                                     JSONObject jsonObject = (JSONObject) o1;
@@ -98,10 +99,13 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     jsonObject.put("content", content);
                                     // create_time 消息创建时间
                                     // 原始消息msg_id信息
+                                    // key
+                                    jsonObject.put("key", ((JSONObject) data).getString("UUID"));
                                     WeixinGroupLinkDetail weixinGroupLinkDetail = jsonObject.to(WeixinGroupLinkDetail.class);
                                     datas.add(weixinGroupLinkDetail);
                                 }
                             }
+                            /*  }*/
                         }
                     }
                 }
@@ -121,7 +125,9 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                     if (msgType == 49) {
                         // 转义获取群链接地址
                         String url = data.getContent();
-                        data.setContent(buildUrl(url));
+                        JSONObject jsonObject = buildUrl(url);
+                        data.setContent(jsonObject.getString("url"));
+                        data.setChatroomName(jsonObject.getString("title"));
                         // 判断上一组数据是否入库,群链接信息有了
                         if (StrUtil.isEmpty(tmp.getRemark()) && StrUtil.isNotEmpty(tmp.getContent())) {
                             // 直接入库
@@ -146,20 +152,22 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 weixinGroupLinkDetailService.saveOrUpdateBatch(dataVos);
             }
         };
-        // 每五分钟执行一次
+        // 每1分钟执行一次
         timer.schedule(timerTask, 0, 1 * 60 * 1000);
     }
 
     // 提取群链接地址
-    private String buildUrl(String url) {
+    private JSONObject buildUrl(String url) {
         try {
+            log.info("打印群链接信息：{}", url);
             Document document = DocumentHelper.parseText(url);
             Node node = document.selectSingleNode("/msg/appmsg/url");
-            return node.getText();
+            String title = document.selectSingleNode("/msg/appmsg/des").getText();
+            return JSONObject.of("url", node.getText(), "title", title);
         } catch (DocumentException e) {
             e.printStackTrace();
         }
-        return "";
+        return new JSONObject();
     }
 }
 

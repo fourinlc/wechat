@@ -66,6 +66,11 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
     @ApiModelProperty(value = "邀请时间")
     @TableField("invitation_time")
     private String invitationTime;
+    @TableField("chatroom_name")
+    private String chatroomName;
+
+    @TableField("`key`")
+    private String key;
 
 
     @Override

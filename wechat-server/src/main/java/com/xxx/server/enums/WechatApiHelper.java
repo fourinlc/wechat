@@ -36,7 +36,8 @@ public enum WechatApiHelper {
         }
     },
     GET_REDIS_SYNC_MSG("长链接订阅同步消息", "/v1/user/GetRedisSyncMsg", HttpMethod.POST),
-    NEW_SYNC_HISTORY_MESSAGE("短链接同步消息", "/v1/user/NewSyncHistoryMessage", HttpMethod.POST);
+    NEW_SYNC_HISTORY_MESSAGE("短链接同步消息", "/v1/user/NewSyncHistoryMessage", HttpMethod.POST),
+    SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST);
 
     private String desc;
 

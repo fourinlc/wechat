@@ -5,7 +5,6 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinGroupLinkDetail;
-import com.xxx.server.pojo.WeixinTempalate;
 import com.xxx.server.service.IWeixinGroupLinkDetailService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -13,6 +12,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * <p>
@@ -37,6 +38,12 @@ public class WeixinGroupLinkDetailController {
                 .list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvitationTime()), WeixinGroupLinkDetail::getInvitationTime, weixinGroupLinkDetail.getInvitationTime())
                         .like(StrUtil.isNotEmpty(weixinGroupLinkDetail.getFromUserName()), WeixinGroupLinkDetail::getFromUserName, weixinGroupLinkDetail.getFromUserName())));
+    }
+
+    @GetMapping("batchScanIntoUrlGroup")
+    @ApiOperation("批量进群")
+    public RespBean batchScanIntoUrlGroup(List<Long> ids){
+        return RespBean.sucess("成功", weixinGroupLinkDetailService.batchScanIntoUrlGroup(ids));
     }
 
 }
