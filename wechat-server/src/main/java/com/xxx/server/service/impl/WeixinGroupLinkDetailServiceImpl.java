@@ -60,7 +60,6 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
             multiValueMap.add("key", weixinGroupLinkDetail.getKey());
             JSONObject jsonObject = JSONObject.of("Url", weixinGroupLinkDetail.getContent());
             JSONObject msg = JSONObject.of("param", jsonObject, "query", multiValueMap, "code", WechatApiHelper.SCAN_INTO_URL_GROUP.getCode());
-            //TODO 是否有必要设置成异步消息,加快响应时间
             Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(msg));
             delay = DateUtils.addSeconds(delay, Integer.parseInt(scanIntoUrlGroupTime));
             // 异步更新返回成功时或者失败时更新群链接状态
