@@ -16,4 +16,6 @@ import java.util.List;
 public interface IWeixinDictionaryService extends IService<WeixinDictionary> {
 
     List<WeixinDictionary> query(WeixinDictionary weixinDictionary);
+
+    void saveOrUpdateBatch(List<WeixinDictionary> weixinDictionaries);
 }
