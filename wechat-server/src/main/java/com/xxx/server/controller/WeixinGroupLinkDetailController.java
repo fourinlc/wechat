@@ -38,13 +38,14 @@ public class WeixinGroupLinkDetailController {
         return RespBean.sucess("获取邀请链接", weixinGroupLinkDetailService
                 .list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvitationTime()), WeixinGroupLinkDetail::getInvitationTime, weixinGroupLinkDetail.getInvitationTime())
-                        .like(StrUtil.isNotEmpty(weixinGroupLinkDetail.getFromUserName()), WeixinGroupLinkDetail::getFromUserName, weixinGroupLinkDetail.getFromUserName())));
+                        .like(StrUtil.isNotEmpty(weixinGroupLinkDetail.getFromUserName()), WeixinGroupLinkDetail::getFromUserName, weixinGroupLinkDetail.getFromUserName())
+                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getLinkStatus()), WeixinGroupLinkDetail::getLinkStatus, weixinGroupLinkDetail.getLinkStatus())));
     }
 
     @GetMapping("batchScanIntoUrlGroup")
     @ApiOperation("批量进群")
-    public RespBean batchScanIntoUrlGroup(@RequestParam(value = "ids") List<Long> ids){
-        return RespBean.sucess("成功", weixinGroupLinkDetailService.batchScanIntoUrlGroup(ids));
+    public RespBean batchScanIntoUrlGroup(@RequestParam(value = "linkIds") List<Long> linkIds){
+        return RespBean.sucess("成功", weixinGroupLinkDetailService.batchScanIntoUrlGroup(linkIds));
     }
 
 }

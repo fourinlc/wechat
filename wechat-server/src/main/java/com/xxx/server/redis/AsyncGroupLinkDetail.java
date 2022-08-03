@@ -17,14 +17,16 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.Node;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 异步同步redis聊天消息
  */
-/*@Component*/
+@Component
 @AllArgsConstructor
 @Slf4j
 public class AsyncGroupLinkDetail implements CommandLineRunner {
@@ -119,7 +121,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                     WeixinGroupLinkDetail data = datas.get(i);
                     // 未处理状态
                     data.setLinkStatus("0");
-                    data.setInvitationTime(DateUtil.format(new Date(), "yyyy-mm-dd"));
+                    data.setInvitationTime(DateUtil.format(new Date(), "yyyy-MM-dd"));
                     // 处理具体数据，每两条数据为一组，可能还得剔除部分无效数据,msg_type为49的消息即为群邀请操作
                     Integer msgType = data.getMsgType();
                     if (msgType == 49) {
@@ -129,7 +131,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         data.setContent(jsonObject.getString("url"));
                         data.setChatroomName(jsonObject.getString("title"));
                         // 判断上一组数据是否入库,群链接信息有了
-                        if (StrUtil.isEmpty(tmp.getRemark()) && StrUtil.isNotEmpty(tmp.getContent())) {
+                        if (tmp != null && StrUtil.isEmpty(tmp.getRemark()) && StrUtil.isNotEmpty(tmp.getContent())) {
                             // 直接入库
                             WeixinGroupLinkDetail weixinGroupLinkDetail = tmp.clone();
                             dataVos.add(weixinGroupLinkDetail);
@@ -142,6 +144,8 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         }
                         // 提取备注信息,前提是这个消息类型是1,普通消息文本信息
                     } else if (msgType == 1) {
+                        // 首次普通文本信息情况下，暂时过滤文本信息
+                        if(tmp == null) continue;
                         String content = data.getContent();
                         tmp.setRemark(content);
                         WeixinGroupLinkDetail weixinGroupLinkDetail = tmp.clone();
@@ -153,17 +157,25 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
             }
         };
         // 每1分钟执行一次
-        timer.schedule(timerTask, 0, 1 * 60 * 1000);
+        timer.schedule(timerTask, 0, 2 * 60 * 1000);
     }
 
     // 提取群链接地址
     private JSONObject buildUrl(String url) {
         try {
+            // "半勺小奶酪?"邀请你加入群聊"海娜生活超市特价公告送货群"，进入可查看详情。
             log.info("打印群链接信息：{}", url);
             Document document = DocumentHelper.parseText(url);
             Node node = document.selectSingleNode("/msg/appmsg/url");
-            String title = document.selectSingleNode("/msg/appmsg/des").getText();
-            return JSONObject.of("url", node.getText(), "title", title);
+            String des = document.selectSingleNode("/msg/appmsg/des").getText();
+            // 获取具体群聊名称
+            List<String> roomNames = Arrays.stream(des.split("\"")).filter(str -> str.endsWith("群")).collect(Collectors.toList());
+            // 存在邀请人也叫xxx群情况
+            if(roomNames.size() == 2){
+                roomNames.remove(0);
+            }
+            String roomName = roomNames.get(0);
+            return JSONObject.of("url", node.getText(), "title", roomName);
         } catch (DocumentException e) {
             e.printStackTrace();
         }
