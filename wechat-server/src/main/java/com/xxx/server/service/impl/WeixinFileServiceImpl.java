@@ -7,7 +7,6 @@ import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.collect.Lists;
 import com.xxx.server.mapper.WeixinFileMapper;
-import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinFile;
 import com.xxx.server.service.IWeixinFileService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * <p>

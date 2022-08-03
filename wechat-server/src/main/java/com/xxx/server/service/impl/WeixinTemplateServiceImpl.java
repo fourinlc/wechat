@@ -45,8 +45,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
-    @Value("${spring.rocketmq.tags.qun}")
-    private String consumerQunTag;
+    /*@Value("${spring.rocketmq.tags.qun}")
+    private String consumerQunTag;*/
 
     // AB话术相互群聊
     @Override
@@ -87,7 +87,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                 // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
                 JSONObject msg = JSONObject.of("param", param, "query", query, "code", code);
                 //TODO 是否有必要设置成异步消息,加快响应时间
-                Message message = new Message(consumerTopic, consumerQunTag, JSON.toJSONBytes(msg));
+                Message message = new Message(consumerTopic, "", JSON.toJSONBytes(msg));
                 delay = DateUtils.addSeconds(delay, 2);
                 delayMqProducer.sendDelay(message, delay);
                 // 清空param、query参数

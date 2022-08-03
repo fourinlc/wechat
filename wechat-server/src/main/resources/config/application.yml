@@ -26,7 +26,7 @@ spring:
     consumer-topic: wechat
     consumer-group: wechat
     tags:
-      qun: qunChat
+      qunGroup: scanIntoUrlGroup
   redis:
     password: iseeyou_123
     host: 120.77.218.220

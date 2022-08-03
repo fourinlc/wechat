@@ -37,7 +37,14 @@ public enum WechatApiHelper {
     },
     GET_REDIS_SYNC_MSG("长链接订阅同步消息", "/v1/user/GetRedisSyncMsg", HttpMethod.POST),
     NEW_SYNC_HISTORY_MESSAGE("短链接同步消息", "/v1/user/NewSyncHistoryMessage", HttpMethod.POST),
-    SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST);
+    SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST){
+        @Override
+        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+            // 模拟处理群发消息文字版本
+            log.info("模拟进群操作：param ：{}，multiValueMap ：{}", param , multiValueMap);
+            return JSONObject.of("code", 200);
+        }
+    };
 
     private String desc;
 

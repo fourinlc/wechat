@@ -7,5 +7,7 @@ import com.alibaba.fastjson2.JSONObject;
  */
 public interface MqMessageHandler {
 
-    boolean process(JSONObject message);
+    default boolean process(JSONObject message){
+        return true;
+    }
 }

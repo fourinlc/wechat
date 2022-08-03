@@ -71,11 +71,11 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         weixinBaseInfos.add(weixinBaseInfo);
                         // 同步微信信息
                         while (true) {
-                        // 100毫秒没取出来，跳出循环
-                         Object data = redisTemplate.opsForList().leftPop(uuidTopic, 100, TimeUnit.MILLISECONDS);
-                        // List<Object> dataVo = redisTemplate.opsForList().range(uuidTopic, 0, 14);
-                        if (Objects.isNull(data)) break;
-                       /* for (Object data : dataVo) {*/
+                            // 100毫秒没取出来，跳出循环
+                            Object data = redisTemplate.opsForList().leftPop(uuidTopic, 100, TimeUnit.MILLISECONDS);
+                            // List<Object> dataVo = redisTemplate.opsForList().range(uuidTopic, 0, 14);
+                            if (Objects.isNull(data)) break;
+                            /* for (Object data : dataVo) {*/
                             if (data instanceof JSONObject) {
                                 // 校验数据是否是我们需要的类型
                                 JSONArray jsonArray = ((JSONObject) data).getJSONArray(MSGS);

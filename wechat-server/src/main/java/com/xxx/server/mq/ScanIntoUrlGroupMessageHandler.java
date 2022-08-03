@@ -9,26 +9,26 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
- * 群聊信息处理，tag为qunChat处理类
+ * 进群成功失败信息处理，tag为scanIntoUrlGroup处理类
  */
-@Component("qunChat")
+@Component("scanIntoUrlGroup")
 @Slf4j
-public class QunChatMessageHandler implements MqMessageHandler{
+public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
 
     @Override
     public boolean process(JSONObject message) {
-        log.info("消息处理====》{}", message);
+        log.info("进群消息处理====》{}", message);
         String code = message.getString("code");
         WechatApiHelper wechatApiHelper = WechatApiHelper.getWechatApiHelper(code);
         if(wechatApiHelper == null){
-            log.info("群消息处理异常,跳过处理");
+            log.info("群消息体数据异常,跳过处理：{}", message);
             return true;
         }
-        //TODO 发送消息，失败是否需要重试
         LinkedTreeMap query = (LinkedTreeMap)message.get("query");
         JSONObject param = message.getJSONObject("param");
         MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap(query);
-        wechatApiHelper.invoke(param, multiValueMap);
+        Object data = wechatApiHelper.invoke(param, multiValueMap);
+        // TODO 具体更新操作逻辑
         return true;
     }
 }

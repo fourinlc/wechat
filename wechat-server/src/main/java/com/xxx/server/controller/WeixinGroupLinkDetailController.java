@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -42,7 +43,7 @@ public class WeixinGroupLinkDetailController {
 
     @GetMapping("batchScanIntoUrlGroup")
     @ApiOperation("批量进群")
-    public RespBean batchScanIntoUrlGroup(List<Long> ids){
+    public RespBean batchScanIntoUrlGroup(@RequestParam(value = "ids") List<Long> ids){
         return RespBean.sucess("成功", weixinGroupLinkDetailService.batchScanIntoUrlGroup(ids));
     }
 
