@@ -1,5 +1,6 @@
 package com.xxx.server.service.impl;
 
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -16,8 +17,10 @@ import org.springframework.util.MultiValueMap;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
+import java.util.Vector;
 
 /**
  * <p>
@@ -87,12 +90,28 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     @Override
     public RespBean getFriendsAndChatRooms(String key) {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("key",key);
-        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
-        map.add("CurrentWxcontactSeq", "0");
-        map.add("CurrentChatRoomContactSeq", "0");
-        Object obj = WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,map);
-
+        jsonObject.put("CurrentWxcontactSeq",0);
+        jsonObject.put("CurrentChatRoomContactSeq",0);
+        MultiValueMap<String,String> getContactListMap = new LinkedMultiValueMap<>();
+        getContactListMap.add("key", key);
+        JSONObject resultJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,getContactListMap)));
+        JSONArray userNameList = resultJson.getJSONObject("Data").getJSONObject("ContactList").getJSONArray("contactUsernameList");
+        ArrayList<String> friendList = new ArrayList<>();
+        ArrayList<String> chatRoomList = new ArrayList<>();
+        for(int i=0; i<userNameList.size(); i++){
+            String userName = userNameList.get(i).toString();
+            if(userName.startsWith("wxid_")){
+                friendList.add(userName);
+            }else {
+                chatRoomList.add(userName);
+            }
+        }
+        MultiValueMap<String,String> getDetailsListMap = new LinkedMultiValueMap<>();
+        getDetailsListMap.add("key",key);
+        JSONObject getDetailsjsonObject = new JSONObject();
+        getDetailsjsonObject.put("UserNames",friendList);
+        getDetailsjsonObject.put("RoomWxIDList",chatRoomList);
+        WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailsjsonObject,getDetailsListMap);
         return RespBean.sucess("doing...");
     }
 }
