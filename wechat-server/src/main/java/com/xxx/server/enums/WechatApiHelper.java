@@ -44,7 +44,7 @@ public enum WechatApiHelper {
             log.info("模拟进群操作：param ：{}，multiValueMap ：{}", param , multiValueMap);
             return JSONObject.of("code", 200);
         }
-    };
+    },ADD_CHATROOM_MEMBERS("邀请进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST),;
 
     private String desc;
 
