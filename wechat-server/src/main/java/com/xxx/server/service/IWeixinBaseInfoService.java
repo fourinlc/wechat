@@ -19,4 +19,6 @@ public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
     RespBean checkLoginStatus(String key, String uuid);
 
     RespBean modifyRemarkName(String wxId, String remarkName);
+
+    RespBean getFriendsAndChatRooms(String key);
 }

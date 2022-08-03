@@ -83,4 +83,16 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             return RespBean.sucess("修改成功");
         }
     }
+
+    @Override
+    public RespBean getFriendsAndChatRooms(String key) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("key",key);
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("CurrentWxcontactSeq", "0");
+        map.add("CurrentChatRoomContactSeq", "0");
+        Object obj = WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,map);
+
+        return RespBean.sucess("doing...");
+    }
 }

@@ -7,10 +7,7 @@ import com.xxx.server.service.IWeixinBaseInfoService;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <p>
@@ -30,20 +27,25 @@ public class WeixinBaseInfoController{
 
     @ApiOperation(value = "获取登录二维码")
     @PostMapping("/getLoginQrcode")
-    RespBean getLoginQrcode(){
+    public RespBean getLoginQrcode(){
         return weixinBaseInfoService.getLoginQrcode();
     }
 
     @ApiOperation(value = "登录检测")
     @PostMapping("/checkLoginStatus")
-    RespBean checkLoginStatus(@RequestBody WeixinBaseInfo weixinBaseInfo){
+    public RespBean checkLoginStatus(@RequestBody WeixinBaseInfo weixinBaseInfo){
         return weixinBaseInfoService.checkLoginStatus(weixinBaseInfo.getKey(),weixinBaseInfo.getUuid());
     }
 
     @ApiOperation(value = "修改备注")
     @PostMapping("/modifyRemarkName")
-    RespBean modifyRemarkName(String wxId, String remarkName){
+    public RespBean modifyRemarkName(String wxId, String remarkName){
         return weixinBaseInfoService.modifyRemarkName(wxId,remarkName);
     }
 
+    @ApiOperation(value = "获取好友和群列表")
+    @GetMapping("/getFriends")
+    public RespBean getFriendsAndChatRooms(String key){
+        return weixinBaseInfoService.getFriendsAndChatRooms(key);
+    }
 }
