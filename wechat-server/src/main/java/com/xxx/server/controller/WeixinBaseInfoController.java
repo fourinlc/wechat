@@ -48,4 +48,10 @@ public class WeixinBaseInfoController{
     public RespBean getFriendsAndChatRooms(String key){
         return weixinBaseInfoService.getFriendsAndChatRooms(key);
     }
+
+    @ApiOperation("获取在线好友列表")
+    @GetMapping("queryList")
+    public RespBean query(){
+        return RespBean.sucess("查询成功", weixinBaseInfoService.queryList());
+    }
 }

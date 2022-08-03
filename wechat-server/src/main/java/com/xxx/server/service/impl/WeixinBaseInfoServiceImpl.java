@@ -3,24 +3,22 @@ package com.xxx.server.service.impl;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinBaseInfoMapper;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
-import com.xxx.server.pojo.WeixinUser;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 /**
  * <p>
@@ -113,5 +111,10 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         getDetailsjsonObject.put("RoomWxIDList",chatRoomList);
         WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailsjsonObject,getDetailsListMap);
         return RespBean.sucess("doing...");
+    }
+
+    @Override
+    public List<WeixinBaseInfo> queryList(){
+        return baseMapper.selectList(Wrappers.lambdaQuery(WeixinBaseInfo.class).eq(WeixinBaseInfo::getState, 1).orderByDesc(WeixinBaseInfo::getCreateTime));
     }
 }

@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
 
+import java.util.List;
+
 /**
  * <p>
  *  服务类
@@ -21,4 +23,6 @@ public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
     RespBean modifyRemarkName(String wxId, String remarkName);
 
     RespBean getFriendsAndChatRooms(String key);
+
+    List<WeixinBaseInfo> queryList();
 }

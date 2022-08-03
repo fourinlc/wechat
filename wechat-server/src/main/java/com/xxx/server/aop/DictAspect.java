@@ -38,9 +38,9 @@ public class DictAspect {
     private IWeixinDictionaryService weixinDictionaryService;
 
     /**
-     * 切点，切入 controller 包下面的所有方法
+     * 切点，切入 controller 包下面的所有方法,查询类型方法
      */
-    @Pointcut("execution( * com.xxx.server.controller.*.*(..))")
+    @Pointcut("execution( * com.xxx.server.controller.*.*query(..))")
     public void dict() {
 
     }

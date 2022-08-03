@@ -32,7 +32,7 @@ public class WeixinDictionaryServiceImpl extends ServiceImpl<WeixinDictionaryMap
     }
 
     @CacheEvict(cacheNames = "dic", allEntries = true)
-    public void saveOrUpdateBatch(List<WeixinDictionary> weixinDictionaries){
-         super.saveOrUpdateBatch(weixinDictionaries);
+    public boolean saveOrUpdateBatch(List<WeixinDictionary> weixinDictionaries){
+         return super.saveOrUpdateBatch(weixinDictionaries);
     }
 }

@@ -17,5 +17,5 @@ public interface IWeixinDictionaryService extends IService<WeixinDictionary> {
 
     List<WeixinDictionary> query(WeixinDictionary weixinDictionary);
 
-    void saveOrUpdateBatch(List<WeixinDictionary> weixinDictionaries);
+    boolean saveOrUpdateBatch(List<WeixinDictionary> weixinDictionaries);
 }

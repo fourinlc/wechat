@@ -36,8 +36,10 @@ public class WeixinDictionaryController {
     @ApiOperation("新增修改字典列表")
     @PostMapping("batchUpdate")
     public RespBean batchUpdate(@RequestBody List<WeixinDictionary> weixinDictionaries){
-        weixinDictionaryService.saveOrUpdateBatch(weixinDictionaries);
-        return RespBean.sucess("修改字典列表成功");
+        if(weixinDictionaryService.saveOrUpdateBatch(weixinDictionaries)){
+            return RespBean.sucess("修改字典列表成功");
+        }
+        return RespBean.error("修改字典失败");
     }
 
 }
