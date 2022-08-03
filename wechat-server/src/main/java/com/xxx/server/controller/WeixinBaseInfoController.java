@@ -34,9 +34,16 @@ public class WeixinBaseInfoController{
         return weixinBaseInfoService.getLoginQrcode();
     }
 
-    @ApiOperation(value = "登錄檢測")
+    @ApiOperation(value = "登录检测")
     @PostMapping("/checkLoginStatus")
     RespBean checkLoginStatus(@RequestBody WeixinBaseInfo weixinBaseInfo){
         return weixinBaseInfoService.checkLoginStatus(weixinBaseInfo.getKey(),weixinBaseInfo.getUuid());
     }
+
+    @ApiOperation(value = "修改备注")
+    @PostMapping("/modifyRemarkName")
+    RespBean modifyRemarkName(String wxId, String remarkName){
+        return weixinBaseInfoService.modifyRemarkName(wxId,remarkName);
+    }
+
 }

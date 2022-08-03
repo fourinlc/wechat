@@ -73,8 +73,7 @@ public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinU
         weixinUser.setUserName(userName)
                 .setUserPassWord(passWord)
                 .setUserType(userType);
-        if (weixinUserMapper.selectOne(new QueryWrapper<WeixinUser>().eq("user_name",userName)).getUsername()
-                .equals(weixinUser.getUsername())){
+        if (weixinUserMapper.selectCount(new QueryWrapper<WeixinUser>().eq("user_name",userName)) > 0){
             return RespBean.error("注册失败:用户名已存在");
         }
         int result = weixinUserMapper.insert(weixinUser);

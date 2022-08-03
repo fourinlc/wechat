@@ -39,6 +39,10 @@ public class WeixinBaseInfo implements Serializable {
     @TableField("nick_name")
     private String nickname;
 
+    @ApiModelProperty(value = "微信名备注")
+    @TableField("remark_name")
+    private String remarkName;
+
     @ApiModelProperty(value = "登录状态")
     @TableField("state")
     private String state;

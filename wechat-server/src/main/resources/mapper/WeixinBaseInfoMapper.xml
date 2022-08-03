@@ -4,9 +4,9 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.xxx.server.pojo.WeixinBaseInfo">
-        <id column="weixin_id" property="weixinId" />
-        <result column="weixin_nick" property="weixinNick" />
-        <result column="login_status" property="loginStatus" />
+        <id column="wx_id" property="wxId" />
+        <result column="nick_name" property="nickName" />
+        <result column="state" property="state" />
         <result column="chat_room_count" property="chatRoomCount" />
         <result column="key" property="key" />
         <result column="uuid" property="uuid" />
@@ -14,11 +14,12 @@
         <result column="update_time" property="updateTime" />
         <result column="create_user" property="createUser" />
         <result column="update_user" property="updateUser" />
+        <result column="remark_name" property="remarkName" />
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        weixin_id, weixin_nick, login_status, chat_room_count, key, uuid, create_time, update_time, create_user, update_user
+        wx_id, nick_name, state, chat_room_count, key, uuid, create_time, update_time, create_user, update_user, remark_name
     </sql>
 
 </mapper>
