@@ -5,6 +5,7 @@ import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
 
 import java.util.List;
+import java.util.Vector;
 
 /**
  * <p>
@@ -27,4 +28,10 @@ public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
     List<WeixinBaseInfo> queryList();
 
     RespBean logOut(String key);
+
+    RespBean relatedFriends(String wxId, List<String> relatedWxIds);
+
+    RespBean cancelRelatedFriends(List<String> relatedWxIds);
+
+    RespBean getRelatedFriends(String wxId);
 }

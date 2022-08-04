@@ -85,10 +85,58 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     }
 
     @Override
+    public RespBean relatedFriends(String wxId, List<String> relatedWxIds) {
+        MultiValueMap<String,String> errorMap = new LinkedMultiValueMap<>();
+        for(String relatedWxId : relatedWxIds){
+            if (weixinBaseInfoMapper.selectCount(Wrappers.lambdaQuery(WeixinBaseInfo.class)
+                    .eq(WeixinBaseInfo::getWxId,relatedWxId)
+                    .ne(WeixinBaseInfo::getParentWxid,"")) > 0){
+                errorMap.add(relatedWxId,"该账号已有关联账号，请先取消");
+                continue;
+            }
+            WeixinBaseInfo weixinBaseInfo = new WeixinBaseInfo();
+            weixinBaseInfo.setWxId(relatedWxId)
+                    .setParentWxid(wxId);
+            if(weixinBaseInfoMapper.updateById(weixinBaseInfo) == 0){
+                errorMap.add(relatedWxId,"关联失败");
+            }
+        }
+        if (errorMap.isEmpty()){
+            return RespBean.sucess("关联成功");
+        } else {
+            return RespBean.sucess("关联失败",errorMap);
+        }
+    }
+
+    @Override
+    public RespBean cancelRelatedFriends(List<String> relatedWxIds) {
+        MultiValueMap<String,String> errorMap = new LinkedMultiValueMap<>();
+        for(String relatedWxId : relatedWxIds){
+            WeixinBaseInfo weixinBaseInfo = new WeixinBaseInfo();
+            weixinBaseInfo.setWxId(relatedWxId)
+                    .setParentWxid("");
+            if(weixinBaseInfoMapper.updateById(weixinBaseInfo) == 0){
+                errorMap.add(relatedWxId,"关联失败");
+            }
+        }
+        if (errorMap.isEmpty()){
+            return RespBean.sucess("取消关联成功");
+        } else {
+            return RespBean.sucess("取消关联失败",errorMap);
+        }
+    }
+
+    @Override
+    public RespBean getRelatedFriends(String wxId) {
+        List<WeixinBaseInfo> weixinBaseInfos = weixinBaseInfoMapper.selectList(Wrappers.lambdaQuery(WeixinBaseInfo.class).eq(WeixinBaseInfo::getParentWxid,wxId));
+        return RespBean.sucess("查询成功",weixinBaseInfos);
+    }
+
+    @Override
     public RespBean modifyRemarkName(String wxId, String remarkName) {
         WeixinBaseInfo weixinBaseInfo = new WeixinBaseInfo();
-        weixinBaseInfo.setWxId(wxId);
-        weixinBaseInfo.setRemarkName(remarkName);
+        weixinBaseInfo.setWxId(wxId)
+            .setRemarkName(remarkName);
         int result = weixinBaseInfoMapper.updateById(weixinBaseInfo);
         if (result == 0){
             return RespBean.sucess("修改失败,该用户不存在");
@@ -109,20 +157,20 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         JSONArray userNameList = resultJson.getJSONObject("Data").getJSONObject("ContactList").getJSONArray("contactUsernameList");
         ArrayList<String> friendList = new ArrayList<>();
         ArrayList<String> chatRoomList = new ArrayList<>();
-        for(int i=0; i<userNameList.size(); i++){
-            String userName = userNameList.get(i).toString();
-            if(userName.startsWith("wxid_")){
+        for (Object o : userNameList) {
+            String userName = o.toString();
+            if (userName.startsWith("wxid_")) {
                 friendList.add(userName);
-            }else {
+            } else {
                 chatRoomList.add(userName);
             }
         }
         MultiValueMap<String,String> getDetailsListMap = new LinkedMultiValueMap<>();
         getDetailsListMap.add("key",key);
-        JSONObject getDetailsjsonObject = new JSONObject();
-        getDetailsjsonObject.put("UserNames",friendList);
-        getDetailsjsonObject.put("RoomWxIDList",chatRoomList);
-        WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailsjsonObject,getDetailsListMap);
+        JSONObject getDetailersObject = new JSONObject();
+        getDetailersObject.put("UserNames",friendList);
+        getDetailersObject.put("RoomWxIDList",chatRoomList);
+        WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsListMap);
         return RespBean.sucess("doing...");
     }
 

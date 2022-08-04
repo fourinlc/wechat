@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * <p>
  *  微信基础操作
@@ -47,6 +49,24 @@ public class WeixinBaseInfoController{
     @PostMapping("/modifyRemarkName")
     public RespBean modifyRemarkName(String wxId, String remarkName){
         return weixinBaseInfoService.modifyRemarkName(wxId,remarkName);
+    }
+
+    @ApiOperation(value = "关联好友")
+    @PostMapping("/relatedFriends")
+    public RespBean relatedFriends(String wxId, @RequestBody List<String> relatedWxIds){
+        return weixinBaseInfoService.relatedFriends(wxId, relatedWxIds);
+    }
+
+    @ApiOperation(value = "获取关联好友")
+    @GetMapping("/getRelatedFriends")
+    public RespBean getRelatedFriends(String wxId){
+        return weixinBaseInfoService.getRelatedFriends(wxId);
+    }
+
+    @ApiOperation(value = "取消关联好友")
+    @PostMapping("/cancelRelatedFriends")
+    public RespBean cancelRelatedFriends(@RequestBody List<String> relatedWxIds){
+        return weixinBaseInfoService.cancelRelatedFriends(relatedWxIds);
     }
 
     @ApiOperation(value = "获取好友和群列表")
