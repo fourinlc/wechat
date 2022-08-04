@@ -25,4 +25,6 @@ public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
     RespBean getFriendsAndChatRooms(String key);
 
     List<WeixinBaseInfo> queryList();
+
+    RespBean logOut(String key);
 }

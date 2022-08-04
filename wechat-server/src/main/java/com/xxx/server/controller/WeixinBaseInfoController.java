@@ -37,6 +37,12 @@ public class WeixinBaseInfoController{
         return weixinBaseInfoService.checkLoginStatus(weixinBaseInfo.getKey(),weixinBaseInfo.getUuid());
     }
 
+    @ApiOperation(value = "退出登录")
+    @PostMapping("/logOut")
+    public RespBean logOut(String key){
+        return weixinBaseInfoService.logOut(key);
+    }
+
     @ApiOperation(value = "修改备注")
     @PostMapping("/modifyRemarkName")
     public RespBean modifyRemarkName(String wxId, String remarkName){

@@ -17,6 +17,7 @@ public enum WechatApiHelper {
     GET_LOGIN_QRCODE_NEW("获取二维码", "/v1/login/GetLoginQrCodeNew", HttpMethod.POST),
     CHECK_LOGIN_STATUS("登录检测", "/v1/login/CheckLoginStatus", HttpMethod.GET),
     WAKEUP_LOGIN("唤醒登录", "/v1/login/WakeUpLogin", HttpMethod.POST),
+    LOG_OUT("退出登录","/v1/user/LogOut",HttpMethod.GET),
     GET_CONTACT_LIST("分页获取联系人", "/v1/user/GetContactList", HttpMethod.POST),
     GET_CONTACT_DETAILS_LIST("批量获取好友详情","/v1/user/GetContactDetailsList", HttpMethod.POST),
     GET_PROFILE("获取个人信息", "/v1/user/GetProfile", HttpMethod.GET),

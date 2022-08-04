@@ -72,6 +72,19 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     }
 
     @Override
+    public RespBean logOut(String key) {
+        MultiValueMap<String,String> logOutMap = new LinkedMultiValueMap<>();
+        logOutMap.add("key", key);
+        Object obj = WechatApiHelper.LOG_OUT.invoke(null,logOutMap);
+        Map entity = (Map)obj;
+        if (entity.get("Code").equals(200)){
+            return RespBean.sucess("退出成功",obj);
+        } else {
+            return RespBean.error("退出失败",obj);
+        }
+    }
+
+    @Override
     public RespBean modifyRemarkName(String wxId, String remarkName) {
         WeixinBaseInfo weixinBaseInfo = new WeixinBaseInfo();
         weixinBaseInfo.setWxId(wxId);
