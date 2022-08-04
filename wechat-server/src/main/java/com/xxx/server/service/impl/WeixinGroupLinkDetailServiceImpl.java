@@ -1,5 +1,8 @@
 package com.xxx.server.service.impl;
 
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -49,22 +52,40 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
 
     public boolean batchScanIntoUrlGroup(List<Long> linkIds){
         List<WeixinGroupLinkDetail> weixinGroupLinkDetails = baseMapper.selectBatchIds(linkIds);
-        // 遍历进群
-        List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("qun").setDicKey("scanIntoUrlGroupTime"));
-        Assert.isTrue(scanIntoUrlGroupTimes.size() == 1, "系统进群消息配置异常");
-        String scanIntoUrlGroupTime = scanIntoUrlGroupTimes.get(0).getDicValue();
+        // 遍历进群,增加参数配置，增加进群个数后休息时间配置
+        List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
+        // Assert.isTrue(scanIntoUrlGroupTimes.size() >= 2, "系统进群消息配置异常");
+        // 获取对应随机数字1-5, 默认2-4秒
+        JSONObject dices = new JSONObject();
+        scanIntoUrlGroupTimes.forEach(scanIntoUrlGroupTime->{
+            dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
+        });
+        int max = dices.getIntValue("max", 4);
+        int min = dices.getIntValue("min", 2);
+        int sheaves = dices.getIntValue("sheaves", 2);
+        int rate = dices.getIntValue("rate", 1);
+        int between = dices.getIntValue("between", 1);
+        log.info("群邀请配置信息：{}", dices);
         Date delay = new Date();
-        for (WeixinGroupLinkDetail weixinGroupLinkDetail : weixinGroupLinkDetails) {
+        for (int i = 0; i < weixinGroupLinkDetails.size(); i++) {
+            if ((i + 1) % (sheaves * rate) == 0) {
+                // log.info("新的一轮操作：{}", i);
+                // 说明一轮数据完成，增加间隔时间
+                delay = DateUtils.addSeconds(delay, between * 60);
+            }
+            WeixinGroupLinkDetail weixinGroupLinkDetail = weixinGroupLinkDetails.get(i);
             MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap<>();
             // 获取对应的key值信息
             multiValueMap.add("key", weixinGroupLinkDetail.getKey());
             JSONObject jsonObject = JSONObject.of("Url", weixinGroupLinkDetail.getContent());
             JSONObject msg = JSONObject.of("param", jsonObject, "query", multiValueMap, "code", WechatApiHelper.SCAN_INTO_URL_GROUP.getCode());
             Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(msg));
-            delay = DateUtils.addSeconds(delay, Integer.parseInt(scanIntoUrlGroupTime));
+            // 设置随机时间
+            delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
             // 异步更新返回成功时或者失败时更新群链接状态
             try {
                 // 缓存中获取进群间隔时间，分发mq延时任务进行消费
+                log.info("发送延时消息延时时间为：{}", delay);
                 delayMqProducer.sendDelay(message, delay);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -74,4 +95,5 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
         }
         return true;
     }
+
 }
