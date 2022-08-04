@@ -1,9 +1,11 @@
 package com.xxx.server.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.xxx.server.config.security.JwtTokenUtil;
 import com.xxx.server.mapper.WeixinUserMapper;
 import com.xxx.server.pojo.RespBean;
+import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.pojo.WeixinUser;
 import com.xxx.server.service.IWeixinUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -17,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,11 +75,28 @@ public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinU
         WeixinUser weixinUser = new WeixinUser();
         weixinUser.setUserName(userName)
                 .setUserPassWord(passWord)
+                .setCreateTime(LocalDateTime.now())
                 .setUserType(userType);
         if (weixinUserMapper.selectCount(new QueryWrapper<WeixinUser>().eq("user_name",userName)) > 0){
             return RespBean.error("注册失败:用户名已存在");
         }
         int result = weixinUserMapper.insert(weixinUser);
         return RespBean.sucess("注册成功",result);
+    }
+
+    @Override
+    public RespBean changePassword(String userName, String passWord) {
+        WeixinUser weixinUser = new WeixinUser();
+        weixinUser.setUserPassWord(passWord);
+        LambdaUpdateWrapper<WeixinUser> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
+        lambdaUpdateWrapper.eq(WeixinUser::getUsername,userName)
+                .set(WeixinUser::getUserPassWord,passWord);
+        int result = weixinUserMapper.update(null,lambdaUpdateWrapper);
+        if (result == 0){
+            return RespBean.sucess("修改失败,该用户不存在");
+        } else
+        {
+            return RespBean.sucess("修改成功");
+        }
     }
 }

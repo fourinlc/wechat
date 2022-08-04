@@ -21,4 +21,6 @@ public interface IWeixinUserService extends IService<WeixinUser> {
     WeixinUser getWeixinUserByUserName(String userName);
 
     RespBean register(String userName, String passWord, String userType);
+
+    RespBean changePassword(String userName, String passWord);
 }

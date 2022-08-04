@@ -59,4 +59,10 @@ public class LoginController {
         return weixinUserService.register(userRegisterParam.getUserName(),userRegisterParam.getPassWord(),userRegisterParam.getUserType());
     }
 
+    @ApiOperation(value = "修改密码")
+    @PostMapping("/changePassword")
+    public RespBean changePassword(@RequestBody WeixinUserLoginParam changePasswordParam){
+        return weixinUserService.changePassword(changePasswordParam.getUserName(),changePasswordParam.getPassWord());
+    }
+
 }
