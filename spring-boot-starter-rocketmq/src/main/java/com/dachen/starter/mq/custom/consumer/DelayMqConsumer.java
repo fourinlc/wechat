@@ -46,7 +46,7 @@ public class DelayMqConsumer extends AbstractMQPushConsumer<MessageExt> {
                     continue;
                 }
                 properties.remove(GuavaRocketConstants.GUAVA_TIMES);
-                log.info("中转消息uuId {} --topic: {}-- tags: {} #####body:{}", uuid, messageExt.getTopic(), messageExt.getTags(), new String(messageExt.getBody()));
+                log.debug("中转消息uuId {} --topic: {}-- tags: {} #####body:{}", uuid, messageExt.getTopic(), messageExt.getTags(), new String(messageExt.getBody()));
                 Message message = new Message();
                 message.setTopic(topic);
                 if (StringUtils.isNotBlank(tag)) {
