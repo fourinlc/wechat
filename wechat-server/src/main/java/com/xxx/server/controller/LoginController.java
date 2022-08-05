@@ -1,9 +1,6 @@
 package com.xxx.server.controller;
 
-import com.xxx.server.pojo.RespBean;
-import com.xxx.server.pojo.WeixinUser;
-import com.xxx.server.pojo.WeixinUserLoginParam;
-import com.xxx.server.pojo.WeixinUserRegisterParam;
+import com.xxx.server.pojo.*;
 import com.xxx.server.service.IWeixinUserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -61,8 +58,8 @@ public class LoginController {
 
     @ApiOperation(value = "修改密码")
     @PostMapping("/changePassword")
-    public RespBean changePassword(@RequestBody WeixinUserLoginParam changePasswordParam){
-        return weixinUserService.changePassword(changePasswordParam.getUserName(),changePasswordParam.getPassWord());
+    public RespBean changePassword(@RequestBody WeixinUserChangePwdParam changePasswordParam){
+        return weixinUserService.changePassword(changePasswordParam.getUserName(),changePasswordParam.getOldPassWord(),changePasswordParam.getNewPassWord());
     }
 
 }

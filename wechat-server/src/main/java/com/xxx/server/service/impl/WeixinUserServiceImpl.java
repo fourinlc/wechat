@@ -2,6 +2,7 @@ package com.xxx.server.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxx.server.config.security.JwtTokenUtil;
 import com.xxx.server.mapper.WeixinUserMapper;
 import com.xxx.server.pojo.RespBean;
@@ -47,7 +48,8 @@ public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinU
     public RespBean login(String userName, String passWord, HttpServletRequest request){
         //登录
         UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
-        if (null == userDetails || passwordEncoder.matches(passWord,userDetails.getPassword())){
+        String pwd = userDetails.getPassword();
+        if (null == userDetails || !passwordEncoder.matches(passWord,userDetails.getPassword())){
             return RespBean.error("用户名或密码不正确");
         }
         if (!userDetails.isEnabled()){
@@ -74,7 +76,7 @@ public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinU
     public RespBean register(String userName, String passWord, String userType) {
         WeixinUser weixinUser = new WeixinUser();
         weixinUser.setUserName(userName)
-                .setUserPassWord(passWord)
+                .setUserPassWord(passwordEncoder.encode(passWord))
                 .setCreateTime(LocalDateTime.now())
                 .setUserType(userType);
         if (weixinUserMapper.selectCount(new QueryWrapper<WeixinUser>().eq("user_name",userName)) > 0){
@@ -85,18 +87,15 @@ public class WeixinUserServiceImpl extends ServiceImpl<WeixinUserMapper, WeixinU
     }
 
     @Override
-    public RespBean changePassword(String userName, String passWord) {
-        WeixinUser weixinUser = new WeixinUser();
-        weixinUser.setUserPassWord(passWord);
+    public RespBean changePassword(String userName, String oldPassWord, String newPassWord) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
+        if (null == userDetails || !passwordEncoder.matches(oldPassWord,userDetails.getPassword())){
+            return RespBean.error("用户名或密码不正确");
+        }
         LambdaUpdateWrapper<WeixinUser> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
         lambdaUpdateWrapper.eq(WeixinUser::getUsername,userName)
-                .set(WeixinUser::getUserPassWord,passWord);
-        int result = weixinUserMapper.update(null,lambdaUpdateWrapper);
-        if (result == 0){
-            return RespBean.sucess("修改失败,该用户不存在");
-        } else
-        {
-            return RespBean.sucess("修改成功");
-        }
+                .set(WeixinUser::getUserPassWord,passwordEncoder.encode(newPassWord));
+        weixinUserMapper.update(null,lambdaUpdateWrapper);
+        return RespBean.sucess("修改成功");
     }
 }
