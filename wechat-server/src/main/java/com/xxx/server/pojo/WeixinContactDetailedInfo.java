@@ -1,6 +1,5 @@
 package com.xxx.server.pojo;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,8 +15,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel(value = "weixinDetailedInfo",description = "")
-public class WeixinDetailedInfo {
+public class WeixinContactDetailedInfo {
     @ApiModelProperty(value = "微信id")
     String wxId;
     @ApiModelProperty(value = "用户名")
@@ -26,6 +24,10 @@ public class WeixinDetailedInfo {
     String sex;
     @ApiModelProperty(value = "签名")
     String signature;
-
-
+    @ApiModelProperty(value = "拥有者")
+    String chatRoomOwner;
+    @ApiModelProperty(value = "bigHeadImgUrl")
+    String bigHeadImgUrl;
+    @ApiModelProperty(value = "smallHeadImgUrl")
+    String smallHeadImgUrl;
 }
