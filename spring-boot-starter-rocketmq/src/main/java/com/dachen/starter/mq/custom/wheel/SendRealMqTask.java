@@ -36,7 +36,7 @@ public class SendRealMqTask implements TimerTask {
         validate();
         toRealMessage(message);
         sendResult = delayMqProducer.syncSend(message);
-        log.info("实际Mq投递时间{} 发送成功", String.format("%tF %<tT", new Date()));
+        log.debug("实际Mq投递时间{} 发送成功", String.format("%tF %<tT", new Date()));
         countDownLatch.countDown();
     }
 

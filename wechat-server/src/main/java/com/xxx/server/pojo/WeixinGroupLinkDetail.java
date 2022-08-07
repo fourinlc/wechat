@@ -40,14 +40,18 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
     @TableField("msg_id")
     private Long msgId;
 
-    @ApiModelProperty(value = "群链接状态0：未操作，1：失效，2:频繁，3：企业微信")
+    @ApiModelProperty(value = "群链接状态0：未操作，1：失效，2:频繁，3：企业微信，99：操作中")
     @TableField("link_status")
     @Dict
     private String linkStatus;
 
-    @ApiModelProperty(value = "邀请人微信id")
+    @ApiModelProperty(value = "邀请人微信名称")
     @TableField("from_user_name")
     private String fromUserName;
+
+    @ApiModelProperty(value = "邀请人微信id")
+    @TableField("from_user_wxId")
+    private String fromUserWxId;
 
     @ApiModelProperty(value = "群备注。")
     private String remark;
@@ -56,9 +60,13 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
     @TableField("create_time")
     private Long createTime;
 
-    @ApiModelProperty(value = "被邀请人微信id")
+    @ApiModelProperty(value = "被邀请人微信名称")
     @TableField("to_user_name")
     private String toUserName;
+
+    @ApiModelProperty(value = "被邀请人微信id")
+    @TableField("to_user_wxId")
+    private String toUserWxId;
 
     @TableField(exist = false)
     private Integer msgType;
@@ -66,6 +74,7 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
     @ApiModelProperty(value = "邀请时间")
     @TableField("invitation_time")
     private String invitationTime;
+
     @TableField("chatroom_name")
     private String chatroomName;
 

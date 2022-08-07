@@ -44,9 +44,27 @@ public enum WechatApiHelper {
         public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
             // 模拟处理群发消息文字版本
             log.info("模拟进群操作：param ：{}，multiValueMap ：{}", param , multiValueMap);
-            return JSONObject.of("code", 200);
+            JSONObject jsonObject = JSONObject.of("chatroomUrl", "1111@chaoom");
+            return JSONObject.of("Code", 200, "Data", jsonObject);
         }
-    },ADD_CHATROOM_MEMBERS("邀请进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST),;
+    },
+    ADD_CHATROOM_MEMBERS("邀请进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST){
+        @Override
+        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+            // 模拟处理群发消息文字版本
+            log.info("邀请进群：param ：{}，multiValueMap ：{}", param , multiValueMap);
+
+            return JSONObject.of("Code", 200);
+        }
+    },
+    MOVETO_CONTRACT("保存群聊", "/v1/group/MoveToContract", HttpMethod.POST){
+        @Override
+        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+            // 模拟处理群发消息文字版本
+            log.info("保存群聊：param ：{}，multiValueMap ：{}", param , multiValueMap);
+            return JSONObject.of("Code", 200);
+        }
+    };
 
     private String desc;
 
@@ -58,16 +76,21 @@ public enum WechatApiHelper {
 
     // 通用调用参数处理
     public Object invoke(Object param, MultiValueMap<String,String> multiValueMap){
-        log.info("调用wechat统一入参信息：param:{}, query:{}", param, multiValueMap);
+        log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, query:{}", getDesc(), param, multiValueMap);
+        Object o;
         switch (getHttpMethod()){
             case POST:
-                return restclient.postJson(getCode(), param, multiValueMap);
+                o = restclient.postJson(getCode(), param, multiValueMap);
+                break;
             case GET:
                 // 是否再区别更细分，依据Content-Type,当然可以直接子类重写相关
-                return restclient.getForm(getCode(), param, multiValueMap);
+                o = restclient.getForm(getCode(), param, multiValueMap);
+                break;
             default:
                 return null;
         }
+        log.info("调用wechat统一返回结果：{}", o);
+        return o;
     }
 
     WechatApiHelper(String desc, String code, HttpMethod httpMethod){

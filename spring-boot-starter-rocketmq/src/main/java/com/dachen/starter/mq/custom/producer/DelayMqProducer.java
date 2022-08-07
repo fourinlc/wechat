@@ -43,20 +43,25 @@ public class DelayMqProducer extends AbstractMQProducer {
         long l = Duration.between(Instant.now(), startSendTime.toInstant()).getSeconds();
         //如果不等于0,说明设置了延时等级，直接用rocketMQ支持的发送
         if (l <= GuavaRocketConstants.TIME_OUT) {
-            HashedWheelTimer instance = TimeWheelFactory.getInstance();
-            CountDownLatch countDownLatch = new CountDownLatch(1);
-            SendRealMqTask sendRealMqTask = new SendRealMqTask();
-            sendRealMqTask.setDelayMqProducer(this);
-            sendRealMqTask.setMessage(msg);
-            sendRealMqTask.setCountDownLatch(countDownLatch);
-            instance.newTimeout(sendRealMqTask, l < 0 ? 1 : l, TimeUnit.SECONDS);
-            countDownLatch.await();
+            SendRealMqTask sendRealMqTask = getSendRealMqTask(msg, l);
             return sendRealMqTask.getResult();
         } else {
             Integer level = DelayLevelCalculate.calculateDefault(l);
             fillMessage(msg, level, startSendTime);
             return syncSend(msg);
         }
+    }
+
+    private SendRealMqTask getSendRealMqTask(Message msg, long l) throws InterruptedException {
+        HashedWheelTimer instance = TimeWheelFactory.getInstance();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        SendRealMqTask sendRealMqTask = new SendRealMqTask();
+        sendRealMqTask.setDelayMqProducer(this);
+        sendRealMqTask.setMessage(msg);
+        sendRealMqTask.setCountDownLatch(countDownLatch);
+        instance.newTimeout(sendRealMqTask, l < 0 ? 1 : l, TimeUnit.SECONDS);
+        countDownLatch.await();
+        return sendRealMqTask;
     }
 
 

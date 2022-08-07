@@ -31,13 +31,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AsyncGroupLinkDetail implements CommandLineRunner {
 
+    private IWeixinBaseInfoService weixinBaseInfoService;
+
     private RedisTemplate<String, Object> redisTemplate;
 
     private static final String SUFFIX = "_wx_sync_msg_topic";
 
     private static final String MSGS = "AddMsgs";
-
-    private IWeixinBaseInfoService weixinBaseInfoService;
 
     private IWeixinGroupLinkDetailService weixinGroupLinkDetailService;
 
@@ -50,28 +50,18 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 log.debug("开始定时处理群链接信息和在线好友信息");
                 // 获取所有存活微信信息
                 // Set<String> stringSet = redisTemplate.keys("*" + SUFFIX);
-                Set<String> stringSet = RedisHelper.scan(redisTemplate, "*" + SUFFIX);
+                Set<String> stringSet = RedisHelper.scan(redisTemplate, "*");
                 // 获取对应的uuid,验证其登录情况
                 List<WeixinGroupLinkDetail> datas = new LinkedList<>();
                 // 提取微信id列表
                 List<WeixinBaseInfo> weixinBaseInfos = Lists.newArrayList();
                 log.debug("待处理消息列表：{}", stringSet);
                 for (String uuidTopic : stringSet) {
-                    // 截取对应的uuid信息
-                    String uuid = uuidTopic.replaceAll(SUFFIX, "");
-                    // 获取对应的在线微信
-                    Object o = redisTemplate.opsForValue().get(uuid);
-                    if (o instanceof JSONObject) {
-                        // 存在异常登录状态或者状态不为1即为异常
-                        if (StrUtil.isNotEmpty(((JSONObject) o).getString("ErrMsg")) || ((JSONObject) o).getLong("state") != 1) {
-                            // 账户已退出或者异常状态
-                            continue;
-                        }
-                        WeixinBaseInfo weixinBaseInfo = ((JSONObject) o).to(WeixinBaseInfo.class);
-                        weixinBaseInfo.setKey(weixinBaseInfo.getUuid());
-                        weixinBaseInfo.setUuid(null);
-                        weixinBaseInfos.add(weixinBaseInfo);
-                        // 同步微信信息
+                    // 剔除loginLog结尾参数
+                    if (uuidTopic.endsWith("loginLog") || uuidTopic.startsWith("dic") || uuidTopic.startsWith("wechat")) {
+                        continue;
+                    } else if (uuidTopic.endsWith(SUFFIX)) {
+                        // 循环处理消息
                         while (true) {
                             // 100毫秒没取出来，跳出循环
                             Object data = redisTemplate.opsForList().leftPop(uuidTopic, 100, TimeUnit.MILLISECONDS);
@@ -81,20 +71,28 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                             if (data instanceof JSONObject) {
                                 // 校验数据是否是我们需要的类型
                                 JSONArray jsonArray = ((JSONObject) data).getJSONArray(MSGS);
-                                if(jsonArray == null) continue;
+                                if (jsonArray == null) continue;
                                 // 通常只有一条信息
                                 for (Object o1 : jsonArray) {
                                     JSONObject jsonObject = (JSONObject) o1;
                                     // 获取发送人信息，判断是否为群消息，群消息过滤掉 from_user_name字段校验
                                     JSONObject fromUserNameVO = jsonObject.getJSONObject("from_user_name");
-                                    String fromUserName = fromUserNameVO.getString("str");
-                                    if (StrUtil.contains(fromUserName, "@chatroom")) {
+                                    String fromUserWxId = fromUserNameVO.getString("str");
+                                    if (StrUtil.contains(fromUserWxId, "@chatroom")) {
                                         continue;
                                     }
-                                    jsonObject.put("from_user_name", fromUserName);
+                                    WeixinBaseInfo fromWeixinBaseInfo = weixinBaseInfoService.getById(fromUserWxId);
+                                    // 这个参数只能从我的好友列表中获取对应的昵称
+                                    // 如果存在直接添加至邀请连接中
+                                    if (fromWeixinBaseInfo != null)
+                                        jsonObject.put("from_user_name", fromWeixinBaseInfo.getNickname());
+                                    jsonObject.put("from_user_wxId", fromUserWxId);
                                     JSONObject toUserNameVO = jsonObject.getJSONObject("to_user_name");
-                                    String toUserName = toUserNameVO.getString("str");
-                                    jsonObject.put("to_user_name", toUserName);
+                                    String toUserWxId = toUserNameVO.getString("str");
+                                    jsonObject.put("to_user_wxId", toUserWxId);
+                                    WeixinBaseInfo toWeixinBaseInfo = weixinBaseInfoService.getById(toUserWxId);
+                                    if (toWeixinBaseInfo != null)
+                                        jsonObject.put("to_user_name", toWeixinBaseInfo.getNickname());
                                     // content 消息内容
                                     JSONObject contentVo = jsonObject.getJSONObject("content");
                                     String content = contentVo.getString("str");
@@ -107,13 +105,35 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     datas.add(weixinGroupLinkDetail);
                                 }
                             }
-                            /*  }*/
+                        }
+                    } else {
+                        // 具体微信处理
+                        Object o = redisTemplate.opsForValue().get(uuidTopic);
+                        if (o instanceof JSONObject) {
+                            WeixinBaseInfo weixinBaseInfo = ((JSONObject) o).to(WeixinBaseInfo.class);
+                            weixinBaseInfo.setKey(weixinBaseInfo.getUuid());
+                            weixinBaseInfo.setUuid(null);
+                            weixinBaseInfos.add(weixinBaseInfo);
                         }
                     }
                 }
-
+                List<WeixinBaseInfo> weixinBaseInfoListVo = Lists.newArrayList();
+                for (List<WeixinBaseInfo> weixinBaseInfoList : weixinBaseInfos.stream().collect(Collectors.groupingBy(WeixinBaseInfo::getWxId)).values()) {
+                    // 剔除相同的
+                    if (weixinBaseInfoList.size() == 1) {
+                        weixinBaseInfoListVo.addAll(weixinBaseInfoList);
+                    }else {
+                        // 获取状态为1的的数据，如果没有就取第一条数据
+                        List<WeixinBaseInfo> collect = weixinBaseInfoList.stream().filter(weixinBaseInfo -> StrUtil.equals(weixinBaseInfo.getState(), "1")).collect(Collectors.toList());
+                        if(collect.size() == 1) {
+                            weixinBaseInfoListVo.addAll(collect);
+                        }else {
+                            weixinBaseInfoListVo.add(weixinBaseInfoList.get(0));
+                        }
+                    }
+                }
                 // 异步批量更新至在线列表数据
-                weixinBaseInfoService.saveOrUpdateBatch(weixinBaseInfos);
+                weixinBaseInfoService.saveOrUpdateBatch(weixinBaseInfoListVo);
                 // 处理所有消息列表数据
                 WeixinGroupLinkDetail tmp = new WeixinGroupLinkDetail();
                 List<WeixinGroupLinkDetail> dataVos = new LinkedList<>();
@@ -157,14 +177,14 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
             }
         };
         // 每1分钟执行一次
-        timer.schedule(timerTask, 0, 2 * 60 * 1000);
+        timer.schedule(timerTask, 0, 3 * 60 * 1000);
     }
 
     // 提取群链接地址
     private JSONObject buildUrl(String url) {
         try {
             // "半勺小奶酪?"邀请你加入群聊"海娜生活超市特价公告送货群"，进入可查看详情。
-            log.info("打印群链接信息：{}", url);
+            log.debug("打印群链接信息：{}", url);
             Document document = DocumentHelper.parseText(url);
             Node node = document.selectSingleNode("/msg/appmsg/url");
             String des = document.selectSingleNode("/msg/appmsg/des").getText();
@@ -181,5 +201,6 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
         }
         return new JSONObject();
     }
+
 }
 

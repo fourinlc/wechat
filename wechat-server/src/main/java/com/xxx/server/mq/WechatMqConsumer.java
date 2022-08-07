@@ -25,10 +25,9 @@ public class WechatMqConsumer extends AbstractMQPushConsumer<JSONObject> {
 
     @Override
     public boolean process(JSONObject message, Map<String, Object> extMap) {
-
         JSONObject jsonObject = new JSONObject(extMap);
         String tags = jsonObject.getString(MessageExtConst.PROPERTY_TAGS);
-        log.info("原始消息信息 ：body:{}, tag:{}, messageId:{}", message, tags, jsonObject.getString(MessageExtConst.PROPERTY_EXT_MSG_ID));
+        log.info("接收消息 ：body:{}, tag:{}, messageId:{}", message, tags, jsonObject.getString(MessageExtConst.PROPERTY_EXT_MSG_ID));
         // 先尝试直接用 WechatApiHelper进行处理
         WechatApiHelper wechatApiHelper = WechatApiHelper.getWechatApiHelper(jsonObject.getString("code"));
         if(mqMessageHandlers.containsKey(tags)){
@@ -43,7 +42,7 @@ public class WechatMqConsumer extends AbstractMQPushConsumer<JSONObject> {
             return true;
         }else {
             log.info("未处理消息：msgId:{}", jsonObject.getString(MessageExtConst.PROPERTY_EXT_MSG_ID));
-            return false;
+            return true;
         }
     }
 }
