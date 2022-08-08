@@ -61,10 +61,11 @@ public class WeixinTemplateController {
     @ApiImplicitParams(
             {
                     @ApiImplicitParam(value = "模板名称", name = "templateName", paramType = "query"),
+                    @ApiImplicitParam(value = "模板类型", name = "templateType", paramType = "query"),
             }
     )
-    public RespBean query(String templateName){
-        return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTempalate().setTemplateName(templateName)));
+    public RespBean query(String templateName, String templateType){
+        return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTempalate().setTemplateName(templateName).setTemplateType(templateType)));
     }
 
     @GetMapping("chatHandler")

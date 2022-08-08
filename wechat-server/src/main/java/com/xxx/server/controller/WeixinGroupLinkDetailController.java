@@ -6,13 +6,13 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinGroupLinkDetail;
 import com.xxx.server.service.IWeixinGroupLinkDetailService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.*;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
@@ -34,7 +34,15 @@ public class WeixinGroupLinkDetailController {
 
     @GetMapping("query")
     @ApiOperation("获取邀请链接")
-    public RespBean query(WeixinGroupLinkDetail weixinGroupLinkDetail) {
+    @ApiImplicitParams(
+            {
+                    @ApiImplicitParam(value = "邀请时间", name = "invitationTime", paramType = "query"),
+                    @ApiImplicitParam(value = "邀请人名称", name = "fromUserName", paramType = "query"),
+                    @ApiImplicitParam(value = "邀请状态", name = "linkStatus", paramType = "query"),
+                    @ApiImplicitParam(value = "被邀请人id", name = "toUserWxId", paramType = "query"),
+            }
+    )
+    public RespBean query(@ApiIgnore WeixinGroupLinkDetail weixinGroupLinkDetail) {
         return RespBean.sucess("获取邀请链接", weixinGroupLinkDetailService
                 .list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvitationTime()), WeixinGroupLinkDetail::getInvitationTime, weixinGroupLinkDetail.getInvitationTime())

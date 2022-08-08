@@ -98,6 +98,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     public List<WeixinTempalate> queryList(WeixinTempalate weixinTempalate) {
         return baseMapper.selectList(Wrappers.<WeixinTempalate>lambdaQuery()
                 .like(StrUtil.isNotEmpty(weixinTempalate.getTemplateName()), WeixinTempalate::getTemplateName, weixinTempalate.getTemplateName())
+                .eq(StrUtil.isNotEmpty(weixinTempalate.getTemplateType()), WeixinTempalate::getTemplateType, weixinTempalate.getTemplateType())
                 .orderByDesc(WeixinTempalate::getTemplateOrder));
     }
 }

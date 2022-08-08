@@ -48,13 +48,19 @@ public class WeixinTempalate implements Serializable {
     @NotEmpty(groups = AddValid.class, message = "新增模板内容不能为空")
     private String templateContent;
 
-    @ApiModelProperty(value = "模板类型")
+    @ApiModelProperty(value = "模板类型 single : double")
     @TableField("template_type")
     private String templateType;
 
     @ApiModelProperty(value = "消息类型")
     @TableField("msg_type")
+    @NotEmpty(groups = AddValid.class, message = "消息类型内容不能为空")
     private String msgType;
+
+    @ApiModelProperty(value = "模板角色类型 A : B")
+    @TableField("template_role")
+    @NotEmpty(groups = AddValid.class, message = "模板角色类型不能为空")
+    private String templateRole;
 
     @ApiModelProperty(value = "单条模板状态")
     @TableField("template_status")
@@ -62,6 +68,7 @@ public class WeixinTempalate implements Serializable {
 
     @ApiModelProperty(value = "模板顺序")
     @TableField("template_order")
+    @NotEmpty(groups = AddValid.class, message = "模板顺序不能为空")
     private Integer templateOrder;
 
     @ApiModelProperty(value = "创建时间")

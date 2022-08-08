@@ -146,7 +146,7 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
             // step 2 失效状态校验
             // 创建链接时间是否超过十四天，邀请人是否还是微信好友，群状态是否还是正常状态
             long time = DateUtil.between(new Date(), DateUtil.date(weixinGroupLinkDetail.getCreateTime() * 1000), DateUnit.SECOND, true);
-            weixinGroupLinkDetail.setInvalidStatus(time > 14* 24 * 60 * 60 ? "1" : "0");
+            weixinGroupLinkDetail.setInvalidStatus(time > 14 * 24 * 60 * 60 ? "1" : "0");
             // step 3 企业微信校验
             String content = weixinGroupLinkDetail.getContent();
             weixinGroupLinkDetail.setCompanyStatus(StrUtil.contains(content, COMPANY_STATUS) ? "1" :"0");
