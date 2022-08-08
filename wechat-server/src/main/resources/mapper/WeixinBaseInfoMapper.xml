@@ -12,6 +12,7 @@
         <result column="uuid" property="uuid" />
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
+        <result column="last_time" property="lastTime" />
         <result column="create_user" property="createUser" />
         <result column="update_user" property="updateUser" />
         <result column="remark_name" property="remarkName" />
@@ -20,7 +21,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        wx_id, nick_name, state, chat_room_count, key, uuid, create_time, update_time, create_user, update_user, remark_name, parent_wxid
+        wx_id, nick_name, state, chat_room_count, key, uuid, create_time, update_time, last_time, create_user, update_user, remark_name, parent_wxid
     </sql>
 
 </mapper>

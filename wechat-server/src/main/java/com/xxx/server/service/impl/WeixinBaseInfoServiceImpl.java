@@ -9,7 +9,6 @@ import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinBaseInfoMapper;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
-import com.xxx.server.pojo.WeixinContactDetailedInfo;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +18,7 @@ import org.springframework.util.MultiValueMap;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -72,8 +72,14 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                         .setWxId(resultJson.getJSONObject("Data").get("wxid").toString())
                         .setNickname(resultJson.getJSONObject("Data").get("nick_name").toString())
                         .setState(resultJson.getJSONObject("Data").get("state").toString())
+                        .setUpdateTime(LocalDateTime.now())
+                        .setLastTime(LocalDateTime.now())
                         .setCreateTime(LocalDateTime.now());
                 weixinBaseInfoMapper.insert(weixinBaseInfo);
+            } else {
+                weixinBaseInfo.setLastTime(weixinBaseInfo.getUpdateTime())
+                        .setUpdateTime(LocalDateTime.now());
+                weixinBaseInfoMapper.updateById(weixinBaseInfo);
             }
             return RespBean.sucess("登录成功",weixinBaseInfo);
         } else {
@@ -85,17 +91,12 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     public RespBean logOut(String key) {
         MultiValueMap<String,String> logOutMap = new LinkedMultiValueMap<>();
         logOutMap.add("key", key);
-        JSONObject resultJson = JSONObject.parseObject(WechatApiHelper.LOG_OUT.invoke(null,logOutMap).toString());
-        String code;
-        if(resultJson.containsKey("Code")){
-            code = resultJson.getString("Code");
-        }else{
-            code = resultJson.getString("code");
-        }
-        if (code.equals("200")){
-            return RespBean.sucess("退出成功",resultJson);
+        Object obj = WechatApiHelper.LOG_OUT.invoke(null,logOutMap);
+        Map entity = (Map)obj;
+        if (entity.get("Code").equals(200)){
+            return RespBean.sucess("退出成功",obj);
         } else {
-            return RespBean.error("退出失败",resultJson);
+            return RespBean.error("退出失败",obj);
         }
     }
 
@@ -163,77 +164,30 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
 
     @Override
     public RespBean getFriendsAndChatRooms(String key) {
-        //获取所有联系人wxid
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("CurrentWxcontactSeq",0);
         jsonObject.put("CurrentChatRoomContactSeq",0);
         MultiValueMap<String,String> getContactListMap = new LinkedMultiValueMap<>();
         getContactListMap.add("key", key);
         JSONObject resultJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,getContactListMap)));
-        String code;
-        if(resultJson.containsKey("Code")){
-            code = resultJson.getString("Code");
-        }else {
-            code = resultJson.getString("code");
-        }
-        if (!code.equals("200")){
-            return RespBean.error("获取好友列表失败",resultJson);
-        }
-        //通过wxid获取详细信息
         JSONArray userNameList = resultJson.getJSONObject("Data").getJSONObject("ContactList").getJSONArray("contactUsernameList");
         ArrayList<String> friendList = new ArrayList<>();
-        ArrayList<String> contactList = new ArrayList<>();
+        ArrayList<String> chatRoomList = new ArrayList<>();
         for (Object o : userNameList) {
             String userName = o.toString();
-            if (userName.endsWith("@chatroom")) {
-                contactList.add(userName);
-            } else if(!userName.equals("weixin") &&
-                    !userName.equals("medianote") &&
-                    !userName.equals("floatbottle") &&
-                    !userName.equals("fmessage") &&
-                    !userName.equals("filehelper") &&
-                    !userName.startsWith("gh_")){
+            if (userName.startsWith("wxid_")) {
                 friendList.add(userName);
-                contactList.add(userName);
+            } else {
+                chatRoomList.add(userName);
             }
         }
         MultiValueMap<String,String> getDetailsListMap = new LinkedMultiValueMap<>();
         getDetailsListMap.add("key",key);
         JSONObject getDetailersObject = new JSONObject();
-        getDetailersObject.put("UserNames",contactList);
-        JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsListMap)));
-        if(detailsJson.containsKey("Code")){
-            code = detailsJson.getString("Code");
-        }else if(detailsJson.containsKey("code")){
-            code = detailsJson.getString("code");
-        }
-        if(!code.equals("200")){
-            return RespBean.error("获取好友详情失败",detailsJson);
-        }
-        //过滤出好友和群
-        JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
-        MultiValueMap<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new LinkedMultiValueMap<>();
-        ArrayList<WeixinContactDetailedInfo> chatRoomDetaileList = new ArrayList<>();
-        ArrayList<WeixinContactDetailedInfo> friendDetaileList = new ArrayList<>();
-        for (Object o : detailsList) {
-            JSONObject detailJson = JSONObject.parseObject(o.toString());
-            WeixinContactDetailedInfo contactDetailedInfo = new WeixinContactDetailedInfo();
-            contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
-            contactDetailedInfo.setUserName(detailJson.getString("nickName").substring(8,detailJson.getString("nickName").length()-2));
-            contactDetailedInfo.setSex(detailJson.getString("sex"));
-            contactDetailedInfo.setSmallHeadImgUrl(detailJson.getString("smallHeadImgUrl"));
-            if (friendList.contains(contactDetailedInfo.getWxId())){
-                contactDetailedInfo.setSignature(detailJson.getString("signature"));
-                contactDetailedInfo.setBigHeadImgUrl(detailJson.getString("bigHeadImgUrl"));
-                friendDetaileList.add(contactDetailedInfo);
-            } else {
-                contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
-                chatRoomDetaileList.add(contactDetailedInfo);
-            }
-        }
-        contactDetailedInfoMap.add("friendsDetail",friendDetaileList);
-        contactDetailedInfoMap.add("chatRoomDetaile",chatRoomDetaileList);
-        return RespBean.sucess("查询成功",contactDetailedInfoMap);
+        getDetailersObject.put("UserNames",friendList);
+        getDetailersObject.put("RoomWxIDList",chatRoomList);
+        WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsListMap);
+        return RespBean.sucess("doing...");
     }
 
     @Override

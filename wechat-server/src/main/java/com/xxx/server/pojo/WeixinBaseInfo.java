@@ -70,6 +70,10 @@ public class WeixinBaseInfo implements Serializable {
     @TableField("update_time")
     private LocalDateTime updateTime;
 
+    @ApiModelProperty(value = "上一次登录时间")
+    @TableField("last_time")
+    private LocalDateTime lastTime;
+
     @TableField("create_user")
     private Long createUser;
 
