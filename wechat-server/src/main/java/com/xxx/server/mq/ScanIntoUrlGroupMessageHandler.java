@@ -1,11 +1,7 @@
 package com.xxx.server.mq;
 
-import cn.hutool.core.date.DateField;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.google.gson.internal.LinkedTreeMap;
 import com.xxx.server.constant.ResConstant;
 import com.xxx.server.enums.WechatApiHelper;
@@ -15,16 +11,12 @@ import com.xxx.server.service.IWeixinAsyncEventCallService;
 import com.xxx.server.service.IWeixinGroupLinkDetailService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.rocketmq.common.message.Message;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.PatternMatchUtils;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
