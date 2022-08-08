@@ -17,4 +17,7 @@ public interface IWeixinGroupLinkDetailService extends IService<WeixinGroupLinkD
 
     boolean batchScanIntoUrlGroup(List<Long> linkIds);
 
+    /**批量保存邀请链接，并处理对应链接状态*/
+    boolean saveBatch(List<WeixinGroupLinkDetail> weixinGroupLinkDetails);
+
 }

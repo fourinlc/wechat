@@ -4,6 +4,8 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.xxx.server.constant.ResConstant;
+import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.pojo.WeixinGroupLinkDetail;
 import com.xxx.server.service.IWeixinBaseInfoService;
@@ -18,6 +20,8 @@ import org.dom4j.Node;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -84,15 +88,31 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     WeixinBaseInfo fromWeixinBaseInfo = weixinBaseInfoService.getById(fromUserWxId);
                                     // 这个参数只能从我的好友列表中获取对应的昵称
                                     // 如果存在直接添加至邀请连接中
-                                    if (fromWeixinBaseInfo != null)
+                                    if (fromWeixinBaseInfo != null){
                                         jsonObject.put("from_user_name", fromWeixinBaseInfo.getNickname());
+                                    }else {
+                                        // 调用微信接口
+                                        JSONObject param = JSONObject.of("UserNames", Lists.newArrayList(fromUserWxId));
+                                        MultiValueMap multiValueMap = new LinkedMultiValueMap();
+                                        multiValueMap.add("key", ((JSONObject) data).getString("UUID"));
+                                        JSONObject dataVo = (JSONObject) WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(param, multiValueMap);
+                                        if(ResConstant.CODE_SUCCESS.equals(dataVo.getInteger(ResConstant.CODE))){
+                                            // 获取对应的微信昵称
+                                            JSONObject contact = dataVo.getJSONObject(ResConstant.DATA).getJSONArray("contactList").getJSONObject(0);
+                                            String string = contact.getJSONObject("nickName").getString("str");
+                                            jsonObject.put("from_user_name", string);
+                                        }
+                                    }
+
                                     jsonObject.put("from_user_wxId", fromUserWxId);
                                     JSONObject toUserNameVO = jsonObject.getJSONObject("to_user_name");
                                     String toUserWxId = toUserNameVO.getString("str");
                                     jsonObject.put("to_user_wxId", toUserWxId);
+                                    // 先尝试从维护的列表中获取
                                     WeixinBaseInfo toWeixinBaseInfo = weixinBaseInfoService.getById(toUserWxId);
-                                    if (toWeixinBaseInfo != null)
+                                    if (toWeixinBaseInfo != null){
                                         jsonObject.put("to_user_name", toWeixinBaseInfo.getNickname());
+                                    }
                                     // content 消息内容
                                     JSONObject contentVo = jsonObject.getJSONObject("content");
                                     String content = contentVo.getString("str");
@@ -145,11 +165,13 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                     // 处理具体数据，每两条数据为一组，可能还得剔除部分无效数据,msg_type为49的消息即为群邀请操作
                     Integer msgType = data.getMsgType();
                     if (msgType == 49) {
-                        // 转义获取群链接地址
+                        log.debug("接收链接类消息处理：{}", data);
+                        // 转义获取群链接地址,不一定是群链接
                         String url = data.getContent();
                         JSONObject jsonObject = buildUrl(url);
                         data.setContent(jsonObject.getString("url"));
                         data.setChatroomName(jsonObject.getString("title"));
+                        data.setThumbUrl(jsonObject.getString("thumbUrl"));
                         // 判断上一组数据是否入库,群链接信息有了
                         if (tmp != null && StrUtil.isEmpty(tmp.getRemark()) && StrUtil.isNotEmpty(tmp.getContent())) {
                             // 直接入库
@@ -172,11 +194,11 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         dataVos.add(weixinGroupLinkDetail);
                     }
                 }
-                // 批量更新入库
-                weixinGroupLinkDetailService.saveOrUpdateBatch(dataVos);
+                // 批量更新入库,手动判断入库，更新对应的
+                weixinGroupLinkDetailService.saveBatch(dataVos);
             }
         };
-        // 每1分钟执行一次
+        // 每3分钟执行一次
         timer.schedule(timerTask, 0, 3 * 60 * 1000);
     }
 
@@ -184,23 +206,24 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
     private JSONObject buildUrl(String url) {
         try {
             // "半勺小奶酪?"邀请你加入群聊"海娜生活超市特价公告送货群"，进入可查看详情。
-            log.debug("打印群链接信息：{}", url);
+            log.info("打印群链接信息：{}", url);
             Document document = DocumentHelper.parseText(url);
             Node node = document.selectSingleNode("/msg/appmsg/url");
             String des = document.selectSingleNode("/msg/appmsg/des").getText();
+            // 获取类似群id的概念
+            String thumbUrl = document.selectSingleNode("/msg/appmsg/thumburl").getText();
             // 获取具体群聊名称
-            List<String> roomNames = Arrays.stream(des.split("\"")).filter(str -> str.endsWith("群")).collect(Collectors.toList());
-            // 存在邀请人也叫xxx群情况
+            List<String> roomNames = Arrays.asList(des.split("\""));
+         /*   // 存在邀请人也叫xxx群情况
             if(roomNames.size() == 2){
                 roomNames.remove(0);
-            }
-            String roomName = roomNames.get(0);
-            return JSONObject.of("url", node.getText(), "title", roomName);
+            }*/
+            String roomName = roomNames.get(3);
+            return JSONObject.of("url", node.getText(), "title", roomName, "thumbUrl", thumbUrl);
         } catch (DocumentException e) {
             e.printStackTrace();
         }
         return new JSONObject();
     }
-
 }
 

@@ -1,14 +1,15 @@
 package com.xxx.server.service.impl;
 
 import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.util.URLUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.constant.ResConstant;
@@ -25,12 +26,10 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.rocketmq.common.message.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -136,4 +135,23 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
         return true;
     }
 
+    private static final String COMPANY_STATUS = "openim";
+
+    @Override
+    public boolean saveBatch(List<WeixinGroupLinkDetail> weixinGroupLinkDetails){
+        for (WeixinGroupLinkDetail weixinGroupLinkDetail : weixinGroupLinkDetails) {
+            //TODO step 1 首先本地去重,根据数据量再考虑是否采用接入redis布隆过滤器功能
+            Integer count = baseMapper.selectCount(Wrappers.lambdaQuery(WeixinGroupLinkDetail.class).eq(WeixinGroupLinkDetail::getThumbUrl, weixinGroupLinkDetail.getThumbUrl()));
+            weixinGroupLinkDetail.setRepeatStatus(count > 0 ? "1" : "0");
+            // step 2 失效状态校验
+            // 创建链接时间是否超过十四天，邀请人是否还是微信好友，群状态是否还是正常状态
+            long time = DateUtil.between(new Date(), DateUtil.date(weixinGroupLinkDetail.getCreateTime() * 1000), DateUnit.SECOND, true);
+            weixinGroupLinkDetail.setInvalidStatus(time > 14* 24 * 60 * 60 ? "1" : "0");
+            // step 3 企业微信校验
+            String content = weixinGroupLinkDetail.getContent();
+            weixinGroupLinkDetail.setCompanyStatus(StrUtil.contains(content, COMPANY_STATUS) ? "1" :"0");
+            baseMapper.insert(weixinGroupLinkDetail);
+        }
+        return true;
+    }
 }

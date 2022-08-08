@@ -40,10 +40,26 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
     @TableField("msg_id")
     private Long msgId;
 
-    @ApiModelProperty(value = "群链接状态0：未操作，1：失效，2:频繁，3：企业微信，99：操作中")
+    @ApiModelProperty(value = "群链接状态0：未操作，1：成功，2:失败，99：操作中")
     @TableField("link_status")
     @Dict
     private String linkStatus;
+
+    @ApiModelProperty(value = "重复标识")
+    @TableField("repeat_status")
+    private String repeatStatus;
+
+    @ApiModelProperty(value = "失效标识")
+    @TableField("invalid_status")
+    private String invalidStatus;
+
+    @ApiModelProperty(value = "验证群标识")
+    @TableField("verify_status")
+    private String verifyStatus;
+
+    @ApiModelProperty(value = "企业微信群标识")
+    @TableField("company_status")
+    private String companyStatus;
 
     @ApiModelProperty(value = "邀请人微信名称")
     @TableField("from_user_name")
@@ -53,7 +69,7 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
     @TableField("from_user_wxId")
     private String fromUserWxId;
 
-    @ApiModelProperty(value = "群备注。")
+    @ApiModelProperty(value = "邀请备注")
     private String remark;
 
     @ApiModelProperty(value = "消息创建时间")
@@ -80,6 +96,10 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
 
     @TableField("`key`")
     private String key;
+
+    @ApiModelProperty(value = "群id的概念，用于区分是否重复群")
+    @TableField("thumb_url")
+    private String thumbUrl;
 
 
     @Override
