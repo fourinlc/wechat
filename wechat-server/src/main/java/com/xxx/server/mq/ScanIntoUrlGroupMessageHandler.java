@@ -33,11 +33,6 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
 
     private IWeixinGroupLinkDetailService weixinGroupLinkDetailService;
 
-    /*private DelayMqProducer delayMqProducer;
-
-    @Value("${spring.rocketmq.consumer-topic}")
-    private String consumerTopic;*/
-
     @Override
     public boolean process(JSONObject message) {
         // log.info("开始进群消息处理====》{}", message);
@@ -63,6 +58,7 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
             return true;
         }
         if (!ResConstant.CODE_SUCCESS.equals(weixinAsyncEventCall.getResultCode())) {
+            // 更新y
             log.info("流程提前结束：{}", message);
             return true;
         }

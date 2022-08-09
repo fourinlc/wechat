@@ -19,6 +19,7 @@ import com.xxx.server.pojo.WeixinAsyncEventCall;
 import com.xxx.server.pojo.WeixinDictionary;
 import com.xxx.server.pojo.WeixinGroupLinkDetail;
 import com.xxx.server.service.IWeixinAsyncEventCallService;
+import com.xxx.server.service.IWeixinBaseInfoService;
 import com.xxx.server.service.IWeixinDictionaryService;
 import com.xxx.server.service.IWeixinGroupLinkDetailService;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -62,12 +64,19 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
     @Value("${spring.rocketmq.tags.qunGroup}")
     private String consumerQunGroupTag;
 
+    private IWeixinBaseInfoService weixinBaseInfoService;
+
+    private static final String COMPANY_STATUS = "openim";
+
     public boolean batchScanIntoUrlGroup(List<Long> linkIds){
         // 暂时设置为每一个微信为一组独立的队列，每次处理生成一个特定的批次号，用于统一处理异常或者终止后续操作，减少同一时间内操作
         List<WeixinGroupLinkDetail> weixinGroupLinkDetailsVo = baseMapper.selectBatchIds(linkIds);
         // 依照微信id分组并生成对应的批次号
         Map<String, List<WeixinGroupLinkDetail>> maps = weixinGroupLinkDetailsVo.stream().collect(Collectors.groupingBy(WeixinGroupLinkDetail::getToUserWxId));
         maps.forEach((wxId, weixinGroupLinkDetailList)->{
+            // 校验是否存在子号
+            /*List<WeixinBaseInfo> weixinBaseInfoList = weixinBaseInfoService.list(Wrappers.lambdaQuery(WeixinBaseInfo.class).eq(WeixinBaseInfo::getParentWxid, wxId));
+            Assert.isTrue(weixinBaseInfoList.size() > 0, "请先关联对应的子账号wxId ：" + wxId);*/
             // 可以使用多线程处理每一个线程处理一个wxId数据即可
             //TODO 查看该微信下是否存在
             // 直接生成的批次号，用于错误时回调
@@ -130,16 +139,18 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
             }
             // 设置预期完成时间
             weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay));
+            // 后边加入的微信进群操作需要
             weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
         });
         return true;
     }
 
-    private static final String COMPANY_STATUS = "openim";
-
     @Override
     public boolean saveBatch(List<WeixinGroupLinkDetail> weixinGroupLinkDetails){
         for (WeixinGroupLinkDetail weixinGroupLinkDetail : weixinGroupLinkDetails) {
+            if(Objects.isNull(weixinGroupLinkDetail.getThumbUrl())){
+                continue;
+            }
             //TODO step 1 首先本地去重,根据数据量再考虑是否采用接入redis布隆过滤器功能
             Integer count = baseMapper.selectCount(Wrappers.lambdaQuery(WeixinGroupLinkDetail.class).eq(WeixinGroupLinkDetail::getThumbUrl, weixinGroupLinkDetail.getThumbUrl()));
             weixinGroupLinkDetail.setRepeatStatus(count > 0 ? "1" : "0");

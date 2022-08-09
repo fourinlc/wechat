@@ -45,6 +45,8 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
 
     private IWeixinGroupLinkDetailService weixinGroupLinkDetailService;
 
+    private static final List SYSTEM_MESSAGE = Lists.newArrayList("newsapp", "weixin");
+
     @Override
     public void run(String... args) {
         Timer timer = new Timer();
@@ -82,8 +84,12 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     // 获取发送人信息，判断是否为群消息，群消息过滤掉 from_user_name字段校验
                                     JSONObject fromUserNameVO = jsonObject.getJSONObject("from_user_name");
                                     String fromUserWxId = fromUserNameVO.getString("str");
-                                    if (StrUtil.contains(fromUserWxId, "@chatroom")) {
+                                    // 过滤系统消息
+                                    if (SYSTEM_MESSAGE.contains(fromUserWxId) || StrUtil.contains(fromUserWxId, "@chatroom")) {
                                         continue;
+                                    }
+                                    if(StrUtil.equals("49", jsonObject.getString("msg_type"))){
+                                        log.info(((JSONObject) data).toJSONString());
                                     }
                                     WeixinBaseInfo fromWeixinBaseInfo = weixinBaseInfoService.getById(fromUserWxId);
                                     // 这个参数只能从我的好友列表中获取对应的昵称
@@ -165,7 +171,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                     // 处理具体数据，每两条数据为一组，可能还得剔除部分无效数据,msg_type为49的消息即为群邀请操作
                     Integer msgType = data.getMsgType();
                     if (msgType == 49) {
-                        log.debug("接收链接类消息处理：{}", data);
+                        //log.info("接收链接类消息处理：{}", data);
                         // 转义获取群链接地址,不一定是群链接
                         String url = data.getContent();
                         JSONObject jsonObject = buildUrl(url);
@@ -206,7 +212,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
     private JSONObject buildUrl(String url) {
         try {
             // "半勺小奶酪?"邀请你加入群聊"海娜生活超市特价公告送货群"，进入可查看详情。
-            log.info("打印群链接信息：{}", url);
+            log.debug("打印群链接信息：{}", url);
             Document document = DocumentHelper.parseText(url);
             Node node = document.selectSingleNode("/msg/appmsg/url");
             String des = document.selectSingleNode("/msg/appmsg/des").getText();
