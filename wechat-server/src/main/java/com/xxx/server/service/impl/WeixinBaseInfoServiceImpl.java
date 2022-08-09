@@ -33,6 +33,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
 
     @Autowired
     WeixinBaseInfoMapper weixinBaseInfoMapper;
+
     @Override
     public RespBean getLoginQrcode() {
         JSONObject jsonObject = new JSONObject();
@@ -64,7 +65,8 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             code = resultJson.getString("code");
         }
         if (code.equals("200")){
-            WeixinBaseInfo weixinBaseInfo = weixinBaseInfoMapper.selectOne(new QueryWrapper<WeixinBaseInfo>().eq("wx_id",resultJson.getJSONObject("Data").get("wxid")));
+            WeixinBaseInfo weixinBaseInfo;
+            weixinBaseInfo = weixinBaseInfoMapper.selectOne(new QueryWrapper<WeixinBaseInfo>().eq("wx_id",resultJson.getJSONObject("Data").get("wxid")));
             if (weixinBaseInfo == null) {
                 weixinBaseInfo = new WeixinBaseInfo();
                 weixinBaseInfo.setKey(key)
@@ -103,54 +105,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         } else {
             return RespBean.error("退出失败",resultJson);
         }
-    }
-
-    @Override
-    public RespBean relatedFriends(String wxId, List<String> relatedWxIds) {
-        MultiValueMap<String,String> errorMap = new LinkedMultiValueMap<>();
-        for(String relatedWxId : relatedWxIds){
-            if (weixinBaseInfoMapper.selectCount(Wrappers.lambdaQuery(WeixinBaseInfo.class)
-                    .eq(WeixinBaseInfo::getWxId,relatedWxId)
-                    .ne(WeixinBaseInfo::getParentWxid,"")) > 0){
-                errorMap.add(relatedWxId,"该账号已有关联账号，请先取消");
-                continue;
-            }
-            WeixinBaseInfo weixinBaseInfo = new WeixinBaseInfo();
-            weixinBaseInfo.setWxId(relatedWxId)
-                    .setParentWxid(wxId);
-            if(weixinBaseInfoMapper.updateById(weixinBaseInfo) == 0){
-                errorMap.add(relatedWxId,"关联失败");
-            }
-        }
-        if (errorMap.isEmpty()){
-            return RespBean.sucess("关联成功");
-        } else {
-            return RespBean.sucess("关联失败",errorMap);
-        }
-    }
-
-    @Override
-    public RespBean cancelRelatedFriends(List<String> relatedWxIds) {
-        MultiValueMap<String,String> errorMap = new LinkedMultiValueMap<>();
-        for(String relatedWxId : relatedWxIds){
-            WeixinBaseInfo weixinBaseInfo = new WeixinBaseInfo();
-            weixinBaseInfo.setWxId(relatedWxId)
-                    .setParentWxid("");
-            if(weixinBaseInfoMapper.updateById(weixinBaseInfo) == 0){
-                errorMap.add(relatedWxId,"关联失败");
-            }
-        }
-        if (errorMap.isEmpty()){
-            return RespBean.sucess("取消关联成功");
-        } else {
-            return RespBean.sucess("取消关联失败",errorMap);
-        }
-    }
-
-    @Override
-    public RespBean getRelatedFriends(String wxId) {
-        List<WeixinBaseInfo> weixinBaseInfos = weixinBaseInfoMapper.selectList(Wrappers.lambdaQuery(WeixinBaseInfo.class).eq(WeixinBaseInfo::getParentWxid,wxId));
-        return RespBean.sucess("查询成功",weixinBaseInfos);
     }
 
     @Override

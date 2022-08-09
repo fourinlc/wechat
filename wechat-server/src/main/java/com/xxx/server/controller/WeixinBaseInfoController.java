@@ -51,24 +51,6 @@ public class WeixinBaseInfoController{
         return weixinBaseInfoService.modifyRemarkName(wxId,remarkName);
     }
 
-    @ApiOperation(value = "关联好友")
-    @PostMapping("/relatedFriends")
-    public RespBean relatedFriends(String wxId, @RequestBody List<String> relatedWxIds){
-        return weixinBaseInfoService.relatedFriends(wxId, relatedWxIds);
-    }
-
-    @ApiOperation(value = "获取关联好友")
-    @GetMapping("/getRelatedFriends")
-    public RespBean getRelatedFriends(String wxId){
-        return weixinBaseInfoService.getRelatedFriends(wxId);
-    }
-
-    @ApiOperation(value = "取消关联好友")
-    @PostMapping("/cancelRelatedFriends")
-    public RespBean cancelRelatedFriends(@RequestBody List<String> relatedWxIds){
-        return weixinBaseInfoService.cancelRelatedFriends(relatedWxIds);
-    }
-
     @ApiOperation(value = "获取好友和群列表")
     @GetMapping("/getFriends")
     public RespBean getFriendsAndChatRooms(String key){
