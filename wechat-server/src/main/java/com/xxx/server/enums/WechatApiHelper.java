@@ -64,7 +64,8 @@ public enum WechatApiHelper {
             log.info("保存群聊：param ：{}，multiValueMap ：{}", param , multiValueMap);
             return JSONObject.of("Code", 200);
         }
-    };
+    },
+    GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST);
 
     private String desc;
 
