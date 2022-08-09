@@ -27,9 +27,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("t_weixin_tempalate")
-@ApiModel(value="WeixinTempalate对象")
+@ApiModel(value="WeixinTemplate")
 @RepeatValid(groups = {AddValid.class, UpdateValid.class}, message = "该模板名已存在",fieldName = "templateName")
-public class WeixinTempalate implements Serializable {
+public class WeixinTemplate implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -68,7 +68,7 @@ public class WeixinTempalate implements Serializable {
 
     @ApiModelProperty(value = "模板顺序")
     @TableField("template_order")
-    @NotEmpty(groups = AddValid.class, message = "模板顺序不能为空")
+    @NotNull(groups = AddValid.class, message = "模板顺序不能为空")
     private Integer templateOrder;
 
     @ApiModelProperty(value = "创建时间")

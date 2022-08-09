@@ -4,7 +4,7 @@ package com.xxx.server.controller;
 import com.xxx.server.annotation.valid.AddValid;
 import com.xxx.server.annotation.valid.UpdateValid;
 import com.xxx.server.pojo.RespBean;
-import com.xxx.server.pojo.WeixinTempalate;
+import com.xxx.server.pojo.WeixinTemplate;
 import com.xxx.server.service.IWeixinTemplateService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -38,21 +38,21 @@ public class WeixinTemplateController {
     @ApiOperation("新增")
     @PostMapping("add")
     @Validated(AddValid.class)
-    public RespBean add(@Valid WeixinTempalate weixinTempalate){
+    public RespBean add(@Valid WeixinTemplate weixinTempalate){
         return weixinTempalateService.save(weixinTempalate) ? RespBean.sucess("新增成功") : RespBean.error("新增失败");
     }
 
     @ApiOperation("批量新增")
     @PostMapping("batchAdd")
     @Validated(AddValid.class)
-    public RespBean batchAdd(@Valid @RequestBody List<WeixinTempalate> weixinTempalates){
+    public RespBean batchAdd(@Valid @RequestBody List<WeixinTemplate> weixinTempalates){
         return weixinTempalateService.saveBatch(weixinTempalates) ? RespBean.sucess("批量新增成功") : RespBean.error("新增失败");
     }
 
     @ApiOperation("更新")
     @PostMapping("update")
     @Validated(UpdateValid.class)
-    public RespBean update(@Valid WeixinTempalate weixinTempalate){
+    public RespBean update(@Valid WeixinTemplate weixinTempalate){
         return weixinTempalateService.updateById(weixinTempalate) ? RespBean.sucess("修改成功") : RespBean.error("修改失败");
     }
 
@@ -65,7 +65,7 @@ public class WeixinTemplateController {
             }
     )
     public RespBean query(String templateName, String templateType){
-        return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTempalate().setTemplateName(templateName).setTemplateType(templateType)));
+        return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTemplate().setTemplateName(templateName).setTemplateType(templateType)));
     }
 
     @GetMapping("chatHandler")

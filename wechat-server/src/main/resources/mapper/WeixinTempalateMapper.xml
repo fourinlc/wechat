@@ -3,7 +3,7 @@
 <mapper namespace="com.xxx.server.mapper.WeixinTemplateMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="com.xxx.server.pojo.WeixinTempalate">
+    <resultMap id="BaseResultMap" type="com.xxx.server.pojo.WeixinTemplate">
         <id column="template_id" property="templateId" />
         <result column="template_name" property="templateName" />
         <result column="template_content" property="templateContent" />

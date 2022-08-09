@@ -1,7 +1,7 @@
 package com.xxx.server.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.xxx.server.pojo.WeixinTempalate;
+import com.xxx.server.pojo.WeixinTemplate;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.xxx.server.pojo.WeixinTempalate;
  * @author lc
  * @since 2022-07-16
  */
-public interface WeixinTemplateMapper extends BaseMapper<WeixinTempalate> {
+public interface WeixinTemplateMapper extends BaseMapper<WeixinTemplate> {
 
 }

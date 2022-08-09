@@ -1,7 +1,7 @@
 package com.xxx.server.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.xxx.server.pojo.WeixinTempalate;
+import com.xxx.server.pojo.WeixinTemplate;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import java.util.List;
  * @author lc
  * @since 2022-07-16
  */
-public interface IWeixinTemplateService extends IService<WeixinTempalate> {
+public interface IWeixinTemplateService extends IService<WeixinTemplate> {
 
     void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) throws InterruptedException;
 
@@ -22,6 +22,6 @@ public interface IWeixinTemplateService extends IService<WeixinTempalate> {
      * @param weixinTempalate
      * @return
      */
-    List<WeixinTempalate> queryList(WeixinTempalate weixinTempalate);
+    List<WeixinTemplate> queryList(WeixinTemplate weixinTempalate);
 
 }

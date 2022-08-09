@@ -7,8 +7,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.enums.WechatApiHelper;
-import com.xxx.server.mapper.WeixinTemplateMapper;
-import com.xxx.server.pojo.WeixinTempalate;
+import com.xxx.server.mapper.WeixinTemplateMapper;import com.xxx.server.pojo.WeixinTemplate;
 import com.xxx.server.service.IWeixinFileService;
 import com.xxx.server.service.IWeixinTemplateService;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +34,7 @@ import java.util.List;
 @Service
 //@AllArgsConstructor
 @Slf4j
-public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper, WeixinTempalate> implements IWeixinTemplateService {
+public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper, WeixinTemplate> implements IWeixinTemplateService {
 
     @Resource
     private IWeixinFileService weixinFileService;
@@ -55,10 +54,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         for (int i = 0; i < chatRoomNames.size(); i++) {
             String chatRoomName = chatRoomNames.get(i);
             // step one 遍历模板列表
-            List<WeixinTempalate> weixinTempalates = baseMapper
-                    .selectList(Wrappers.<WeixinTempalate>lambdaQuery()
-                            .eq(WeixinTempalate::getTemplateName, templateName)
-                            .orderByAsc(WeixinTempalate::getTemplateOrder));
+            List<WeixinTemplate> weixinTempalates = baseMapper
+                    .selectList(Wrappers.<WeixinTemplate>lambdaQuery()
+                            .eq(WeixinTemplate::getTemplateName, templateName)
+                            .orderByAsc(WeixinTemplate::getTemplateOrder));
             Assert.isTrue(!weixinTempalates.isEmpty(), "模板信息有误");
             // 发送延时消息至rocketmq
             JSONObject param = JSONObject.of("ToUserName", chatRoomName, "Delay", true);
@@ -66,7 +65,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             Date delay = new Date();
             // 每隔两秒执行一次
             String code = WechatApiHelper.SEND_TEXT_MESSAGE.getCode();
-            for (WeixinTempalate weixinTempalate : weixinTempalates) {
+            for (WeixinTemplate weixinTempalate : weixinTempalates) {
                 // 构造模板参数
                 query.add("key", "A".equals(weixinTempalate.getTemplateType()) ? keyA : keyB);
                 // 1默认为普通文字消息
@@ -95,10 +94,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     }
 
     @Override
-    public List<WeixinTempalate> queryList(WeixinTempalate weixinTempalate) {
-        return baseMapper.selectList(Wrappers.<WeixinTempalate>lambdaQuery()
-                .like(StrUtil.isNotEmpty(weixinTempalate.getTemplateName()), WeixinTempalate::getTemplateName, weixinTempalate.getTemplateName())
-                .eq(StrUtil.isNotEmpty(weixinTempalate.getTemplateType()), WeixinTempalate::getTemplateType, weixinTempalate.getTemplateType())
-                .orderByDesc(WeixinTempalate::getTemplateOrder));
+    public List<WeixinTemplate> queryList(WeixinTemplate weixinTempalate) {
+        return baseMapper.selectList(Wrappers.<WeixinTemplate>lambdaQuery()
+                .like(StrUtil.isNotEmpty(weixinTempalate.getTemplateName()), WeixinTemplate::getTemplateName, weixinTempalate.getTemplateName())
+                .eq(StrUtil.isNotEmpty(weixinTempalate.getTemplateType()), WeixinTemplate::getTemplateType, weixinTempalate.getTemplateType())
+                .orderByDesc(WeixinTemplate::getTemplateOrder));
     }
 }
