@@ -1,6 +1,7 @@
 package com.xxx.server.controller;
 
 
+import com.alibaba.fastjson2.JSONObject;
 import com.xxx.server.annotation.valid.AddValid;
 import com.xxx.server.annotation.valid.UpdateValid;
 import com.xxx.server.pojo.RespBean;
@@ -16,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
@@ -72,6 +74,12 @@ public class WeixinTemplateController {
     public RespBean chatHandler() throws InterruptedException {
         weixinTempalateService.chatHandler(Lists.newArrayList("开心", "快乐"), "广A", "广B", "test", null);
         return RespBean.sucess("查询成功");
+    }
+
+    @ApiOperation("删除模板")
+    @GetMapping("deleteByName")
+    public RespBean deleteByName(@NotEmpty(message = "模板名称不能为空") String templateName){
+        return RespBean.sucess(weixinTempalateService.removeByMap(JSONObject.of("template_name", templateName)) ? "删除成功" : "删除失败");
     }
 
 }

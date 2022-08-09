@@ -89,7 +89,8 @@ public enum WechatApiHelper {
             default:
                 return null;
         }
-        log.info("调用wechat统一返回结果：{}", o);
+        // 对应接口自行开启日志
+        log.debug("调用wechat统一返回结果：{}", o);
         return o;
     }
 
