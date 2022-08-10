@@ -1,8 +1,8 @@
 package com.xxx.server.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.xxx.server.pojo.WeixinTemplateDetail;
 import com.xxx.server.mapper.WeixinTemplateDetailMapper;
-import com.xxx.server.service.IWeixinTemplateDetailService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +15,6 @@ import org.springframework.stereotype.Service;
  * @since 2022-08-09
  */
 @Service
-public class WeixinTemplateDetailServiceImpl extends ServiceImpl<WeixinTemplateDetailMapper, WeixinTemplateDetail> implements IWeixinTemplateDetailService {
+public class WeixinTemplateDetailServiceImpl extends ServiceImpl<WeixinTemplateDetailMapper, WeixinTemplateDetail> implements IService<WeixinTemplateDetail> {
 
 }
