@@ -11,6 +11,7 @@ import com.xxx.server.service.IWeixinAsyncEventCallService;
 import com.xxx.server.service.IWeixinGroupLinkDetailService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
@@ -48,7 +49,6 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
         JSONObject param = message.getJSONObject("param");
         MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap(query);
         // TODO 增加校验该用户是否还在群中，从获取联系人列表查看自己是否在这个群里
-        JSONObject data = (JSONObject) wechatApiHelper.invoke(param, multiValueMap);
         // Date delay = new Date();
         // 校验该批次是否还是有些状态
         Long asyncEventCallId = message.getLong("asyncEventCallId");
@@ -58,21 +58,34 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
             return true;
         }
         if (!ResConstant.CODE_SUCCESS.equals(weixinAsyncEventCall.getResultCode())) {
-            // 更新y
             log.info("流程提前结束：{}", message);
             return true;
         }
+        // 额外校验群链接生效情况
+        JSONObject data = (JSONObject) wechatApiHelper.invoke(param, multiValueMap);
         log.info("step one: 主号自己进群,返回值：{}", data);
+
         if (ResConstant.CODE_SUCCESS.equals(data.getInteger(ResConstant.CODE))) {
-            // 延迟2-3秒，开始保存群聊信息，组装对应参数，获取群id
             JSONObject jsonObject = data.getJSONObject(ResConstant.DATA);
             Assert.isTrue(Objects.nonNull(jsonObject),"群操作数据结构异常");
             String chatroomUrl = jsonObject.getString("chatroomUrl");
             Matcher matcher = Pattern.compile(ResConstant.PATTERN).matcher(chatroomUrl);
             if(matcher.find()){
                 String chatroomName = matcher.group();
+                // 查看自己是否还在群中，同时也相当于获取群聊信息，确定群是验证群还是普通群，间隔时间设置成0.5-1秒之间
+                JSONObject chatRoomInfo = JSONObject.of("ChatRoomWxIdList", Lists.newArrayList());
+                JSONObject chatRoomInfoRes = (JSONObject)WechatApiHelper.GET_CHAT_ROOM_INFO.invoke(chatRoomInfo, multiValueMap);
+
+                // 提取对应的群验证标识字段，并更新至邀请链接中
+                JSONObject contact = chatRoomInfoRes.getJSONObject(ResConstant.DATA).getJSONArray("contactList").getJSONObject(0);
+                log.info("step two: 校验是否还在群中同时更新群是否验证标识:群信息{}", contact);
+                String chatroomAccessType = contact.getString("chatroomAccessType");
+                // 更新群验证状态
+                weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setVerifyStatus(chatroomAccessType).setLinkId(linkId));
                 // 开始组装保存群聊
                 // 进群成功后，保存群聊，更新邀请链接状态
+
+                // 延迟2-3秒，开始保存群聊信息，组装对应参数，获取群id
                 JSONObject jsonObject1 = JSONObject.of("ChatRoomName", chatroomName, "Val", 1);
                 // 随机延时1-2操作
                 // RandomUtil.randomDate(new Date(), DateField.SECOND, 1, 2);

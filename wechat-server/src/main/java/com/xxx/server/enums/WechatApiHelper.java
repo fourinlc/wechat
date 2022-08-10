@@ -64,7 +64,8 @@ public enum WechatApiHelper {
             log.info("保存群聊：param ：{}，multiValueMap ：{}", param , multiValueMap);
             return JSONObject.of("Code", 200);
         }
-    };
+    },
+    GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST);
 
     private String desc;
 
@@ -89,7 +90,8 @@ public enum WechatApiHelper {
             default:
                 return null;
         }
-        log.info("调用wechat统一返回结果：{}", o);
+        // 对应接口自行开启日志
+        log.debug("调用wechat统一返回结果：{}", o);
         return o;
     }
 

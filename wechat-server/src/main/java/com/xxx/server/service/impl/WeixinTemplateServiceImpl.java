@@ -1,26 +1,24 @@
 package com.xxx.server.service.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
-import com.xxx.server.enums.WechatApiHelper;
-import com.xxx.server.mapper.WeixinTemplateMapper;import com.xxx.server.pojo.WeixinTemplate;
+import com.xxx.server.mapper.WeixinTemplateMapper;
+import com.xxx.server.pojo.WeixinTemplate;
+import com.xxx.server.pojo.WeixinTemplateDetail;
+import com.xxx.server.pojo.WeixinTemplateParam;
 import com.xxx.server.service.IWeixinFileService;
+import com.xxx.server.service.IWeixinTemplateDetailService;
 import com.xxx.server.service.IWeixinTemplateService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.rocketmq.common.message.Message;
+import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -41,15 +39,15 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Resource
     private DelayMqProducer delayMqProducer;
 
+    @Resource
+    private IWeixinTemplateDetailService weixinTemplateDetailService;
+
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
-    /*@Value("${spring.rocketmq.tags.qun}")
-    private String consumerQunTag;*/
-
     // AB话术相互群聊
-    @Override
-    public void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) throws InterruptedException {
+    // @Override
+    /*public void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) throws InterruptedException {
         // 获取对应文件信息
         for (int i = 0; i < chatRoomNames.size(); i++) {
             String chatRoomName = chatRoomNames.get(i);
@@ -91,13 +89,60 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                 query.clear();
             }
         }
+    }*/
+
+     @Transactional
+    public boolean add(WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails){
+        if (save(weixinTemplate)) {
+            // 填充id
+            for (WeixinTemplateDetail weixinTemplateDetail : weixinTemplateDetails) {
+                weixinTemplateDetail.setTemplateId(weixinTemplate.getTemplateId());
+            }
+        }
+        // 批量新增
+        return weixinTemplateDetailService.saveBatch(weixinTemplateDetails);
     }
 
-    @Override
-    public List<WeixinTemplate> queryList(WeixinTemplate weixinTempalate) {
-        return baseMapper.selectList(Wrappers.<WeixinTemplate>lambdaQuery()
-                .like(StrUtil.isNotEmpty(weixinTempalate.getTemplateName()), WeixinTemplate::getTemplateName, weixinTempalate.getTemplateName())
-                .eq(StrUtil.isNotEmpty(weixinTempalate.getTemplateType()), WeixinTemplate::getTemplateType, weixinTempalate.getTemplateType())
-                .orderByDesc(WeixinTemplate::getTemplateOrder));
+    @Transactional
+    public boolean update( WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails){
+        if (updateById(weixinTemplate)) {
+            // 填充id,删除老数据
+            weixinTemplateDetailService.removeByMap(JSONObject.of("template_id", weixinTemplate.getTemplateId()));
+            for (WeixinTemplateDetail weixinTemplateDetail : weixinTemplateDetails) {
+                weixinTemplateDetail.setTemplateId(weixinTemplate.getTemplateId());
+            }
+        }
+        // 批量新增
+        return weixinTemplateDetailService.saveBatch(weixinTemplateDetails);
     }
+
+    public List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate){
+        List<WeixinTemplateParam> weixinTemplateParams = Lists.newArrayList();
+        List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class)
+                .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateName()), WeixinTemplate::getTemplateName, weixinTemplate.getTemplateName())
+                .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateType()), WeixinTemplate::getTemplateType, weixinTemplate.getTemplateType()));
+        for (WeixinTemplate weixinTemplateVo : weixinTemplates) {
+            WeixinTemplateParam weixinTemplateParam = new WeixinTemplateParam();
+            weixinTemplateParam.setWeixinTemplate(weixinTemplateVo);
+            if(weixinTemplateVo != null){
+                // 查询其模板详情
+                weixinTemplateParam.setWeixinTemplateDetailList(weixinTemplateDetailService.listByMap(JSONObject.of("template_id", weixinTemplateVo.getTemplateId())));
+            }
+            weixinTemplateParams.add(weixinTemplateParam);
+        }
+        return weixinTemplateParams;
+    }
+
+    @Transactional
+    public boolean deleteByName(String templateName){
+         // 查询数据
+        WeixinTemplate weixinTemplate = getOne(Wrappers.lambdaQuery(WeixinTemplate.class).eq(WeixinTemplate::getTemplateName, templateName));
+        if(weixinTemplate == null) return false;
+        if (removeByMap(JSONObject.of("template_name", templateName))) {
+            // 删除模板内容
+            return weixinTemplateDetailService.removeByMap(JSONObject.of("template_id", weixinTemplate.getTemplateId()));
+        }
+        return false;
+    }
+
 }

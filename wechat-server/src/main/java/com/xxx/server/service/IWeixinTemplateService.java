@@ -1,8 +1,14 @@
 package com.xxx.server.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xxx.server.annotation.valid.AddValid;
+import com.xxx.server.annotation.valid.UpdateValid;
 import com.xxx.server.pojo.WeixinTemplate;
+import com.xxx.server.pojo.WeixinTemplateDetail;
+import com.xxx.server.pojo.WeixinTemplateParam;
+import org.springframework.validation.annotation.Validated;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -13,15 +19,16 @@ import java.util.List;
  * @author lc
  * @since 2022-07-16
  */
+@Validated
 public interface IWeixinTemplateService extends IService<WeixinTemplate> {
 
-    void chatHandler(List<String> chatRoomNames, String keyA, String keyB, String templateName, List<Long> fileIds) throws InterruptedException;
+    @Validated(AddValid.class)
+    boolean add(@Valid WeixinTemplate weixinTemplate,List<WeixinTemplateDetail> weixinTemplateDetails);
 
-    /**
-     * 获取模板列表
-     * @param weixinTempalate
-     * @return
-     */
-    List<WeixinTemplate> queryList(WeixinTemplate weixinTempalate);
+    @Validated(UpdateValid.class)
+    boolean update(@Valid WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails);
 
+    List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate);
+
+    boolean deleteByName(String templateName);
 }
