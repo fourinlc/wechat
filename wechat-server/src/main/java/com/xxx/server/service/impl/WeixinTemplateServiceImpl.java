@@ -1,11 +1,14 @@
 package com.xxx.server.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.mapper.WeixinTemplateMapper;
 import com.xxx.server.pojo.WeixinTemplate;
 import com.xxx.server.pojo.WeixinTemplateDetail;
+import com.xxx.server.pojo.WeixinTemplateParam;
 import com.xxx.server.service.IWeixinFileService;
 import com.xxx.server.service.IWeixinTemplateDetailService;
 import com.xxx.server.service.IWeixinTemplateService;
@@ -112,5 +115,17 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         return weixinTemplateDetailService.saveBatch(weixinTemplateDetails);
     }
 
+    public WeixinTemplateParam queryList(WeixinTemplate weixinTemplate){
+        WeixinTemplateParam weixinTemplateParam = new WeixinTemplateParam();
+        WeixinTemplate weixinTemplateVo = getOne(Wrappers.lambdaQuery(WeixinTemplate.class)
+                .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateName()), WeixinTemplate::getTemplateName, weixinTemplate.getTemplateName())
+                .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateType()), WeixinTemplate::getTemplateType, weixinTemplate.getTemplateType()));
+        weixinTemplateParam.setWeixinTemplate(weixinTemplateVo);
+        if(weixinTemplateVo != null){
+            // 查询其模板详情
+            weixinTemplateParam.setWeixinTemplateDetailList(weixinTemplateDetailService.listByMap(JSONObject.of("template_id", weixinTemplateVo.getTemplateId())));
+        }
+        return weixinTemplateParam;
+    }
 
 }

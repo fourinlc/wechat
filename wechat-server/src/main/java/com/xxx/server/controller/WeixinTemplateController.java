@@ -8,6 +8,8 @@ import com.xxx.server.pojo.WeixinTemplateParam;
 import com.xxx.server.service.IWeixinTemplateDetailService;
 import com.xxx.server.service.IWeixinTemplateService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -32,7 +34,7 @@ public class WeixinTemplateController {
 
     private IWeixinTemplateDetailService weixinTemplateDetailService;
 
-    @ApiOperation("新增修改")
+    @ApiOperation("批量新增修改")
     @PostMapping("addOrUpdate")
     public RespBean add(@RequestBody WeixinTemplateParam weixinTemplateParam){
         WeixinTemplate weixinTemplate = weixinTemplateParam.getWeixinTemplate();
@@ -43,17 +45,17 @@ public class WeixinTemplateController {
         }
     }
 
-   /* @ApiOperation("查询")
+    @ApiOperation("查询")
     @GetMapping("query")
     @ApiImplicitParams(
             {
                     @ApiImplicitParam(value = "模板名称", name = "templateName", paramType = "query"),
                     @ApiImplicitParam(value = "模板类型", name = "templateType", paramType = "query"),
             }
-    )*/
-    /*public RespBean query(String templateName, String templateType){
-        return RespBean.sucess("查询成功", weixinTempalateService.queryList(new WeixinTemplate().setTemplateName(templateName).setTemplateType(templateType)));
-    }*/
+    )
+    public RespBean query(String templateName, String templateType){
+        return RespBean.sucess("查询成功", weixinTemplateService.queryList(new WeixinTemplate().setTemplateName(templateName).setTemplateType(templateType)));
+    }
 
     /*@GetMapping("chatHandler")
     public RespBean chatHandler() throws InterruptedException {
