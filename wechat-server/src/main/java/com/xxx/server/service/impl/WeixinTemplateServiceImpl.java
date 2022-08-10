@@ -13,6 +13,7 @@ import com.xxx.server.service.IWeixinFileService;
 import com.xxx.server.service.IWeixinTemplateDetailService;
 import com.xxx.server.service.IWeixinTemplateService;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,17 +116,33 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         return weixinTemplateDetailService.saveBatch(weixinTemplateDetails);
     }
 
-    public WeixinTemplateParam queryList(WeixinTemplate weixinTemplate){
-        WeixinTemplateParam weixinTemplateParam = new WeixinTemplateParam();
-        WeixinTemplate weixinTemplateVo = getOne(Wrappers.lambdaQuery(WeixinTemplate.class)
+    public List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate){
+        List<WeixinTemplateParam> weixinTemplateParams = Lists.newArrayList();
+        List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class)
                 .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateName()), WeixinTemplate::getTemplateName, weixinTemplate.getTemplateName())
                 .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateType()), WeixinTemplate::getTemplateType, weixinTemplate.getTemplateType()));
-        weixinTemplateParam.setWeixinTemplate(weixinTemplateVo);
-        if(weixinTemplateVo != null){
-            // 查询其模板详情
-            weixinTemplateParam.setWeixinTemplateDetailList(weixinTemplateDetailService.listByMap(JSONObject.of("template_id", weixinTemplateVo.getTemplateId())));
+        for (WeixinTemplate weixinTemplateVo : weixinTemplates) {
+            WeixinTemplateParam weixinTemplateParam = new WeixinTemplateParam();
+            weixinTemplateParam.setWeixinTemplate(weixinTemplateVo);
+            if(weixinTemplateVo != null){
+                // 查询其模板详情
+                weixinTemplateParam.setWeixinTemplateDetailList(weixinTemplateDetailService.listByMap(JSONObject.of("template_id", weixinTemplateVo.getTemplateId())));
+            }
+            weixinTemplateParams.add(weixinTemplateParam);
         }
-        return weixinTemplateParam;
+        return weixinTemplateParams;
+    }
+
+    @Transactional
+    public boolean deleteByName(String templateName){
+         // 查询数据
+        WeixinTemplate weixinTemplate = getOne(Wrappers.lambdaQuery(WeixinTemplate.class).eq(WeixinTemplate::getTemplateName, templateName));
+        if(weixinTemplate == null) return false;
+        if (removeByMap(JSONObject.of("template_name", templateName))) {
+            // 删除模板内容
+            return weixinTemplateDetailService.removeByMap(JSONObject.of("template_id", weixinTemplate.getTemplateId()));
+        }
+        return false;
     }
 
 }

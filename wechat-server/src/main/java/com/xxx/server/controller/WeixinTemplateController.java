@@ -1,17 +1,16 @@
 package com.xxx.server.controller;
 
 
-import com.alibaba.fastjson2.JSONObject;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinTemplate;
 import com.xxx.server.pojo.WeixinTemplateParam;
-import com.xxx.server.service.IWeixinTemplateDetailService;
 import com.xxx.server.service.IWeixinTemplateService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
+import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +30,6 @@ import org.springframework.web.bind.annotation.*;
 public class WeixinTemplateController {
 
     private IWeixinTemplateService weixinTemplateService;
-
-    private IWeixinTemplateDetailService weixinTemplateDetailService;
 
     @ApiOperation("批量新增修改")
     @PostMapping("addOrUpdate")
@@ -66,7 +63,8 @@ public class WeixinTemplateController {
     @ApiOperation("删除模板")
     @GetMapping("deleteByName")
     public RespBean deleteByName( String templateName){
-        return RespBean.sucess(weixinTemplateService.removeByMap(JSONObject.of("template_name", templateName)) ? "删除成功" : "删除失败");
+        Assert.hasText(templateName, "模板名称不能为空");
+        return RespBean.sucess(weixinTemplateService.deleteByName(templateName) ? "删除成功" : "删除失败");
     }
 
 }
