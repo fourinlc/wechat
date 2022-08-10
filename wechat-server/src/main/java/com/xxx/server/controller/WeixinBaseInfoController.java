@@ -53,8 +53,8 @@ public class WeixinBaseInfoController{
 
     @ApiOperation(value = "获取好友和群列表")
     @GetMapping("/getFriends")
-    public RespBean getFriendsAndChatRooms(String key){
-        return weixinBaseInfoService.getFriendsAndChatRooms(key);
+    public RespBean getFriendsAndChatRooms(String key, String wxid){
+        return weixinBaseInfoService.getFriendsAndChatRooms(key,wxid);
     }
 
     @ApiOperation("获取在线好友列表")

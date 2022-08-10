@@ -140,7 +140,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     }
 
     @Override
-    public RespBean getFriendsAndChatRooms(String key) {
+    public RespBean getFriendsAndChatRooms(String key, String wxid) {
         //获取所有联系人wxid
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("CurrentWxcontactSeq",0);
@@ -188,7 +188,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         if(!code.equals("200")){
             return RespBean.error("获取好友详情失败",detailsJson);
         }
-        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsMapper.selectById(key);
+        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsMapper.selectById(wxid);
         ArrayList<String> relatedList = new ArrayList<>();
         if (weixinRelatedContacts != null) {
             relatedList.add(weixinRelatedContacts.getRelated1());

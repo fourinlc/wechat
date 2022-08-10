@@ -22,7 +22,7 @@ public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
 
     RespBean modifyRemarkName(String wxId, String remarkName);
 
-    RespBean getFriendsAndChatRooms(String key);
+    RespBean getFriendsAndChatRooms(String key, String wxid);
 
     List<WeixinBaseInfo> queryList();
 
