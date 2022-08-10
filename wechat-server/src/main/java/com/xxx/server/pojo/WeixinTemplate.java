@@ -31,34 +31,35 @@ import javax.validation.constraints.NotEmpty;
 @Accessors(chain = true)
 @TableName("t_weixin_template")
 @ApiModel(value="WeixinTemplate对象", description="")
-@RepeatValid(groups = {AddValid.class, UpdateValid.class}, message = "模板不能重复", fieldName = "templateName")
+@RepeatValid(groups = {AddValid.class}, message = "模板不能重复", fieldName = "templateName")
+@RepeatValid(groups = {UpdateValid.class}, message = "模板不能重复", fieldName = "templateName")
 public class WeixinTemplate implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "模板id")
+    @ApiModelProperty("模板id")
     @TableId(value = "template_id", type = IdType.AUTO)
     private Long templateId;
 
-    @ApiModelProperty(value = "模板名称")
+    @ApiModelProperty("模板名称")
     @TableField("template_name")
     @NotEmpty(groups = AddValid.class, message = "模板名称不能为空")
     private String templateName;
 
-    @ApiModelProperty(value = "模板类型,单人 双人")
+    @ApiModelProperty("模板类型,单人 双人")
     @TableField("template_type")
     @NotEmpty(groups = AddValid.class, message = "模板类型不能为空")
     private String templateType;
 
-    @ApiModelProperty(value = "单条模板状态")
+    @ApiModelProperty("单条模板状态")
     @TableField("template_status")
     private Integer templateStatus;
 
-    @ApiModelProperty(value = "创建时间")
+    @ApiModelProperty("创建时间")
     @TableField("create_time")
     private LocalDateTime createTime;
 
-    @ApiModelProperty(value = "更新时间")
+    @ApiModelProperty("更新时间")
     @TableField("update_time")
     private LocalDateTime updateTime;
 

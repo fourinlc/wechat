@@ -64,8 +64,9 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
         // 额外校验群链接生效情况
         JSONObject data =  wechatApiHelper.invoke(param, multiValueMap);
         log.info("step one: 主号自己进群,返回值：{}", data);
-
         if (ResConstant.CODE_SUCCESS.equals(data.getInteger(ResConstant.CODE))) {
+            // 更新链接状态为进群完成
+            weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("1").setLinkId(linkId));
             JSONObject jsonObject = data.getJSONObject(ResConstant.DATA);
             Assert.isTrue(Objects.nonNull(jsonObject),"群操作数据结构异常");
             String chatroomUrl = jsonObject.getString("chatroomUrl");
@@ -104,6 +105,8 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
                 log.info("step three: 保存群聊信息返回{}", movetoContract);
                 if (ResConstant.CODE_SUCCESS.equals(movetoContract.getInteger(ResConstant.CODE))) {
                     // 更新系统状态批次状态
+                    // 更新链接状态为保存群聊消息
+                    weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("2").setLinkId(linkId));
                     // 保存群聊成功时，邀请两个子号进行进群操作
                     try {
                         Thread.sleep(RandomUtil.randomInt(1000,1500));
@@ -122,7 +125,7 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler{
         }else {
             // 根据code值更新对应的邀请链接状态
             // TODO 带数据验证
-            weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("2").setLinkId(linkId));
+            weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("5").setLinkId(linkId));
         }
         // 更新系统批次为失败状态，下次该批次直接跳过
         weixinAsyncEventCall.setResultCode(500);
