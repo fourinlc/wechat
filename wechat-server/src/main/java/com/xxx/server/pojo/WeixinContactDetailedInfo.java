@@ -30,4 +30,6 @@ public class WeixinContactDetailedInfo {
     String bigHeadImgUrl;
     @ApiModelProperty(value = "smallHeadImgUrl")
     String smallHeadImgUrl;
+    @ApiModelProperty(value = "related")
+    String related;
 }

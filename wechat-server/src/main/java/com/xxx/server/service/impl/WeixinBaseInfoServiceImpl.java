@@ -7,9 +7,11 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinBaseInfoMapper;
+import com.xxx.server.mapper.WeixinRelatedContactsMapper;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.pojo.WeixinContactDetailedInfo;
+import com.xxx.server.pojo.WeixinRelatedContacts;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,8 @@ import java.util.List;
 @Service
 public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper, WeixinBaseInfo> implements IWeixinBaseInfoService {
 
+    @Autowired
+    WeixinRelatedContactsMapper weixinRelatedContactsMapper;
     @Autowired
     WeixinBaseInfoMapper weixinBaseInfoMapper;
 
@@ -170,6 +174,12 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         if(!code.equals("200")){
             return RespBean.error("获取好友详情失败",detailsJson);
         }
+        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsMapper.selectById(key);
+        ArrayList<String> relatedList = new ArrayList<>();
+        if (weixinRelatedContacts != null) {
+            relatedList.add(weixinRelatedContacts.getRelated1());
+            relatedList.add(weixinRelatedContacts.getRelated2());
+        }
         //过滤出好友和群
         JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
         MultiValueMap<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new LinkedMultiValueMap<>();
@@ -185,6 +195,11 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             if (friendList.contains(contactDetailedInfo.getWxId())){
                 contactDetailedInfo.setSignature(detailJson.getString("signature"));
                 contactDetailedInfo.setBigHeadImgUrl(detailJson.getString("bigHeadImgUrl"));
+                if (relatedList.contains(contactDetailedInfo.getWxId())){
+                    contactDetailedInfo.setRelated("1");
+                } else {
+                    contactDetailedInfo.setRelated("0");
+                }
                 friendDetaileList.add(contactDetailedInfo);
             } else {
                 contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
