@@ -23,7 +23,7 @@ public enum WechatApiHelper {
     GET_PROFILE("获取个人信息", "/v1/user/GetProfile", HttpMethod.GET),
     SEND_TEXT_MESSAGE("发送文字消息", "/v1/message/SendTextMessage", HttpMethod.POST){
         @Override
-        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
             // 模拟处理群发消息文字版本
             log.info("开始发送文字消息：param ：{}，multiValueMap ：{}", param , multiValueMap);
             return JSONObject.of("code", 200);
@@ -31,7 +31,7 @@ public enum WechatApiHelper {
     },
     SEND_IMAGE_MESSAGE("发送图片", "/v1/message/SendImageMessage", HttpMethod.POST){
         @Override
-        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
             // 模拟处理群发消息文字版本
             log.info("开始发送图片消息：param ：{}，multiValueMap ：{}", param , multiValueMap);
             return JSONObject.of("code", 200);
@@ -41,7 +41,7 @@ public enum WechatApiHelper {
     NEW_SYNC_HISTORY_MESSAGE("短链接同步消息", "/v1/user/NewSyncHistoryMessage", HttpMethod.POST),
     SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST){
         @Override
-        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
             // 模拟处理群发消息文字版本
             log.info("模拟进群操作：param ：{}，multiValueMap ：{}", param , multiValueMap);
             JSONObject jsonObject = JSONObject.of("chatroomUrl", "1111@chaoom");
@@ -50,7 +50,7 @@ public enum WechatApiHelper {
     },
     ADD_CHATROOM_MEMBERS("邀请进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST){
         @Override
-        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
             // 模拟处理群发消息文字版本
             log.info("邀请进群：param ：{}，multiValueMap ：{}", param , multiValueMap);
 
@@ -59,7 +59,7 @@ public enum WechatApiHelper {
     },
     MOVETO_CONTRACT("保存群聊", "/v1/group/MoveToContract", HttpMethod.POST){
         @Override
-        public Object invoke(Object param, MultiValueMap<String, String> multiValueMap) {
+        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
             // 模拟处理群发消息文字版本
             log.info("保存群聊：param ：{}，multiValueMap ：{}", param , multiValueMap);
             return JSONObject.of("Code", 200);
@@ -76,9 +76,9 @@ public enum WechatApiHelper {
     private static final RestClient restclient = SpringUtils.getBean(RestClient.class);
 
     // 通用调用参数处理
-    public Object invoke(Object param, MultiValueMap<String,String> multiValueMap){
+    public JSONObject invoke(Object param, MultiValueMap<String,String> multiValueMap){
         log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, query:{}", getDesc(), param, multiValueMap);
-        Object o;
+        JSONObject o;
         switch (getHttpMethod()){
             case POST:
                 o = restclient.postJson(getCode(), param, multiValueMap);
@@ -94,6 +94,14 @@ public enum WechatApiHelper {
         log.debug("调用wechat统一返回结果：{}", o);
         return o;
     }
+
+ /*   // 增加重试机制包装
+    public Object invoke(Object param, MultiValueMap<String,String> multiValueMap, Integer repeat){
+        // 对通用异常如延时，服务器调用异常，进行选择性重试
+        Object invoke = invoke(param, multiValueMap);
+
+        return invoke(param, multiValueMap);
+    }*/
 
     WechatApiHelper(String desc, String code, HttpMethod httpMethod){
         this.code = code;

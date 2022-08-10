@@ -15,7 +15,7 @@ import java.io.Serializable;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author lc
@@ -25,8 +25,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("t_weixin_group_link_detail")
-@ApiModel(value="WeixinGroupLinkDetail对象", description="")
-public class WeixinGroupLinkDetail implements Serializable,Cloneable {
+@ApiModel(value = "WeixinGroupLinkDetail对象", description = "")
+public class WeixinGroupLinkDetail implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -40,7 +40,7 @@ public class WeixinGroupLinkDetail implements Serializable,Cloneable {
     @TableField("msg_id")
     private Long msgId;
 
-    @ApiModelProperty(value = "群链接状态0：未操作，1：成功，2:失败，99：操作中")
+    @ApiModelProperty(value = "群链接状态0：未操作，1：进群成功，2:保存群聊，3：邀请子账号完成 4：处理完成 99：处理中")
     @TableField("link_status")
     @Dict
     private String linkStatus;

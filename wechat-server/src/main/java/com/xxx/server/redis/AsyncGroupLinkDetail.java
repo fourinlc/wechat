@@ -101,7 +101,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                         JSONObject param = JSONObject.of("UserNames", Lists.newArrayList(fromUserWxId));
                                         MultiValueMap multiValueMap = new LinkedMultiValueMap();
                                         multiValueMap.add("key", ((JSONObject) data).getString("UUID"));
-                                        JSONObject dataVo = (JSONObject) WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(param, multiValueMap);
+                                        JSONObject dataVo =  WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(param, multiValueMap);
                                         if(ResConstant.CODE_SUCCESS.equals(dataVo.getInteger(ResConstant.CODE))){
                                             // 获取对应的微信昵称
                                             JSONObject contact = dataVo.getJSONObject(ResConstant.DATA).getJSONArray("contactList").getJSONObject(0);
