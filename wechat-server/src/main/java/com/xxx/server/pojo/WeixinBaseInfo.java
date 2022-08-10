@@ -79,4 +79,7 @@ public class WeixinBaseInfo implements Serializable {
 
     @TableField("update_user")
     private Long updateUser;
+
+    @TableField("head_img_url")
+    private String headImgUrl;
 }
