@@ -39,32 +39,10 @@ public enum WechatApiHelper {
     },
     GET_REDIS_SYNC_MSG("长链接订阅同步消息", "/v1/user/GetRedisSyncMsg", HttpMethod.POST),
     NEW_SYNC_HISTORY_MESSAGE("短链接同步消息", "/v1/user/NewSyncHistoryMessage", HttpMethod.POST),
-    SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST){
-        @Override
-        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
-            // 模拟处理群发消息文字版本
-            log.info("模拟进群操作：param ：{}，multiValueMap ：{}", param , multiValueMap);
-            JSONObject jsonObject = JSONObject.of("chatroomUrl", "1111@chaoom");
-            return JSONObject.of("Code", 200, "Data", jsonObject);
-        }
-    },
-    ADD_CHATROOM_MEMBERS("邀请进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST){
-        @Override
-        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
-            // 模拟处理群发消息文字版本
-            log.info("邀请进群：param ：{}，multiValueMap ：{}", param , multiValueMap);
-
-            return JSONObject.of("Code", 200);
-        }
-    },
-    MOVETO_CONTRACT("保存群聊", "/v1/group/MoveToContract", HttpMethod.POST){
-        @Override
-        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
-            // 模拟处理群发消息文字版本
-            log.info("保存群聊：param ：{}，multiValueMap ：{}", param , multiValueMap);
-            return JSONObject.of("Code", 200);
-        }
-    },
+    SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST),
+    ADD_CHATROOM_MEMBERS("添加进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST),
+    INVITE_CHATROOM_MEMBERS("邀请好友进群", "/v1/group/InviteChatroomMembers", HttpMethod.POST),
+    MOVETO_CONTRACT("保存群聊", "/v1/group/MoveToContract", HttpMethod.POST),
     GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST);
 
     private String desc;

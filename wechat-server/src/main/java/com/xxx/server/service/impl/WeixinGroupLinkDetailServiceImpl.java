@@ -87,6 +87,7 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                     // 群邀请类型
                     .setEventType(ResConstant.ASYNC_EVENT_SCAN_INTO_URL_GROUP)
                     .setBusinessId(UUID.fastUUID().toString())
+                    .setWxId(wxId)
                     // 设置99为处理中状态
                     .setResultCode(99);
             weixinAsyncEventCallService.save(weixinAsyncEventCall);

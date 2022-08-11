@@ -8,10 +8,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinTemplateMapper;
+import com.xxx.server.pojo.WeixinRelatedContacts;
 import com.xxx.server.pojo.WeixinTemplate;
 import com.xxx.server.pojo.WeixinTemplateDetail;
 import com.xxx.server.pojo.WeixinTemplateParam;
 import com.xxx.server.service.IWeixinFileService;
+import com.xxx.server.service.IWeixinRelatedContactsService;
 import com.xxx.server.service.IWeixinTemplateDetailService;
 import com.xxx.server.service.IWeixinTemplateService;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -53,11 +56,17 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Resource
     private IWeixinTemplateDetailService weixinTemplateDetailService;
 
+    @Resource
+    private IWeixinRelatedContactsService weixinRelatedContactsService;
+
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
     // @Override
-    public void chatHandler(List<String> chatRoomNames, String keyA, String keyB, List<Long> templateIds) throws InterruptedException {
+    public void chatHandler(List<String> chatRoomNames, String wxId, List<Long> templateIds) throws InterruptedException {
+        // 查询其对应的子号信息
+        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(wxId);
+        Assert.isTrue(StrUtil.isNotEmpty(weixinRelatedContacts.getRelated1()) && StrUtil.isNotEmpty(weixinRelatedContacts.getRelated2()), "请先关联好友再操作");
         // 获取对应文件信息
         List<WeixinTemplateDetail> list = weixinTemplateDetailService.list(Wrappers.lambdaQuery(WeixinTemplateDetail.class).in(WeixinTemplateDetail::getTemplateId, templateIds));
         // 对具体模板进行分组
@@ -77,7 +86,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             String code = WechatApiHelper.SEND_TEXT_MESSAGE.getCode();
             for (WeixinTemplateDetail weixinTemplateDetail : weixinTemplateDetails) {
                 // 构造模板参数
-                query.add("key", "A".equals(weixinTemplateDetail.getMsgRole()) ? keyA : keyB);
+                // query.add("key", "A".equals(weixinTemplateDetail.getMsgRole()) ? keyA : keyB);
                 // 1默认为普通文字消息
                 if ("1".equals(weixinTemplateDetail.getMsgType())) {
                     param.put("AtWxIDList", null);

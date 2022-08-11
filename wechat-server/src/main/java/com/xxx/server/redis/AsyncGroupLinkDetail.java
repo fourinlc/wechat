@@ -95,6 +95,10 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     // 这个参数只能从我的好友列表中获取对应的昵称
                                     // 如果存在直接添加至邀请连接中
                                     if (fromWeixinBaseInfo != null){
+                                        // 移除自己发出去的消息
+                                        if (StrUtil.equals(fromWeixinBaseInfo.getKey(), ((JSONObject) data).getString("UUID"))) {
+                                            continue;
+                                        }
                                         jsonObject.put("from_user_name", fromWeixinBaseInfo.getNickname());
                                     }else {
                                         // 调用微信接口

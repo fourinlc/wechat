@@ -12,7 +12,7 @@ public interface ResConstant {
     /**成功CODE*/
     Integer CODE_SUCCESS = 200;
 
-    String PATTERN = "[0-9]+@chaoom";
+    String PATTERN = "[0-9]+@chatroom";
 
     /**群邀请类型*/
     String ASYNC_EVENT_SCAN_INTO_URL_GROUP = "scanIntoUrlGroup";
