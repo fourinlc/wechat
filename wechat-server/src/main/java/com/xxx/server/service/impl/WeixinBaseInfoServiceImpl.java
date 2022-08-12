@@ -14,6 +14,9 @@ import com.xxx.server.pojo.WeixinContactDetailedInfo;
 import com.xxx.server.pojo.WeixinRelatedContacts;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -31,6 +34,7 @@ import java.util.List;
  * @since 2022-07-16
  */
 @Service
+@CacheConfig(cacheNames = "contacts")
 public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper, WeixinBaseInfo> implements IWeixinBaseInfoService {
 
     @Autowired
@@ -140,7 +144,9 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     }
 
     @Override
-    public RespBean getFriendsAndChatRooms(String key, String wxid) {
+    @Cacheable(value = "contacts",key = "#wxid",unless = "#result?.code != 200")
+    @CacheEvict(value = "contacts", key="#wxid", condition = "#refresh", beforeInvocation=true)
+    public RespBean getFriendsAndChatRooms(String key, String wxid, boolean refresh) {
         //获取所有联系人wxid
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("CurrentWxcontactSeq",0);

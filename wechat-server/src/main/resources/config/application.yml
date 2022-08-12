@@ -32,7 +32,9 @@ spring:
     host: 120.77.218.220
     database: 7
     timeout: 5000ms
-
+  cache:
+    type: redis   # 指定使用的缓存类型
+  cache-names: contacts
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml
   type-aliases-package: com.xxx.server.pojo
