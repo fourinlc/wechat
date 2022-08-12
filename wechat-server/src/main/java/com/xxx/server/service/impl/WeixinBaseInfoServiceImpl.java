@@ -86,7 +86,9 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                     code = profileJson.getString("code");
                 }
                 if (code.equals("200")){
-                    headImgUrl = profileJson.getJSONObject("data").getJSONObject("userInfoExt").getString("smallHeadImgUrl");
+                    if (profileJson.getJSONObject("data").getJSONObject("userInfoExt").containsKey("smallHeadImgUrl")){
+                        headImgUrl = profileJson.getJSONObject("data").getJSONObject("userInfoExt").getString("smallHeadImgUrl");
+                    }
                 }
             }
             WeixinBaseInfo weixinBaseInfo;
