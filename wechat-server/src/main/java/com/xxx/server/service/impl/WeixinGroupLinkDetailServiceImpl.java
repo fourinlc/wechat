@@ -14,6 +14,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.constant.ResConstant;
 import com.xxx.server.enums.WechatApiHelper;
+import com.xxx.server.exception.BusinessException;
 import com.xxx.server.mapper.WeixinGroupLinkDetailMapper;
 import com.xxx.server.pojo.WeixinAsyncEventCall;
 import com.xxx.server.pojo.WeixinDictionary;
@@ -31,6 +32,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
 
 /**
  * <p>
- *  微信群邀请相关
+ * 微信群邀请相关
  * </p>
  *
  * @author qj
@@ -68,88 +70,111 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
 
     private static final String COMPANY_STATUS = "openim";
 
-    public boolean batchScanIntoUrlGroup(List<Long> linkIds){
+    public boolean batchScanIntoUrlGroup(List<Long> linkIds) {
         // 暂时设置为每一个微信为一组独立的队列，每次处理生成一个特定的批次号，用于统一处理异常或者终止后续操作，减少同一时间内操作
         List<WeixinGroupLinkDetail> weixinGroupLinkDetailsVo = baseMapper.selectBatchIds(linkIds);
-        // 依照微信id分组并生成对应的批次号
-        Map<String, List<WeixinGroupLinkDetail>> maps = weixinGroupLinkDetailsVo.stream().collect(Collectors.groupingBy(WeixinGroupLinkDetail::getToUserWxId));
-        maps.forEach((wxId, weixinGroupLinkDetailList)->{
-            // 校验是否存在子号
-            /*List<WeixinBaseInfo> weixinBaseInfoList = weixinBaseInfoService.list(Wrappers.lambdaQuery(WeixinBaseInfo.class).eq(WeixinBaseInfo::getParentWxid, wxId));
-            Assert.isTrue(weixinBaseInfoList.size() > 0, "请先关联对应的子账号wxId ：" + wxId);*/
-            // 可以使用多线程处理每一个线程处理一个wxId数据即可
-            //TODO 查看该微信下是否存在
-            // 直接生成的批次号，用于错误时回调
-            // 遍历进群,增加参数配置，增加进群个数后休息时间配置
-            WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
-            // 生成对应的批次号
-            weixinAsyncEventCall
-                    // 群邀请类型
-                    .setEventType(ResConstant.ASYNC_EVENT_SCAN_INTO_URL_GROUP)
-                    .setBusinessId(UUID.fastUUID().toString())
-                    .setWxId(wxId)
-                    // 设置99为处理中状态
-                    .setResultCode(99);
-            weixinAsyncEventCallService.save(weixinAsyncEventCall);
-            List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
-            // Assert.isTrue(scanIntoUrlGroupTimes.size() >= 2, "系统进群消息配置异常");
-            // 获取对应随机数字1-5, 默认2-4秒
-            JSONObject dices = new JSONObject();
-            scanIntoUrlGroupTimes.forEach(scanIntoUrlGroupTime->{
-                dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
-            });
-            int max = dices.getIntValue("max", 6);
-            int min = dices.getIntValue("min", 4);
-            int sheaves = dices.getIntValue("sheaves", 2);
-            int rate = dices.getIntValue("rate", 10);
-            int between = dices.getIntValue("between", 1);
-            log.info("群邀请配置信息：{}", dices);
-            Date delay = new Date();
-            for (int i = 0; i < weixinGroupLinkDetailList.size(); i++) {
-                if ((i + 1) % (sheaves * rate) == 0) {
-                    // log.info("新的一轮操作：{}", i);
-                    // 说明一轮数据完成，增加间隔时间
-                    delay = DateUtils.addSeconds(delay, between * 60);
+        // 依照微信id分组并生成对应的批次号,过滤掉状态不为0的数据
+        Map<String, List<WeixinGroupLinkDetail>> maps = weixinGroupLinkDetailsVo.stream().filter(weixinGroupLinkDetail -> StrUtil.equals("0", weixinGroupLinkDetail.getLinkStatus())).collect(Collectors.groupingBy(WeixinGroupLinkDetail::getToUserWxId));
+        if (maps.size() == 0) {
+            return false;
+        }
+        for (Map.Entry<String, List<WeixinGroupLinkDetail>> stringListEntry : maps.entrySet()) {
+            String wxId = stringListEntry.getKey();
+            List<WeixinGroupLinkDetail> weixinGroupLinkDetailList = stringListEntry.getValue();
+            {
+                // 可以使用多线程处理每一个线程处理一个wxId数据即可
+                // TODO 查看该微信下是否存在，优化分步进行
+                // 直接生成的批次号，用于错误时回调
+                // 遍历进群,增加参数配置，增加进群个数后休息时间配置
+                // 如果该微信存在待处理信息，直接添加值队尾等待处理
+                WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
+                WeixinAsyncEventCall old = weixinAsyncEventCallService.getOne(
+                        Wrappers.lambdaQuery(WeixinAsyncEventCall.class)
+                                .eq(WeixinAsyncEventCall::getWxId, wxId)
+                                // 获取正在处理的该微信数据
+                                .eq(WeixinAsyncEventCall::getResultCode, "99"));
+                if (old != null) {
+                    weixinAsyncEventCall = old;
+                    // 获取计划完成时间参数
+                } else {
+                    // 生成对应的批次号
+                    weixinAsyncEventCall
+                            // 群邀请类型
+                            .setEventType(ResConstant.ASYNC_EVENT_SCAN_INTO_URL_GROUP)
+                            .setBusinessId(UUID.fastUUID().toString())
+                            .setWxId(wxId)
+                            // 设置99为处理中状态
+                            .setResultCode(99);
+                    weixinAsyncEventCallService.saveOrUpdate(weixinAsyncEventCall);
                 }
-                WeixinGroupLinkDetail weixinGroupLinkDetail = weixinGroupLinkDetailList.get(i);
-                MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap<>();
-                // 获取对应的key值信息
-                multiValueMap.add("key", weixinGroupLinkDetail.getKey());
-                JSONObject jsonObject = JSONObject.of("Url", weixinGroupLinkDetail.getContent());
-                JSONObject msg = JSONObject.of("param", jsonObject,
-                        "query", multiValueMap,
-                        "code", WechatApiHelper.SCAN_INTO_URL_GROUP.getCode()
-                        );
-                msg.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
-                msg.put("linkId", weixinGroupLinkDetail.getLinkId());
-                Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(msg));
-                // 设置随机时间
-                delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
-                // 异步更新返回成功时或者失败时更新群链接状态
-                try {
-                    // 缓存中获取进群间隔时间，分发mq延时任务进行消费
-                    log.info("发送延时消息延时时间为：{}", delay);
-                    delayMqProducer.sendDelay(message, delay);
-                    // 更新消息处理状态为消息正在处理中
-                    baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("99"));
-                    // 设置状态为等待处理中
-                } catch (InterruptedException e) {
-                    log.info("消息处理失败");
-                    // return false;
+                List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
+                // Assert.isTrue(scanIntoUrlGroupTimes.size() >= 2, "系统进群消息配置异常");
+                // 获取对应随机数字1-5, 默认2-4秒
+                JSONObject dices = new JSONObject();
+                scanIntoUrlGroupTimes.forEach(scanIntoUrlGroupTime -> {
+                    dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
+                });
+                int max = dices.getIntValue("max", 6);
+                int min = dices.getIntValue("min", 4);
+                int sheaves = dices.getIntValue("sheaves", 2);
+                int rate = dices.getIntValue("rate", 10);
+                int between = dices.getIntValue("between", 1);
+                log.info("群邀请配置信息：{}", dices);
+                Date delay = new Date();
+                if (weixinAsyncEventCall.getPlanTime() != null) {
+                    // 重置老数据直接添加至队尾
+                    delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
                 }
+                for (int i = 0; i < weixinGroupLinkDetailList.size(); i++) {
+                    if ((i + 1) % (sheaves * rate) == 0) {
+                        // log.info("新的一轮操作：{}", i);
+                        // 说明一轮数据完成，增加间隔时间
+                        delay = DateUtils.addSeconds(delay, between * 60);
+                    }
+                    WeixinGroupLinkDetail weixinGroupLinkDetail = weixinGroupLinkDetailList.get(i);
+                    MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
+                    // 获取对应的key值信息
+                    multiValueMap.add("key", weixinGroupLinkDetail.getKey());
+                    JSONObject jsonObject = JSONObject.of("Url", weixinGroupLinkDetail.getContent());
+                    JSONObject msg = JSONObject.of("param", jsonObject,
+                            "query", multiValueMap,
+                            "code", WechatApiHelper.SCAN_INTO_URL_GROUP.getCode()
+                    );
+                    msg.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
+                    msg.put("linkId", weixinGroupLinkDetail.getLinkId());
+                    Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(msg));
+                    // 设置随机时间
+                    delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
+                    // 异步更新返回成功时或者失败时更新群链接状态
+                    try {
+                        // 缓存中获取进群间隔时间，分发mq延时任务进行消费
+                        log.info("发送延时消息延时时间为：{}", delay);
+                        delayMqProducer.sendDelay(message, delay);
+                        // 更新消息处理状态为消息正在处理中
+                        baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("99"));
+                        // 设置状态为等待处理中
+                    } catch (Exception e) {
+                        log.error("消息处理失败:{}", e.getMessage());
+                        // 重置回调参数异步回调参数，更新为处理失败
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("mq发送消息失败"));
+                        baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("5"));
+                        throw new BusinessException("mq消息发送失败，请检测网络情况");
+                    }
+                }
+                // 设置预期完成时间，用于后置添加进来的数据处理
+                weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay));
+                // 后边加入的微信进群操作需要
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
             }
-            // 设置预期完成时间
-            weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay));
-            // 后边加入的微信进群操作需要
-            weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
-        });
+
+        }
         return true;
     }
 
     @Override
-    public boolean saveBatch(List<WeixinGroupLinkDetail> weixinGroupLinkDetails){
+    public boolean saveBatch(List<WeixinGroupLinkDetail> weixinGroupLinkDetails) {
         for (WeixinGroupLinkDetail weixinGroupLinkDetail : weixinGroupLinkDetails) {
-            if(Objects.isNull(weixinGroupLinkDetail.getThumbUrl())){
+            if (Objects.isNull(weixinGroupLinkDetail.getThumbUrl())) {
                 continue;
             }
             //TODO step 1 首先本地去重,根据数据量再考虑是否采用接入redis布隆过滤器功能
@@ -161,7 +186,7 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
             weixinGroupLinkDetail.setInvalidStatus(time > 14 * 24 * 60 * 60 ? "1" : "0");
             // step 3 企业微信校验
             String content = weixinGroupLinkDetail.getContent();
-            weixinGroupLinkDetail.setCompanyStatus(StrUtil.contains(content, COMPANY_STATUS) ? "1" :"0");
+            weixinGroupLinkDetail.setCompanyStatus(StrUtil.contains(content, COMPANY_STATUS) ? "1" : "0");
             baseMapper.insert(weixinGroupLinkDetail);
         }
         return true;

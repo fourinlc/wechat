@@ -121,7 +121,7 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler {
                     }
                     // 获取子账号信息，如果不存在，则无须邀请进群了
                     WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(weixinAsyncEventCall.getWxId());
-                    if(!(StrUtil.isEmpty(weixinRelatedContacts.getRelated1()) || StrUtil.isEmpty(weixinRelatedContacts.getRelated2()))){
+                    if (!(StrUtil.isEmpty(weixinRelatedContacts.getRelated1()) || StrUtil.isEmpty(weixinRelatedContacts.getRelated2()))) {
                         JSONObject jsonObject2 = JSONObject.of("ChatRoomName", chatroomName, "UserList", Lists.newArrayList(weixinRelatedContacts.getRelated1(), weixinRelatedContacts.getRelated2()));
                         // TODO 判断群是否是验证群，验证群跳过,或者是不是好友关系跳过
                         JSONObject addChatroomMembers = WechatApiHelper.INVITE_CHATROOM_MEMBERS.invoke(jsonObject2, multiValueMap);
@@ -135,14 +135,13 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler {
                     return true;
                 }
             }
-        } else {
-            // 根据code值更新对应的邀请链接状态
-            // TODO 带数据验证
-            weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("5").setLinkId(linkId));
         }
+        // 根据code值更新对应的邀请链接状态
+        // TODO 带数据验证
+        weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("5").setLinkId(linkId));
         // 更新系统批次为失败状态，下次该批次直接跳过
         weixinAsyncEventCall.setResultCode(500);
-        weixinAsyncEventCall.setRealTime(LocalDateTime.now());
+        weixinAsyncEventCall.setRealTime(LocalDateTime.now()).setResult("进群操作失败");
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
         return true;
     }

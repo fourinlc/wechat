@@ -58,7 +58,7 @@ public class WeixinGroupLinkDetailController {
     @GetMapping("batchScanIntoUrlGroup")
     @ApiOperation("批量进群")
     public RespBean batchScanIntoUrlGroup(@RequestParam(value = "linkIds") List<Long> linkIds){
-        return RespBean.sucess("成功", weixinGroupLinkDetailService.batchScanIntoUrlGroup(linkIds));
+        return RespBean.sucess(weixinGroupLinkDetailService.batchScanIntoUrlGroup(linkIds) ? "成功" : "该群链接已被处理过");
     }
 
 }
