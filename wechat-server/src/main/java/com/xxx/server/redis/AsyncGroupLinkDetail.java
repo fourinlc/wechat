@@ -45,7 +45,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
 
     private IWeixinGroupLinkDetailService weixinGroupLinkDetailService;
 
-    private static final List SYSTEM_MESSAGE = Lists.newArrayList("newsapp", "weixin");
+    private static final List SYSTEM_MESSAGE = Lists.newArrayList("newsapp", "weixin", "fmessage");
 
     @Override
     public void run(String... args) {

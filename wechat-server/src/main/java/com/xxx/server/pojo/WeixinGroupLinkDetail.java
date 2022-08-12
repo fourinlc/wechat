@@ -40,7 +40,7 @@ public class WeixinGroupLinkDetail implements Serializable, Cloneable {
     @TableField("msg_id")
     private Long msgId;
 
-    @ApiModelProperty(value = "群链接状态0：未操作，1：进群成功，2:保存群聊，3：邀请子账号完成 4：处理完成 99：处理中")
+    @ApiModelProperty(value = "群链接状态0：未操作，1：进群成功，2:保存群聊，3：邀请子账号完成 4：处理完成 5：处理失败 99：处理中")
     @TableField("link_status")
     @Dict
     private String linkStatus;
