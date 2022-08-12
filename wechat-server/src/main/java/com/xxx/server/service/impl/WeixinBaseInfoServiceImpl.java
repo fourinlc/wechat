@@ -73,18 +73,22 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             code = resultJson.getString("code");
         }
         if (code.equals("200")){
-//            JSONObject jsonObject = new JSONObject();
-//            jsonObject.put("key",key);
-//            JSONObject profileJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_PROFILE.invoke(jsonObject,null)));
-//            String headImgUrl = "";
-//            if(profileJson.containsKey("Code")){
-//                code = profileJson.getString("Code");
-//            }else {
-//                code = profileJson.getString("code");
-//            }
-//            if (code.equals("200")){
-//                headImgUrl = profileJson.getJSONObject("data").getJSONObject("userInfoExt").getString("smallHeadImgUrl");
-//            }
+            String headImgUrl = "";
+            if (resultJson.getJSONObject("Data").containsKey("head_img_url")){
+                headImgUrl = resultJson.getJSONObject("Data").getString("head_img_url");
+            } else {
+                map.clear();
+                map.add("key",key);
+                JSONObject profileJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_PROFILE.invoke(null,map)));
+                if(profileJson.containsKey("Code")){
+                    code = profileJson.getString("Code");
+                }else {
+                    code = profileJson.getString("code");
+                }
+                if (code.equals("200")){
+                    headImgUrl = profileJson.getJSONObject("data").getJSONObject("userInfoExt").getString("smallHeadImgUrl");
+                }
+            }
             WeixinBaseInfo weixinBaseInfo;
             weixinBaseInfo = weixinBaseInfoMapper.selectOne(new QueryWrapper<WeixinBaseInfo>().eq("wx_id",resultJson.getJSONObject("Data").get("wxid")));
             if (weixinBaseInfo == null) {
@@ -96,13 +100,13 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                         .setState(resultJson.getJSONObject("Data").get("state").toString())
                         .setUpdateTime(LocalDateTime.now())
                         .setLastTime(LocalDateTime.now())
-                        .setCreateTime(LocalDateTime.now());
-                        //.setHeadImgUrl(headImgUrl);
+                        .setCreateTime(LocalDateTime.now())
+                        .setHeadImgUrl(headImgUrl);
                 weixinBaseInfoMapper.insert(weixinBaseInfo);
             } else {
                 weixinBaseInfo.setLastTime(weixinBaseInfo.getUpdateTime())
-                        .setUpdateTime(LocalDateTime.now());
-                        //.setHeadImgUrl(headImgUrl);
+                        .setUpdateTime(LocalDateTime.now())
+                        .setHeadImgUrl(headImgUrl);
                 weixinBaseInfoMapper.updateById(weixinBaseInfo);
             }
             return RespBean.sucess("登录成功",weixinBaseInfo);
