@@ -1,6 +1,7 @@
 package com.xxx.server.controller;
 
 
+import com.xxx.server.pojo.GroupChatParam;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinTemplate;
 import com.xxx.server.pojo.WeixinTemplateParam;
@@ -54,11 +55,11 @@ public class WeixinTemplateController {
         return RespBean.sucess("查询成功", weixinTemplateService.queryList(new WeixinTemplate().setTemplateName(templateName).setTemplateType(templateType)));
     }
 
-    /*@GetMapping("chatHandler")
-    public RespBean chatHandler() throws InterruptedException {
-        weixinTempalateService.chatHandler(Lists.newArrayList("开心", "快乐"), "广A", "广B", "test", null);
-        return RespBean.sucess("查询成功");
-    }*/
+    @ApiOperation("构建群发模板")
+    @PostMapping("groupChat")
+    public RespBean groupChat(@RequestBody GroupChatParam groupChat){
+        return RespBean.sucess(weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds()) ? "构建群发模板成功" : "构建群发模板失败");
+    }
 
     @ApiOperation("删除模板")
     @GetMapping("deleteByName")

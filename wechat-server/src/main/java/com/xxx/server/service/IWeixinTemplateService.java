@@ -31,4 +31,6 @@ public interface IWeixinTemplateService extends IService<WeixinTemplate> {
     List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate);
 
     boolean deleteByName(String templateName);
+
+    boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds);
 }

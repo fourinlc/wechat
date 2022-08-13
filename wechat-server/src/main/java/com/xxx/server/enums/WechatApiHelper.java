@@ -21,14 +21,7 @@ public enum WechatApiHelper {
     GET_CONTACT_LIST("分页获取联系人", "/v1/user/GetContactList", HttpMethod.POST),
     GET_CONTACT_DETAILS_LIST("批量获取好友详情","/v1/user/GetContactDetailsList", HttpMethod.POST),
     GET_PROFILE("获取个人信息", "/v1/user/GetProfile", HttpMethod.GET),
-    SEND_TEXT_MESSAGE("发送文字消息", "/v1/message/SendTextMessage", HttpMethod.POST){
-        @Override
-        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
-            // 模拟处理群发消息文字版本
-            log.info("开始发送文字消息：param ：{}，multiValueMap ：{}", param , multiValueMap);
-            return JSONObject.of("code", 200);
-        }
-    },
+    SEND_TEXT_MESSAGE("发送文字消息", "/v1/message/SendTextMessage", HttpMethod.POST),
     SEND_IMAGE_MESSAGE("发送图片", "/v1/message/SendImageMessage", HttpMethod.POST){
         @Override
         public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
@@ -43,7 +36,9 @@ public enum WechatApiHelper {
     ADD_CHATROOM_MEMBERS("添加进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST),
     INVITE_CHATROOM_MEMBERS("邀请好友进群", "/v1/group/InviteChatroomMembers", HttpMethod.POST),
     MOVETO_CONTRACT("保存群聊", "/v1/group/MoveToContract", HttpMethod.POST),
-    GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST);
+    /**包含群基本信息*/
+    GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST),
+    GET_CHATROOM_MEMBER_DETAIL("群成员列表", "/v1/group/GetChatroomMemberDetail", HttpMethod.POST);
 
     private String desc;
 
