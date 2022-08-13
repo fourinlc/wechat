@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 /**
  * 异步同步redis聊天消息
  */
-/*@Component*/
+@Component
 @AllArgsConstructor
 @Slf4j
 public class AsyncGroupLinkDetail implements CommandLineRunner {
