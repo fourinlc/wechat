@@ -1,21 +1,21 @@
 package com.xxx.server.service.impl;
 
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.LocalDateTimeUtil;
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
+import com.xxx.server.constant.ResConstant;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinTemplateMapper;
-import com.xxx.server.pojo.WeixinRelatedContacts;
-import com.xxx.server.pojo.WeixinTemplate;
-import com.xxx.server.pojo.WeixinTemplateDetail;
-import com.xxx.server.pojo.WeixinTemplateParam;
-import com.xxx.server.service.IWeixinFileService;
-import com.xxx.server.service.IWeixinRelatedContactsService;
-import com.xxx.server.service.IWeixinTemplateDetailService;
-import com.xxx.server.service.IWeixinTemplateService;
+import com.xxx.server.pojo.*;
+import com.xxx.server.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.rocketmq.common.message.Message;
@@ -59,59 +59,68 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Resource
     private IWeixinRelatedContactsService weixinRelatedContactsService;
 
+    @Resource
+    private IWeixinAsyncEventCallService weixinAsyncEventCallService;
+
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
-    // @Override
-    public void chatHandler(List<String> chatRoomNames, String wxId, List<Long> templateIds) throws InterruptedException {
+    @Value("${spring.rocketmq.tags.groupChat}")
+    private String groupChatTag;
+
+    @Override
+    public boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds) {
         // 查询其对应的子号信息
         WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(wxId);
         Assert.isTrue(StrUtil.isNotEmpty(weixinRelatedContacts.getRelated1()) && StrUtil.isNotEmpty(weixinRelatedContacts.getRelated2()), "请先关联好友再操作");
-        // 获取对应文件信息
-        List<WeixinTemplateDetail> list = weixinTemplateDetailService.list(Wrappers.lambdaQuery(WeixinTemplateDetail.class).in(WeixinTemplateDetail::getTemplateId, templateIds));
-        // 对具体模板进行分组
-        Map<Long, List<WeixinTemplateDetail>> WeixinTemplateDetailMap = list.stream().collect(Collectors.groupingBy(WeixinTemplateDetail::getTemplateId));
-        Collection<List<WeixinTemplateDetail>> values = WeixinTemplateDetailMap.values();
-        List<List<WeixinTemplateDetail>> lists = Lists.newArrayList(values);
-        for (int i = 0; i < chatRoomNames.size(); i++) {
-            String chatRoomName = chatRoomNames.get(i);
-            // 查询两个号码是否在群内
-            // step one 遍历模板列表
-            List<WeixinTemplateDetail> weixinTemplateDetails = lists.get(i % lists.size());
-            // 发送延时消息至rocketmq
-            JSONObject param = JSONObject.of("ToUserName", chatRoomName, "Delay", true);
-            MultiValueMap<String, String> query = new LinkedMultiValueMap<>();
-            Date delay = new Date();
-            // 每隔两秒执行一次
-            String code = WechatApiHelper.SEND_TEXT_MESSAGE.getCode();
-            for (WeixinTemplateDetail weixinTemplateDetail : weixinTemplateDetails) {
-                // 构造模板参数
-                // query.add("key", "A".equals(weixinTemplateDetail.getMsgRole()) ? keyA : keyB);
-                // 1默认为普通文字消息
-                if ("1".equals(weixinTemplateDetail.getMsgType())) {
-                    param.put("AtWxIDList", null);
-                    param.put("MsgType", 1);
-                    param.put("TextContent", weixinTemplateDetail.getMsgContent());
-                    // 发送文字信息
-                    // WechatApiHelper.SEND_TEXT_MESSAGE.invoke(param, query);
-                } else {
-                    param.put("TextContent", "");
-                    // 获取图片信息用于展示
-                    param.put("ImageContent", weixinTemplateDetail.getMsgContent());
-                    code = WechatApiHelper.SEND_IMAGE_MESSAGE.getCode();
-                }
-                // step two 校验AB账号登录状态,发送消息的时候是否会自动校验
-                JSONObject msg = JSONObject.of("param", param, "query", query, "code", code);
-                //TODO 是否有必要设置成异步消息,加快响应时间
-                Message message = new Message(consumerTopic, "", JSON.toJSONBytes(msg));
-                // 冲配置字典获取
-                delay = DateUtils.addSeconds(delay, 2);
+        // 构建回调参数，用于额外操作
+        WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
+        WeixinAsyncEventCall old = weixinAsyncEventCallService.getOne(
+                Wrappers.lambdaQuery(WeixinAsyncEventCall.class)
+                        .eq(WeixinAsyncEventCall::getWxId, wxId)
+                        .eq(WeixinAsyncEventCall::getEventType, ResConstant.ASYNC_EVENT_GROUP_CHAT)
+                        // 获取正在处理的该微信数据
+                        .eq(WeixinAsyncEventCall::getResultCode, "99"));
+        if (old != null) {
+            weixinAsyncEventCall = old;
+            // 获取计划完成时间参数
+        } else {
+            // 生成对应的批次号
+            weixinAsyncEventCall
+                    // 群邀请类型
+                    .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
+                    .setBusinessId(UUID.fastUUID().toString())
+                    .setWxId(wxId)
+                    // 设置99为处理中状态
+                    .setResultCode(99);
+            weixinAsyncEventCallService.saveOrUpdate(weixinAsyncEventCall);
+        }
+        // 后来数据添加至前边操作
+        Date delay = new Date();
+        if (weixinAsyncEventCall.getPlanTime() != null) {
+            // 重置老数据直接添加至队尾
+            delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
+        }
+        for (String chatRoomName : chatRoomNames) {
+            // 构建延时消息操作，暂时按照一个群5秒操作
+            JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
+                    "chatRoomName", chatRoomName,
+                    "templateIds", templateIds);
+            // 开始构建延时消息
+            Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
+            // 设置随机时间5-7秒执行时间
+            delay = RandomUtil.randomDate(delay, DateField.SECOND, 5, 7);
+            log.info("发送延时消息延时时间为：{}", delay);
+            try {
                 delayMqProducer.sendDelay(message, delay);
-                // 清空param、query参数
-                param.clear();
-                query.clear();
+            } catch (InterruptedException e) {
+                log.error("发送消息失败{}", e.getMessage());
+                return false;
             }
         }
+        // 设置预期完成时间，用于后置添加进来的数据处理
+        // 后边加入的微信进群操作需要
+        return weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
     }
 
      @Transactional

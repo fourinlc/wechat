@@ -30,5 +30,11 @@
       "type": "java.lang.String",
       "description": "进群tag"
     }
+  ,
+    {
+      "name": "spring.rocketmq.tags.groupChat",
+      "type": "java.lang.String",
+      "description": "群聊tag"
+    }
   ]
 }

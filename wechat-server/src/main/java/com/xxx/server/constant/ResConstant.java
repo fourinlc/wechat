@@ -17,5 +17,8 @@ public interface ResConstant {
     /**群邀请类型*/
     String ASYNC_EVENT_SCAN_INTO_URL_GROUP = "scanIntoUrlGroup";
 
+    /**群聊类型*/
+    String ASYNC_EVENT_GROUP_CHAT = "groupChat";
+
 
 }
