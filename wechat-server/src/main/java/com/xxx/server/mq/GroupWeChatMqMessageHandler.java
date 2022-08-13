@@ -56,7 +56,6 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
         }
         List<Long> templateIds = message.getList("templateIds", Long.class);
         // 验证小号是否存在群中，通过主号获取群成员列表方式
-        // TODO 增加校验该用户是否还在群中，从获取联系人列表查看自己是否在这个群里
         JSONObject jsonObject = JSONObject.of("ChatRoomName", chatRoomName);
         MultiValueMap<String, String> queryBase = new LinkedMultiValueMap<>();
         MultiValueMap<String, String> query = new LinkedMultiValueMap<>();
@@ -103,12 +102,11 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                 JSONObject o = (JSONObject) userNames.get(0);
                 String key = StrUtil.equals(o.getString("user_name"), wxIdA) ? keyA : keyB;
                 // TODO 使用单模板话术进行操作
-
             } else if (userNames.size() == 2) {
                 // 双人模板话术
                 // 维护至redis中，标识当前微信执行到的模板次序
-                Integer count = (Integer)redisTemplate.opsForValue().get( "count :: " + wxId);
-                if(count == null){
+                Integer count = (Integer) redisTemplate.opsForValue().get("count::" + wxId);
+                if (count == null) {
                     // 设置初始值
                     count = 0;
                 }
@@ -122,7 +120,6 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                 List<List<WeixinTemplateDetail>> lists = Lists.newArrayList(values);
                 // step one 遍历模板列表
                 List<WeixinTemplateDetail> weixinTemplateDetails = lists.get(count % lists.size());
-
                 // 每隔两秒执行一次
                 for (int i = 0; i < weixinTemplateDetails.size(); i++) {
                     List<JSONObject> jsonObjectList = Lists.newArrayList();
@@ -133,7 +130,7 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                     // 构造模板参数
                     query.add("key", "A".equals(weixinTemplateDetail.getMsgRole()) ? keyA : keyB);
                     // 查询当前号码是还在否在群内,还是通过主账号查询
-                    if(i > 0){
+                    if (i > 0) {
                         JSONObject chatroomMemberDetailVo = WechatApiHelper.GET_CHATROOM_MEMBER_DETAIL.invoke(jsonObject, queryBase);
                         if (ResConstant.CODE_SUCCESS.equals(chatroomMemberDetailVo.getInteger(ResConstant.CODE))) {
                             JSONArray memberDatasVo = chatroomMemberDetailVo.getJSONObject(ResConstant.DATA).getJSONObject("member_data").getJSONArray("chatroom_member_list");
@@ -145,7 +142,7 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                                 return userName.equals(jsonObject1.getString("user_name"));
                             }).count();
                             log.info("step three 再次校验子账号是否还在群内：{}", wxId);
-                            if(countVo == 0){
+                            if (countVo == 0) {
                                 // 结束本轮操作了
                                 return true;
                             }
@@ -196,8 +193,9 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                     // 清空param、query参数
                     paramVo.clear();
                     query.clear();
-                    redisTemplate.opsForValue().set( "count :: " + wxId, ++ count);
                 }
+                // 未出现异常时将群模板顺序移动至下一个节点
+                redisTemplate.opsForValue().set("count::" + wxId, ++count);
                 return true;
             }
         }

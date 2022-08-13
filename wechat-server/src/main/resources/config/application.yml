@@ -21,12 +21,13 @@ spring:
       connection-test-query: SELECT 1
   rocketmq:
     name-server-address: 180.76.163.53:9876
-    producer-group: producer-wechat
-    proxy-topic: wechat-delay
-    consumer-topic: wechat
-    consumer-group: wechat
+    producer-group: producer-wechatDev
+    proxy-topic: wechat-delayDev
+    consumer-topic: wechatDev
+    consumer-group: wechatDev
     tags:
-      qunGroup: scanIntoUrlGroup
+      qunGroup: scanIntoUrlGroupTag
+      groupChat: groupChatTag
   redis:
     password: iseeyou_123
     host: 120.77.218.220
@@ -35,6 +36,10 @@ spring:
   cache:
     type: redis   # 指定使用的缓存类型
   cache-names: contacts
+  jackson:
+    default-property-inclusion: ALWAYS
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*Mapper.xml
   type-aliases-package: com.xxx.server.pojo
