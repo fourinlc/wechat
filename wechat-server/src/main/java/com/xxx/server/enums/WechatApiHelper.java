@@ -22,14 +22,7 @@ public enum WechatApiHelper {
     GET_CONTACT_DETAILS_LIST("批量获取好友详情","/v1/user/GetContactDetailsList", HttpMethod.POST),
     GET_PROFILE("获取个人信息", "/v1/user/GetProfile", HttpMethod.GET),
     SEND_TEXT_MESSAGE("发送文字消息", "/v1/message/SendTextMessage", HttpMethod.POST),
-    SEND_IMAGE_MESSAGE("发送图片", "/v1/message/SendImageMessage", HttpMethod.POST){
-        @Override
-        public JSONObject invoke(Object param, MultiValueMap<String, String> multiValueMap) {
-            // 模拟处理群发消息文字版本
-            log.info("开始发送图片消息：param ：{}，multiValueMap ：{}", param , multiValueMap);
-            return JSONObject.of("code", 200);
-        }
-    },
+    SEND_IMAGE_MESSAGE("发送图片", "/v1/message/SendImageMessage", HttpMethod.POST),
     GET_REDIS_SYNC_MSG("长链接订阅同步消息", "/v1/user/GetRedisSyncMsg", HttpMethod.POST),
     NEW_SYNC_HISTORY_MESSAGE("短链接同步消息", "/v1/user/NewSyncHistoryMessage", HttpMethod.POST),
     SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST),

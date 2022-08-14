@@ -94,7 +94,13 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                                 // 获取正在处理的该微信数据
                                 .eq(WeixinAsyncEventCall::getResultCode, "99"));
                 if (old != null) {
-                    weixinAsyncEventCall = old;
+                    // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
+                    if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
+                        weixinAsyncEventCall = old;
+                    }else {
+                        // 更新这条异常数据
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResult("系统异常").setResultCode(500));
+                    }
                     // 获取计划完成时间参数
                 } else {
                     // 生成对应的批次号

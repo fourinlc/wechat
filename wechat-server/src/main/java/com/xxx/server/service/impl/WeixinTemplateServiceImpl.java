@@ -12,23 +12,19 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.constant.ResConstant;
-import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinTemplateMapper;
 import com.xxx.server.pojo.*;
 import com.xxx.server.service.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.rocketmq.common.message.Message;
 import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import javax.annotation.Resource;
-import java.util.Collection;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +66,17 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
 
     @Override
     public boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds) {
+        // 检查模板的准确性
+        List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class).in(WeixinTemplate::getTemplateId, templateIds));
+        Assert.isTrue(weixinTemplates.size() == templateIds.size(), "模板数据有误");
+        // 获取单人和双人模板，作为统一入参
+        Map<String, List<WeixinTemplate>> maps = weixinTemplates.stream().collect(Collectors.groupingBy(WeixinTemplate::getTemplateType));
+        JSONObject templateIdVos = JSONObject.of();
+        maps.forEach((templateType, weixinTemplateVos) ->{
+            List<Long> ids = weixinTemplateVos.stream().map(WeixinTemplate::getTemplateId).collect(Collectors.toList());
+            templateIdVos.put(templateType, ids);
+        });
+        Assert.isTrue(templateIdVos.size() == 2, "缺少模板类型");
         // 查询其对应的子号信息
         WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(wxId);
         Assert.isTrue(StrUtil.isNotEmpty(weixinRelatedContacts.getRelated1()) && StrUtil.isNotEmpty(weixinRelatedContacts.getRelated2()), "请先关联好友再操作");
@@ -82,8 +89,13 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         // 获取正在处理的该微信数据
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
         if (old != null) {
-            weixinAsyncEventCall = old;
-            // 获取计划完成时间参数
+            // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
+            if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
+                weixinAsyncEventCall = old;
+            }else {
+                // 更新这条异常数据
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResult("系统异常").setResultCode(500));
+            }
         } else {
             // 生成对应的批次号
             weixinAsyncEventCall
@@ -105,16 +117,17 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             // 构建延时消息操作，暂时按照一个群5秒操作
             JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
                     "chatRoomName", chatRoomName,
-                    "templateIds", templateIds);
+                    "templateIds", templateIdVos);
             // 开始构建延时消息
             Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
-            // 设置随机时间5-7秒执行时间
-            delay = RandomUtil.randomDate(delay, DateField.SECOND, 5, 7);
+            // 设置随机时间10-15秒执行时间
+            delay = RandomUtil.randomDate(delay, DateField.SECOND, 30, 45);
             log.info("发送延时消息延时时间为：{}", delay);
             try {
                 delayMqProducer.sendDelay(message, delay);
             } catch (InterruptedException e) {
                 log.error("发送消息失败{}", e.getMessage());
+                // TODO 已发送出去消息还是正常处理，记录下发送成功的群id信息，防止二次发送
                 return false;
             }
         }
