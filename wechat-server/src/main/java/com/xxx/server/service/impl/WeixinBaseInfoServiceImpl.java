@@ -215,7 +215,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             JSONObject detailJson = JSONObject.parseObject(o.toString());
             WeixinContactDetailedInfo contactDetailedInfo = new WeixinContactDetailedInfo();
             contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
-            System.out.println(detailJson.getString("nickName").length());
             if (detailJson.getString("nickName").length() > 7) {
                 contactDetailedInfo.setUserName(detailJson.getString("nickName").substring(8,detailJson.getString("nickName").length()-2));
             }
