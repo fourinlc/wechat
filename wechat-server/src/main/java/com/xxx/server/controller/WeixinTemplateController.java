@@ -58,7 +58,7 @@ public class WeixinTemplateController {
     @ApiOperation("构建群发模板")
     @PostMapping("groupChat")
     public RespBean groupChat(@RequestBody GroupChatParam groupChat){
-        return RespBean.sucess(weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds()) ? "构建群发模板成功" : "构建群发模板失败");
+        return RespBean.sucess(weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds(), groupChat.getFixedTime()) ? "构建群发模板成功" : "构建群发模板失败");
     }
 
     @ApiOperation("删除模板")

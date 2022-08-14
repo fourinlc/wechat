@@ -9,6 +9,7 @@ import com.xxx.server.pojo.WeixinTemplateParam;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -32,5 +33,5 @@ public interface IWeixinTemplateService extends IService<WeixinTemplate> {
 
     boolean deleteByName(String templateName);
 
-    boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds);
+    boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime);
 }

@@ -65,14 +65,14 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     private String groupChatTag;
 
     @Override
-    public boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds) {
+    public boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime) {
         // 检查模板的准确性
         List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class).in(WeixinTemplate::getTemplateId, templateIds));
         Assert.isTrue(weixinTemplates.size() == templateIds.size(), "模板数据有误");
         // 获取单人和双人模板，作为统一入参
         Map<String, List<WeixinTemplate>> maps = weixinTemplates.stream().collect(Collectors.groupingBy(WeixinTemplate::getTemplateType));
         JSONObject templateIdVos = JSONObject.of();
-        maps.forEach((templateType, weixinTemplateVos) ->{
+        maps.forEach((templateType, weixinTemplateVos) -> {
             List<Long> ids = weixinTemplateVos.stream().map(WeixinTemplate::getTemplateId).collect(Collectors.toList());
             templateIdVos.put(templateType, ids);
         });
@@ -88,15 +88,36 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         .eq(WeixinAsyncEventCall::getEventType, ResConstant.ASYNC_EVENT_GROUP_CHAT)
                         // 获取正在处理的该微信数据
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
+        Date delay = new Date();
         if (old != null) {
             // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
             if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
                 weixinAsyncEventCall = old;
-            }else {
+            } else {
                 // 更新这条异常数据
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResult("系统异常").setResultCode(500));
+                if(fixedTime != null){
+                    if (fixedTime.compareTo(new Date()) >  0) {
+                        delay = fixedTime;
+                    }
+                }
+                // 生成对应的批次号
+                weixinAsyncEventCall
+                        // 群邀请类型
+                        .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
+                        .setBusinessId(UUID.fastUUID().toString())
+                        .setWxId(wxId)
+                        // 设置99为处理中状态
+                        .setResultCode(99);
+                weixinAsyncEventCallService.save(weixinAsyncEventCall);
             }
         } else {
+            // 该微信首次创建话术，直接延时至指定时间
+            if(fixedTime != null){
+                if (fixedTime.compareTo(new Date()) >  0) {
+                    delay = fixedTime;
+                }
+            }
             // 生成对应的批次号
             weixinAsyncEventCall
                     // 群邀请类型
@@ -105,10 +126,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                     .setWxId(wxId)
                     // 设置99为处理中状态
                     .setResultCode(99);
-            weixinAsyncEventCallService.saveOrUpdate(weixinAsyncEventCall);
+            weixinAsyncEventCallService.save(weixinAsyncEventCall);
         }
-        // 后来数据添加至前边操作
-        Date delay = new Date();
         if (weixinAsyncEventCall.getPlanTime() != null) {
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
@@ -121,7 +140,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             // 开始构建延时消息
             Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
             // 设置随机时间10-15秒执行时间
-            delay = RandomUtil.randomDate(delay, DateField.SECOND, 30, 45);
+            delay = RandomUtil.randomDate(delay, DateField.SECOND, 12, 15);
             log.info("发送延时消息延时时间为：{}", delay);
             try {
                 delayMqProducer.sendDelay(message, delay);
@@ -136,8 +155,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         return weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
     }
 
-     @Transactional
-    public boolean add(WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails){
+    @Transactional
+    public boolean add(WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails) {
         if (save(weixinTemplate)) {
             // 填充id
             for (WeixinTemplateDetail weixinTemplateDetail : weixinTemplateDetails) {
@@ -149,7 +168,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     }
 
     @Transactional
-    public boolean update( WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails){
+    public boolean update(WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails) {
         if (updateById(weixinTemplate)) {
             // 填充id,删除老数据
             weixinTemplateDetailService.removeByMap(JSONObject.of("template_id", weixinTemplate.getTemplateId()));
@@ -161,7 +180,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         return weixinTemplateDetailService.saveBatch(weixinTemplateDetails);
     }
 
-    public List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate){
+    public List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate) {
         List<WeixinTemplateParam> weixinTemplateParams = Lists.newArrayList();
         List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class)
                 .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateName()), WeixinTemplate::getTemplateName, weixinTemplate.getTemplateName())
@@ -169,7 +188,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         for (WeixinTemplate weixinTemplateVo : weixinTemplates) {
             WeixinTemplateParam weixinTemplateParam = new WeixinTemplateParam();
             weixinTemplateParam.setWeixinTemplate(weixinTemplateVo);
-            if(weixinTemplateVo != null){
+            if (weixinTemplateVo != null) {
                 // 查询其模板详情
                 weixinTemplateParam.setWeixinTemplateDetailList(weixinTemplateDetailService.listByMap(JSONObject.of("template_id", weixinTemplateVo.getTemplateId())));
             }
@@ -179,10 +198,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     }
 
     @Transactional
-    public boolean deleteByName(String templateName){
-         // 查询数据
+    public boolean deleteByName(String templateName) {
+        // 查询数据
         WeixinTemplate weixinTemplate = getOne(Wrappers.lambdaQuery(WeixinTemplate.class).eq(WeixinTemplate::getTemplateName, templateName));
-        if(weixinTemplate == null) return false;
+        if (weixinTemplate == null) return false;
         if (removeByMap(JSONObject.of("template_name", templateName))) {
             // 删除模板内容
             return weixinTemplateDetailService.removeByMap(JSONObject.of("template_id", weixinTemplate.getTemplateId()));

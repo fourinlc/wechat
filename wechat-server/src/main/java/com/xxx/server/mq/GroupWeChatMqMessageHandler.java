@@ -193,6 +193,7 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
             }
             // 未出现异常时将群模板顺序移动至下一个节点
             redisTemplate.opsForValue().set("count::"  + type + wxId, ++count);
+            weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setRealTime(LocalDateTime.now()).setResultCode(200).setResult("群发成功"));
             return true;
         }
         // 异常状态

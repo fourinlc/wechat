@@ -7,7 +7,7 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://120.77.218.220:3306/wechat_mmtls?useUnicode=true&useSSL=false&characterEncoding=utf8
+    url: jdbc:mysql://120.77.218.220:3306/wechat_mmtls?useUnicode=true&useSSL=false&characterEncoding=utf8&&serverTimezone=GMT%2B8
     username: root
     password: 12345678
     hikari:
@@ -21,10 +21,10 @@ spring:
       connection-test-query: SELECT 1
   rocketmq:
     name-server-address: 180.76.163.53:9876
-    producer-group: producer-wechatDev
-    proxy-topic: wechat-delayDev
-    consumer-topic: wechatDev
-    consumer-group: wechatDev
+    producer-group: producer-wechat
+    proxy-topic: wechat-delay
+    consumer-topic: wechat
+    consumer-group: wechat
     tags:
       qunGroup: scanIntoUrlGroupTag
       groupChat: groupChatTag
