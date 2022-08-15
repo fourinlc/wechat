@@ -97,9 +97,18 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                     // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
                     if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
                         weixinAsyncEventCall = old;
-                    }else {
+                    } else {
                         // 更新这条异常数据
                         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResult("系统异常").setResultCode(500));
+                        // 生成对应的批次号
+                        weixinAsyncEventCall = new WeixinAsyncEventCall()
+                                // 群邀请类型
+                                .setEventType(ResConstant.ASYNC_EVENT_SCAN_INTO_URL_GROUP)
+                                .setBusinessId(UUID.fastUUID().toString())
+                                .setWxId(wxId)
+                                // 设置99为处理中状态
+                                .setResultCode(99);
+                        weixinAsyncEventCallService.save(weixinAsyncEventCall);
                     }
                     // 获取计划完成时间参数
                 } else {
@@ -111,7 +120,7 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                             .setWxId(wxId)
                             // 设置99为处理中状态
                             .setResultCode(99);
-                    weixinAsyncEventCallService.saveOrUpdate(weixinAsyncEventCall);
+                    weixinAsyncEventCallService.save(weixinAsyncEventCall);
                 }
                 List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
                 // Assert.isTrue(scanIntoUrlGroupTimes.size() >= 2, "系统进群消息配置异常");

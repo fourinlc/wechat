@@ -101,8 +101,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         delay = fixedTime;
                     }
                 }
-                // 生成对应的批次号
-                weixinAsyncEventCall
+                // 生成对应的批次号，重新赋值
+                weixinAsyncEventCall = new WeixinAsyncEventCall()
                         // 群邀请类型
                         .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
                         .setBusinessId(UUID.fastUUID().toString())
@@ -140,7 +140,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             // 开始构建延时消息
             Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
             // 设置随机时间10-15秒执行时间
-            delay = RandomUtil.randomDate(delay, DateField.SECOND, 12, 15);
+            delay = RandomUtil.randomDate(delay, DateField.SECOND, 32, 45);
             log.info("发送延时消息延时时间为：{}", delay);
             try {
                 delayMqProducer.sendDelay(message, delay);
