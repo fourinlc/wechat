@@ -65,7 +65,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     private String groupChatTag;
 
     @Override
-    public boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime) {
+    public JSONObject groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime) {
+        JSONObject result = JSONObject.of("code", 200, "msg", "发送消息成功");
+        // 增加开始时间返回以及预计完成时间
         // 检查模板的准确性
         List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class).in(WeixinTemplate::getTemplateId, templateIds));
         Assert.isTrue(weixinTemplates.size() == templateIds.size(), "模板数据有误");
@@ -90,11 +92,19 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
         Date delay = new Date();
         if (old != null) {
-            // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
+
             if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
-                weixinAsyncEventCall = old;
+                // 直接提醒还存在待完成的数据，返回开始预计开始时间和预计完成时间
+                log.info("该微信上次群聊还没完成：{}", wxId);
+                result.put("code", 500);
+                result.put("planTime", weixinAsyncEventCall.getPlanTime());
+                result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
+                result.put("msg", "该微信上次群聊还没完成");
+                return result;
+                // weixinAsyncEventCall = old;
             } else {
                 // 更新这条异常数据
+                // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResult("系统异常").setResultCode(500));
                 if(fixedTime != null){
                     if (fixedTime.compareTo(new Date()) >  0) {
@@ -107,6 +117,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
                         .setBusinessId(UUID.fastUUID().toString())
                         .setWxId(wxId)
+                        .setPlanStartTime(LocalDateTimeUtil.of(delay))
                         // 设置99为处理中状态
                         .setResultCode(99);
                 weixinAsyncEventCallService.save(weixinAsyncEventCall);
@@ -124,10 +135,14 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                     .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
                     .setBusinessId(UUID.fastUUID().toString())
                     .setWxId(wxId)
+                    .setPlanStartTime(LocalDateTimeUtil.of(delay))
                     // 设置99为处理中状态
                     .setResultCode(99);
             weixinAsyncEventCallService.save(weixinAsyncEventCall);
         }
+        // 组装消息体
+        result.put("planTime", weixinAsyncEventCall.getPlanTime());
+        result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
         if (weixinAsyncEventCall.getPlanTime() != null) {
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
@@ -145,14 +160,17 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             try {
                 delayMqProducer.sendDelay(message, delay);
             } catch (InterruptedException e) {
-                log.error("发送消息失败{}", e.getMessage());
+                log.error("mq发送延迟消息失败{}，wxId:{}", e.getMessage(), wxId);
+                result.put("code", 500);
+                result.put("msg", "mq发送延迟消息失败");
                 // TODO 已发送出去消息还是正常处理，记录下发送成功的群id信息，防止二次发送
-                return false;
+                return result;
             }
         }
         // 设置预期完成时间，用于后置添加进来的数据处理
         // 后边加入的微信进群操作需要
-        return weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
+        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
+        return result;
     }
 
     @Transactional

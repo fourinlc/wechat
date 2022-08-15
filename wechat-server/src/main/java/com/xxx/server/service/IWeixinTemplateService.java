@@ -1,5 +1,6 @@
 package com.xxx.server.service;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xxx.server.annotation.valid.AddValid;
 import com.xxx.server.annotation.valid.UpdateValid;
@@ -33,5 +34,5 @@ public interface IWeixinTemplateService extends IService<WeixinTemplate> {
 
     boolean deleteByName(String templateName);
 
-    boolean groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime);
+    JSONObject groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime);
 }

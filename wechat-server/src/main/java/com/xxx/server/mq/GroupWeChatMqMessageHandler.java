@@ -1,5 +1,6 @@
 package com.xxx.server.mq;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONArray;
@@ -18,29 +19,39 @@ import com.xxx.server.service.IWeixinTemplateDetailService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import javax.annotation.Resource;
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component("groupChatTag")
 @Slf4j
-@AllArgsConstructor
 public class GroupWeChatMqMessageHandler implements MqMessageHandler {
 
+    @Resource
     private IWeixinAsyncEventCallService weixinAsyncEventCallService;
 
+    @Resource
     private IWeixinTemplateDetailService weixinTemplateDetailService;
 
+    @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Resource
     private IWeixinBaseInfoService weixinBaseInfoService;
 
+    @Resource
     private IWeixinRelatedContactsService weixinRelatedContactsService;
+
+    @Value("${wechat.file.basePath}")
+    private String basePath;
 
     @Override
     public boolean process(JSONObject message) {
@@ -166,11 +177,12 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                         }
                     }
                 } else {
-                    jsonObjectList.add(param);
+                    /*jsonObjectList.add(param);*/
                     paramVo = JSONObject.of("MsgItem", jsonObjectList);
                     param.put("TextContent", "");
                     // 获取图片信息用于展示
-                    param.put("ImageContent", weixinTemplateDetail.getMsgContent());
+                    File file = new File(basePath + weixinTemplateDetail.getMsgContent());
+                    param.put("ImageContent", FileUtil.readBytes(file));
                     JSONObject imageMessage = WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(paramVo, query);
                     if (!ResConstant.CODE_SUCCESS.equals(imageMessage.getInteger(ResConstant.CODE))) {
                         // 发送消息失败，更新队列状态为失败，终止整个流程
@@ -192,7 +204,7 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                 query.clear();
             }
             // 未出现异常时将群模板顺序移动至下一个节点
-            redisTemplate.opsForValue().set("count::"  + type + wxId, ++count);
+            redisTemplate.opsForValue().set("count::" + type + wxId, ++count);
             weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setRealTime(LocalDateTime.now()).setResultCode(200).setResult("群发成功"));
             return true;
         }

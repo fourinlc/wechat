@@ -21,6 +21,10 @@ spring:
       connection-test-query: SELECT 1
   rocketmq:
     name-server-address: 180.76.163.53:9876
+#    producer-group: producer-wechatDev
+#    proxy-topic: wechat-delayDev
+#    consumer-topic: wechatDev
+#    consumer-group: wechatDev
     producer-group: producer-wechat
     proxy-topic: wechat-delay
     consumer-topic: wechat
@@ -49,7 +53,8 @@ mybatis-plus:
 wechat:
   rootUrl: http://27.151.13.31:18080
   file:
-    basePath: /home/xieyi/xieyi/image
+#    basePath: D:/images/
+    basePath: /home/lighthouse/wechat/images/
 
 logging:
   level:
