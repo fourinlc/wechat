@@ -58,6 +58,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Resource
     private IWeixinAsyncEventCallService weixinAsyncEventCallService;
 
+    @Resource
+    private IWeixinTemplateSendDetailService weixinTemplateSendDetailService;
+
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
@@ -147,6 +150,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
         }
+        // List<WeixinTemplateSendDetail> weixinTemplateSendDetails = Lists.newArrayList();
         for (String chatRoomName : chatRoomNames) {
             // 构建延时消息操作，暂时按照一个群5秒操作
             JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
@@ -159,11 +163,21 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             log.info("发送延时消息延时时间为：{}", delay);
             try {
                 delayMqProducer.sendDelay(message, delay);
+                // 记录已操作过的群聊信息，并标识为正在处理中
+                WeixinTemplateSendDetail weixinTemplateSendDetail =
+                        new WeixinTemplateSendDetail()
+                                .setCreateTime(LocalDateTime.now())
+                                .setWxId(wxId)
+                                .setChatRoomId(chatRoomName)
+                                .setStatus("99")
+                                .setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId());
+                // 先保存数据防止批量保存数据过多
+                weixinTemplateSendDetailService.save(weixinTemplateSendDetail);
+                // weixinTemplateSendDetails.add(weixinTemplateSendDetail);
             } catch (InterruptedException e) {
                 log.error("mq发送延迟消息失败{}，wxId:{}", e.getMessage(), wxId);
                 result.put("code", 500);
                 result.put("msg", "mq发送延迟消息失败");
-                // TODO 已发送出去消息还是正常处理，记录下发送成功的群id信息，防止二次发送
                 return result;
             }
         }

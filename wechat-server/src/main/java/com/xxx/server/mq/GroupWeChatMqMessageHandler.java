@@ -8,15 +8,8 @@ import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxx.server.constant.ResConstant;
 import com.xxx.server.enums.WechatApiHelper;
-import com.xxx.server.pojo.WeixinAsyncEventCall;
-import com.xxx.server.pojo.WeixinBaseInfo;
-import com.xxx.server.pojo.WeixinRelatedContacts;
-import com.xxx.server.pojo.WeixinTemplateDetail;
-import com.xxx.server.service.IWeixinAsyncEventCallService;
-import com.xxx.server.service.IWeixinBaseInfoService;
-import com.xxx.server.service.IWeixinRelatedContactsService;
-import com.xxx.server.service.IWeixinTemplateDetailService;
-import lombok.AllArgsConstructor;
+import com.xxx.server.pojo.*;
+import com.xxx.server.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +43,12 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
     @Resource
     private IWeixinRelatedContactsService weixinRelatedContactsService;
 
+    @Resource
+    private IWeixinTemplateSendDetailService weixinTemplateSendDetailService;
+
+    @Resource
+    private IWeixinTemplateService weixinTemplateService;
+
     @Value("${wechat.file.basePath}")
     private String basePath;
 
@@ -58,8 +57,20 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
         Long asyncEventCallId = message.getLong("asyncEventCallId");
         String chatRoomName = message.getString("chatRoomName");
         WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
-        if (Objects.isNull(weixinAsyncEventCall) || weixinAsyncEventCall.getResultCode() == 500 || StrUtil.isEmpty(chatRoomName)) {
+        if(Objects.isNull(weixinAsyncEventCall) || StrUtil.isEmpty(chatRoomName)){
             log.info("数据格式不正确,忽略该数据流程提前结束:{}", message);
+            return true;
+        }
+        WeixinTemplateSendDetail weixinTemplateSendDetail  = weixinTemplateSendDetailService.getOne(Wrappers.lambdaQuery(WeixinTemplateSendDetail.class)
+                .eq(WeixinTemplateSendDetail::getAsyncEventCallId, weixinAsyncEventCall.getAsyncEventCallId())
+                .eq(WeixinTemplateSendDetail::getWxId, weixinAsyncEventCall.getWxId())
+                .eq(WeixinTemplateSendDetail::getChatRoomId, chatRoomName));
+        if (weixinAsyncEventCall.getResultCode() == 500) {
+            log.info("数据格式不正确,忽略该数据流程提前结束:{}", message);
+            // 更新话术详情
+            if (weixinTemplateSendDetail != null){
+                weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult(weixinAsyncEventCall.getResult()));
+            }
             return true;
         }
         JSONObject templateIds = message.getJSONObject("templateIds");
@@ -86,14 +97,17 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
             String wxIdB = weixinRelatedContacts.getRelated2();
             // 获取对应的key值
             WeixinBaseInfo weixinBaseInfoA = weixinBaseInfoService.getById(wxIdA);
-            if (weixinBaseInfoA == null || StrUtil.isEmpty(weixinBaseInfoA.getKey())) {
-                log.error("该微信信息不存在wxIdA：{}", wxIdA);
+            if (weixinBaseInfoA == null || StrUtil.isEmpty(weixinBaseInfoA.getKey()) || !StrUtil.equals(weixinBaseInfoA.getState(), "1")) {
+                log.error("该子账号微信信息不存在或者未登录系统wxId：{}", wxIdA);
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("该子账号微信信息不存在或者未登录系统wxId" + wxIdA));
+                // 单个好友不在线或者未登录状态
                 return true;
             }
             String keyA = weixinBaseInfoA.getKey();
             WeixinBaseInfo weixinBaseInfoB = weixinBaseInfoService.getById(wxIdB);
-            if (weixinBaseInfoB == null || StrUtil.isEmpty(weixinBaseInfoB.getKey())) {
-                log.error("该微信信息不存在wxIdB：{}", wxIdB);
+            if (weixinBaseInfoB == null || StrUtil.isEmpty(weixinBaseInfoB.getKey()) || !StrUtil.equals(weixinBaseInfoA.getState(), "1")) {
+                log.error("该子账号微信信息不存在或者未登录系统wxId：{}", wxIdB);
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("该子账号微信信息不存在或者未登录系统wxId" + wxIdB));
                 return true;
             }
             String keyB = weixinBaseInfoB.getKey();
@@ -106,6 +120,7 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
             }).collect(Collectors.toList());
             if (userNames.size() == 0) {
                 log.info("该群不包含子账户信息：{} {}", wxId, chatRoomName);
+                weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("该群不包含子账户信息"));
                 return true;
             }
             String type = userNames.size() == 1 ? "single" : "double";
@@ -124,6 +139,13 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
             List<List<WeixinTemplateDetail>> lists = Lists.newArrayList(values);
             // step one 遍历模板列表
             List<WeixinTemplateDetail> weixinTemplateDetails = lists.get(count % lists.size());
+            // 获取模板id和模板名称
+            WeixinTemplate weixinTemplate = new WeixinTemplate();
+            if(weixinTemplateDetails.size() > 0){
+                WeixinTemplateDetail weixinTemplateDetail1 = weixinTemplateDetails.get(0);
+                weixinTemplate = weixinTemplateService.getById(weixinTemplateDetail1.getTemplateId());
+                log.info("当前模板信息：{}", weixinTemplate);
+            }
             log.info("当前count值：{}", count);
             // 每隔两秒执行一次
             for (int i = 0; i < weixinTemplateDetails.size(); i++) {
@@ -133,7 +155,8 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                 JSONObject paramVo = JSONObject.of("MsgItem", jsonObjectList);
                 WeixinTemplateDetail weixinTemplateDetail = weixinTemplateDetails.get(i);
                 // 构造模板参数
-                query.add("key", "A".equals(weixinTemplateDetail.getMsgRole()) ? keyA : keyB);
+                String key = "A".equals(weixinTemplateDetail.getMsgRole()) ? keyA : keyB;
+                query.add("key", key);
                 // 查询当前号码是还在否在群内,还是通过主账号查询
                 if (i > 0) {
                     JSONObject chatroomMemberDetailVo = WechatApiHelper.GET_CHATROOM_MEMBER_DETAIL.invoke(jsonObject, queryBase);
@@ -148,9 +171,16 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                         }).count();
                         log.info("step three 再次校验子账号是否还在群内：{}", wxId);
                         if (countVo == 0) {
-                            // 结束本轮操作了
+                            // 二次校验时子账号被踢出群聊，结束单个群操作
+                            log.error("二次校验时子账号被移除群聊: key {}", key);
+                            weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("子账号被移除群聊" + key));
                             return true;
                         }
+                    } else {
+                        log.error("主账号二次校验时异常 wxId:{}, 结束本轮操作", wxId);
+                        weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("主账号二次校验时异常wxId" + wxId));
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("主账号二次校验时异常").setRealTime(LocalDateTime.now()));
+                        return true;
                     }
                 }
                 // 1默认为普通文字消息
@@ -162,9 +192,9 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                     JSONObject textMessage = WechatApiHelper.SEND_TEXT_MESSAGE.invoke(paramVo, query);
                     log.info("step four 发送文本消息：当前时间：{}，发送内容：{}， 返回值：{}，", new Date(), weixinTemplateDetail.getMsgContent(), textMessage);
                     if (!ResConstant.CODE_SUCCESS.equals(textMessage.getInteger(ResConstant.CODE))) {
-                        // 发送消息失败，更新队列状态为失败，终止整个流程
-                        weixinAsyncEventCall.setResultCode(500).setRealTime(LocalDateTime.now()).setResult("发送消息失败");
-                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
+                        log.error("子账号发送文本信息异常 key:{}, 终止整个流程", key);
+                        weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("子账号发送文本信息异常key" + key));
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("子账号发送文本信息异常key:" + key).setRealTime(LocalDateTime.now()));
                         return true;
                     } else {
                         // 随机延时两秒进行下一个话术操作
@@ -177,7 +207,6 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                         }
                     }
                 } else {
-                    /*jsonObjectList.add(param);*/
                     paramVo = JSONObject.of("MsgItem", jsonObjectList);
                     param.put("TextContent", "");
                     // 获取图片信息用于展示
@@ -185,10 +214,10 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                     param.put("ImageContent", FileUtil.readBytes(file));
                     JSONObject imageMessage = WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(paramVo, query);
                     if (!ResConstant.CODE_SUCCESS.equals(imageMessage.getInteger(ResConstant.CODE))) {
-                        // 发送消息失败，更新队列状态为失败，终止整个流程
-                        weixinAsyncEventCall.setResultCode(500).setRealTime(LocalDateTime.now()).setResult("进群操作失败");
-                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
-                        // 重置计数器
+                        log.error("子账号发送图片信息异常 key:{}, 终止整个流程", key);
+                        weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("子账号发送图片信息异常key" + key));
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("子账号发送图片信息异常key:" + key).setRealTime(LocalDateTime.now()));
+                        // 重置计数器模板计数器
                         return true;
                     } else {
                         // 随机延时两秒进行下一个话术操作
@@ -205,11 +234,23 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
             }
             // 未出现异常时将群模板顺序移动至下一个节点
             redisTemplate.opsForValue().set("count::" + type + wxId, ++count);
-            weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setRealTime(LocalDateTime.now()).setResultCode(200).setResult("群发成功"));
+            // 当前时间大于计划完成时间
+            if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) > 0) {
+                log.info("该轮群发完成");
+                weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setTemplateId(weixinTemplate.getTemplateId()).setStatus("200").setResult("该批次群发完成"));
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("群发完成").setRealTime(LocalDateTime.now()));
+                // 重置count
+                redisTemplate.opsForValue().set("count::double" + wxId, 0);
+                redisTemplate.opsForValue().set("count::single" + wxId, 0);
+            }
+            return true;
+        } else {
+            // 账号本身异常或者其他原因,先记录日志
+            log.info("查询群成员信息异常返回：wxId :{},:{}", wxId, chatroomMemberDetail);
+            // 异常状态
+            weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("主号查询群成员信息异常").setRealTime(LocalDateTime.now()));
+            weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("主号查询群成员信息异常"));
             return true;
         }
-        // 异常状态
-        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("群发失败"));
-        return true;
     }
 }

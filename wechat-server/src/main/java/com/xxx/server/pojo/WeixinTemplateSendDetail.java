@@ -1,16 +1,17 @@
 package com.xxx.server.pojo;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.TableField;
-import java.io.Serializable;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -51,6 +52,9 @@ public class WeixinTemplateSendDetail implements Serializable {
     @ApiModelProperty(value = "处理状态99：处理中，0，处理失败，1，处理成功")
     private String status;
 
+    @ApiModelProperty(value = "异常描述")
+    private String result;
+
     @ApiModelProperty(value = "完成时间")
     @TableField("finish_time")
     private LocalDateTime finishTime;
@@ -58,6 +62,8 @@ public class WeixinTemplateSendDetail implements Serializable {
     @ApiModelProperty(value = "创建时间")
     @TableField("create_time")
     private LocalDateTime createTime;
+
+    private String wxId;
 
 
 }
