@@ -17,8 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * <p>
@@ -77,41 +76,28 @@ public class WeixinRelatedContactsServiceImpl extends ServiceImpl<WeixinRelatedC
     public RespBean getRelatedFriends(String wxId) {
         WeixinRelatedContacts relatedContacts = weixinRelatedContactsMapper.selectOne(Wrappers.lambdaQuery(WeixinRelatedContacts.class).eq(WeixinRelatedContacts::getWxId,wxId));
         //获取微信名和头像
-        MultiValueMap<String,String> respInfoMap = new LinkedMultiValueMap<>();
-        respInfoMap.add("wxid",relatedContacts.getWxId());
+        Map<String,String> respInfoMap = new HashMap<>();
+        respInfoMap.put("wxid",relatedContacts.getWxId());
         ArrayList<String> contactList = new ArrayList<>();
         if (!relatedContacts.getRelated1().equals("")) {
             contactList.add(relatedContacts.getRelated1());
-            respInfoMap.add("related1",relatedContacts.getRelated1());
+            respInfoMap.put("related1",relatedContacts.getRelated1());
         }
         if (!relatedContacts.getRelated2().equals("")) {
             contactList.add(relatedContacts.getRelated2());
-            respInfoMap.add("related2",relatedContacts.getRelated2());
+            respInfoMap.put("related2",relatedContacts.getRelated2());
         }
-        WeixinBaseInfo weixinBaseInfo =  weixinBaseInfoMapper.selectById(wxId);
+
         if (contactList.size() != 0) {
-            MultiValueMap<String,String> getDetailsListMap = new LinkedMultiValueMap<>();
-            getDetailsListMap.add("key",weixinBaseInfo.getKey());
-            JSONObject getDetailersObject = new JSONObject();
-            getDetailersObject.put("UserNames",contactList);
-            JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsListMap)));
-            String code = "";
-            if(detailsJson.containsKey("Code")){
-                code = detailsJson.getString("Code");
-            }else if(detailsJson.containsKey("code")){
-                code = detailsJson.getString("code");
+            if (respInfoMap.containsKey("related1")) {
+                WeixinBaseInfo weixinBaseInfo =  weixinBaseInfoMapper.selectById(respInfoMap.get("related1"));
+                respInfoMap.put("nickName1",weixinBaseInfo.getNickname());
+                respInfoMap.put("smallHeadImgUrl1",weixinBaseInfo.getHeadImgUrl());
             }
-            if(!code.equals("200")){
-                return RespBean.error("获取好友详情失败",detailsJson);
-            }
-            JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
-            JSONObject detailJson1 = JSONObject.parseObject(detailsList.get(0).toString());
-            respInfoMap.add("nickName1",detailJson1.getString("nickName").substring(8, detailJson1.getString("nickName").length() - 2));
-            respInfoMap.add("smallHeadImgUrl1",detailJson1.getString("smallHeadImgUrl"));
-            if (contactList.size() == 2) {
-                JSONObject detailJson2 = JSONObject.parseObject(detailsList.get(1).toString());
-                respInfoMap.add("nickName2",detailJson2.getString("nickName").substring(8, detailJson1.getString("nickName").length() - 2));
-                respInfoMap.add("smallHeadImgUrl2",detailJson2.getString("smallHeadImgUrl"));
+            if (respInfoMap.containsKey("related2")) {
+                WeixinBaseInfo weixinBaseInfo =  weixinBaseInfoMapper.selectById(respInfoMap.get("related2"));
+                respInfoMap.put("nickName2",weixinBaseInfo.getNickname());
+                respInfoMap.put("smallHeadImgUrl2",weixinBaseInfo.getHeadImgUrl());
             }
         }
         return RespBean.sucess("查询成功",respInfoMap);
