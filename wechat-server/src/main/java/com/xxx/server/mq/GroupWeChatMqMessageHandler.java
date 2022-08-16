@@ -91,6 +91,7 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
         JSONObject chatroomMemberDetail = WechatApiHelper.GET_CHATROOM_MEMBER_DETAIL.invoke(jsonObject, queryBase);
         if (ResConstant.CODE_SUCCESS.equals(chatroomMemberDetail.getInteger(ResConstant.CODE))) {
             JSONArray memberDatas = chatroomMemberDetail.getJSONObject(ResConstant.DATA).getJSONObject("member_data").getJSONArray("chatroom_member_list");
+
             // 先获取对应的子账号列表
             WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(wxId);
             String wxIdA = weixinRelatedContacts.getRelated1();
@@ -101,16 +102,20 @@ public class GroupWeChatMqMessageHandler implements MqMessageHandler {
                 log.error("该子账号微信信息不存在或者未登录系统wxId：{}", wxIdA);
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("该子账号微信信息不存在或者未登录系统wxId" + wxIdA));
                 // 单个好友不在线或者未登录状态
+                weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult(weixinAsyncEventCall.getResult()));
                 return true;
             }
             String keyA = weixinBaseInfoA.getKey();
+
             WeixinBaseInfo weixinBaseInfoB = weixinBaseInfoService.getById(wxIdB);
             if (weixinBaseInfoB == null || StrUtil.isEmpty(weixinBaseInfoB.getKey()) || !StrUtil.equals(weixinBaseInfoA.getState(), "1")) {
                 log.error("该子账号微信信息不存在或者未登录系统wxId：{}", wxIdB);
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("该子账号微信信息不存在或者未登录系统wxId" + wxIdB));
+                weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult(weixinAsyncEventCall.getResult()));
                 return true;
             }
             String keyB = weixinBaseInfoB.getKey();
+
             List<String> wxIds = Lists.newArrayList(wxIdA, wxIdB);
             // 校验这两个子账号是否还在群聊中
             List<Object> userNames = memberDatas.stream().filter(o -> {

@@ -63,7 +63,6 @@ public class WeixinTemplateSendDetail implements Serializable {
     @TableField("create_time")
     private LocalDateTime createTime;
 
+    @TableField("wxId")
     private String wxId;
-
-
 }

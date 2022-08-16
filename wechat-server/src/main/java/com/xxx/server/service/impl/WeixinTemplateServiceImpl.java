@@ -61,6 +61,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Resource
     private IWeixinTemplateSendDetailService weixinTemplateSendDetailService;
 
+    @Resource
+    private IWeixinBaseInfoService weixinBaseInfoService;
+
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
@@ -69,11 +72,12 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
 
     @Override
     public JSONObject groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime) {
+        checkWxId(wxId);
         JSONObject result = JSONObject.of("code", 200, "msg", "发送消息成功");
         // 增加开始时间返回以及预计完成时间
         // 检查模板的准确性
         List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class).in(WeixinTemplate::getTemplateId, templateIds));
-        Assert.isTrue(weixinTemplates.size() == templateIds.size(), "模板数据有误");
+        Assert.isTrue(weixinTemplates.size() == templateIds.size(), "模板数据有误,必须包含单人和双人模板");
         // 获取单人和双人模板，作为统一入参
         Map<String, List<WeixinTemplate>> maps = weixinTemplates.stream().collect(Collectors.groupingBy(WeixinTemplate::getTemplateType));
         JSONObject templateIdVos = JSONObject.of();
@@ -95,14 +99,14 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
         Date delay = new Date();
         if (old != null) {
-
             if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
                 // 直接提醒还存在待完成的数据，返回开始预计开始时间和预计完成时间
-                log.info("该微信上次群聊还没完成：{}", wxId);
+                log.info("该微信上次群聊还没执行完成：{}", wxId);
                 result.put("code", 500);
                 result.put("planTime", weixinAsyncEventCall.getPlanTime());
                 result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
-                result.put("msg", "该微信上次群聊还没完成");
+                result.put("msg", "该微信上次群聊还没执行完成");
+                result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
                 return result;
                 // weixinAsyncEventCall = old;
             } else {
@@ -144,13 +148,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             weixinAsyncEventCallService.save(weixinAsyncEventCall);
         }
         // 组装消息体
-        result.put("planTime", weixinAsyncEventCall.getPlanTime());
-        result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
         if (weixinAsyncEventCall.getPlanTime() != null) {
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
         }
-        // List<WeixinTemplateSendDetail> weixinTemplateSendDetails = Lists.newArrayList();
         for (String chatRoomName : chatRoomNames) {
             // 构建延时消息操作，暂时按照一个群5秒操作
             JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
@@ -178,13 +179,30 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                 log.error("mq发送延迟消息失败{}，wxId:{}", e.getMessage(), wxId);
                 result.put("code", 500);
                 result.put("msg", "mq发送延迟消息失败");
+                // TODO 已发送出去消息还是正常处理，记录下发送成功的群id信息，防止二次发送
                 return result;
             }
         }
         // 设置预期完成时间，用于后置添加进来的数据处理
         // 后边加入的微信进群操作需要
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
+        result.put("planTime", weixinAsyncEventCall.getPlanTime());
+        result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
+        result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
         return result;
+    }
+
+    private void checkWxId(String wxId){
+        // 先获取对应的子账号列表
+        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(wxId);
+        String wxIdA = weixinRelatedContacts.getRelated1();
+        String wxIdB = weixinRelatedContacts.getRelated2();
+        // 获取对应的key值
+        WeixinBaseInfo weixinBaseInfoA = weixinBaseInfoService.getById(wxIdA);
+        Assert.isTrue(weixinBaseInfoA == null || StrUtil.isEmpty(weixinBaseInfoA.getKey()) || !StrUtil.equals(weixinBaseInfoA.getState(), "1"), "子账号wxId" + wxIdA + "未登录系统或者不在线");
+        WeixinBaseInfo weixinBaseInfoB = weixinBaseInfoService.getById(wxIdB);
+        Assert.isTrue(weixinBaseInfoB == null || StrUtil.isEmpty(weixinBaseInfoB.getKey()) || !StrUtil.equals(weixinBaseInfoB.getState(), "1"), "子账号wxId" + wxIdB + "未登录系统或者不在线");
+
     }
 
     @Transactional
