@@ -53,7 +53,9 @@ public class WeixinRelatedContactsServiceImpl extends ServiceImpl<WeixinRelatedC
             if (weixinRelatedContactsMapper.selectCount(Wrappers.lambdaQuery(WeixinRelatedContacts.class)
                     .eq(WeixinRelatedContacts::getRelated1,relatedWxId)
                     .or()
-                    .eq(WeixinRelatedContacts::getRelated2,relatedWxId)) > 0){
+                    .eq(WeixinRelatedContacts::getRelated2,relatedWxId)
+                    .or()
+                    .eq(WeixinRelatedContacts::getWxId,relatedWxId)) > 0){
                 errorMap.add(relatedWxId,"该账号已有关联账号，请先取消");
                 continue;
             }
