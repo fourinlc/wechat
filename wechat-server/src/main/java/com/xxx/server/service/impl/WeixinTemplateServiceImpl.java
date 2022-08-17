@@ -199,9 +199,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         String wxIdB = weixinRelatedContacts.getRelated2();
         // 获取对应的key值
         WeixinBaseInfo weixinBaseInfoA = weixinBaseInfoService.getById(wxIdA);
-        Assert.isTrue(weixinBaseInfoA == null || StrUtil.isEmpty(weixinBaseInfoA.getKey()) || !StrUtil.equals(weixinBaseInfoA.getState(), "1"), "子账号wxId" + wxIdA + "未登录系统或者不在线");
+        Assert.isTrue(!(weixinBaseInfoA == null || StrUtil.isEmpty(weixinBaseInfoA.getKey()) || !StrUtil.equals(weixinBaseInfoA.getState(), "1")), "子账号wxId" + wxIdA + "未登录系统或者不在线");
         WeixinBaseInfo weixinBaseInfoB = weixinBaseInfoService.getById(wxIdB);
-        Assert.isTrue(weixinBaseInfoB == null || StrUtil.isEmpty(weixinBaseInfoB.getKey()) || !StrUtil.equals(weixinBaseInfoB.getState(), "1"), "子账号wxId" + wxIdB + "未登录系统或者不在线");
+        Assert.isTrue(!(weixinBaseInfoB == null || StrUtil.isEmpty(weixinBaseInfoB.getKey()) || !StrUtil.equals(weixinBaseInfoB.getState(), "1")), "子账号wxId" + wxIdB + "未登录系统或者不在线");
 
     }
 
