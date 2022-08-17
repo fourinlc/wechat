@@ -58,10 +58,8 @@ public class WeixinTemplateController {
 
     @ApiOperation("构建群发模板")
     @PostMapping("groupChat")
-    public RespBean groupChat(@RequestBody GroupChatParam groupChat){
-        JSONObject jsonObject = weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds(), groupChat.getFixedTime());
-
-        return RespBean.sucess("构建群发模板成功");
+    public JSONObject groupChat(@RequestBody GroupChatParam groupChat){
+        return weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds(), groupChat.getFixedTime());
     }
 
     @ApiOperation("删除模板")
