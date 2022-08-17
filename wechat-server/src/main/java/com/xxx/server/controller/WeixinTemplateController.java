@@ -1,6 +1,7 @@
 package com.xxx.server.controller;
 
 
+import com.alibaba.fastjson2.JSONObject;
 import com.xxx.server.pojo.GroupChatParam;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinTemplate;
@@ -57,8 +58,8 @@ public class WeixinTemplateController {
 
     @ApiOperation("构建群发模板")
     @PostMapping("groupChat")
-    public RespBean groupChat(@RequestBody GroupChatParam groupChat){
-        return RespBean.sucess(weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds()) ? "构建群发模板成功" : "构建群发模板失败");
+    public JSONObject groupChat(@RequestBody GroupChatParam groupChat){
+        return weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds(), groupChat.getFixedTime());
     }
 
     @ApiOperation("删除模板")

@@ -34,15 +34,16 @@ public class WeixinFileServiceImpl extends ServiceImpl<WeixinFileMapper, WeixinF
     private WeixinFileMapper weixinFileMapper;
 
     // 文件上传至本地
-    public WeixinFile uploadFile(byte[] datas, String filePath, String filename){
+    public String uploadFile(byte[] datas, String filePath, String filename){
+        filePath = filePath.replaceAll("/", "");
         // 暂时不支持直接放在根文件夹下
         Assert.isTrue(StrUtil.isNotEmpty(filePath), "暂时不支持根文件夹上传");
         // 默认非追加模式，即为覆盖方式,失败时统一异常捕获
         FileUtil.writeBytes(datas, basePath + filePath + "/" + filename);
         // 成功时记录文件信息
         WeixinFile weixinFile = new WeixinFile().setFileName(filename).setFilePath(filePath);
-        Assert.isTrue(weixinFileMapper.insert(weixinFile) < 0, "文件上传失败");
-        return weixinFile;
+        Assert.isTrue(weixinFileMapper.insert(weixinFile) > 0, "文件上传失败");
+        return "/" + filePath + "/" + filename;
     }
 
     // 文件本地下载

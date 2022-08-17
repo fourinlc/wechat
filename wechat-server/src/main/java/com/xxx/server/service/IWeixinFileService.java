@@ -23,9 +23,9 @@ public interface IWeixinFileService extends IService<WeixinFile> {
      * @param datas 文件流
      * @param filePath 文件相对路径
      * @param filename 文件名字
-     * @return
+     * @return 返回文件相对路径
      */
-    WeixinFile uploadFile(byte[] datas, String filePath, String filename);
+    String uploadFile(byte[] datas, String filePath, String filename);
 
     /**
      * 获取单个文件流

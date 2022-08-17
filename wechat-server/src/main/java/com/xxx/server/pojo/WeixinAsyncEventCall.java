@@ -55,6 +55,9 @@ public class WeixinAsyncEventCall implements Serializable {
     @TableField("real_time")
     private LocalDateTime realTime;
 
+    @TableField("plan_start_time")
+    private LocalDateTime planStartTime;
+
     @ApiModelProperty(value = "结果描述")
     private String result;
 

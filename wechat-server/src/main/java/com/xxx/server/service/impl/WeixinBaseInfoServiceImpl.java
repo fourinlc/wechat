@@ -99,7 +99,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                         .setUuid(uuid)
                         .setWxId(resultJson.getJSONObject("Data").get("wxid").toString())
                         .setNickname(resultJson.getJSONObject("Data").get("nick_name").toString())
-                        .setState(resultJson.getJSONObject("Data").get("state").toString())
+                        .setState("1")
                         .setUpdateTime(LocalDateTime.now())
                         .setLastTime(LocalDateTime.now())
                         .setCreateTime(LocalDateTime.now())
