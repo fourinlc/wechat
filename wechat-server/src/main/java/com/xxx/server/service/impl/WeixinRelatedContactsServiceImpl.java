@@ -49,6 +49,7 @@ public class WeixinRelatedContactsServiceImpl extends ServiceImpl<WeixinRelatedC
         }
 
         for(String relatedWxId : relatedWxIds){
+            //判断是否已关联
             if (weixinRelatedContactsMapper.selectCount(Wrappers.lambdaQuery(WeixinRelatedContacts.class)
                     .eq(WeixinRelatedContacts::getRelated1,relatedWxId)
                     .or()
@@ -56,6 +57,12 @@ public class WeixinRelatedContactsServiceImpl extends ServiceImpl<WeixinRelatedC
                     .or()
                     .eq(WeixinRelatedContacts::getWxId,relatedWxId)) > 0){
                 errorMap.add(relatedWxId,"该账号已有关联账号，请先取消");
+                continue;
+            }
+            //判断是否登录过
+            if (weixinBaseInfoMapper.selectCount(Wrappers.lambdaQuery(WeixinBaseInfo.class)
+                    .eq(WeixinBaseInfo::getWxId,relatedWxId)) == 0) {
+                errorMap.add(relatedWxId,"该账号未登录，请先登录");
                 continue;
             }
             if (relatedContacts.getRelated1().equals("")){
@@ -76,7 +83,15 @@ public class WeixinRelatedContactsServiceImpl extends ServiceImpl<WeixinRelatedC
 
     @Override
     public RespBean getRelatedFriends(String wxId) {
-        WeixinRelatedContacts relatedContacts = weixinRelatedContactsMapper.selectOne(Wrappers.lambdaQuery(WeixinRelatedContacts.class).eq(WeixinRelatedContacts::getWxId,wxId));
+        WeixinRelatedContacts relatedContacts = weixinRelatedContactsMapper.selectOne(Wrappers.lambdaQuery(WeixinRelatedContacts.class)
+                .eq(WeixinRelatedContacts::getWxId,wxId)
+                .or()
+                .eq(WeixinRelatedContacts::getRelated1,wxId)
+                .or()
+                .eq(WeixinRelatedContacts::getRelated2,wxId));
+        if (relatedContacts == null) {
+            return RespBean.error("未找到关联好友");
+        }
         //获取微信名和头像
         Map<String,String> respInfoMap = new HashMap<>();
         respInfoMap.put("wxid",relatedContacts.getWxId());
