@@ -38,21 +38,23 @@ public class WeixinGroupLinkDetailController {
             {
                     @ApiImplicitParam(value = "邀请时间", name = "invitationTime", paramType = "query"),
                     @ApiImplicitParam(value = "邀请人名称", name = "fromUserName", paramType = "query"),
-                    @ApiImplicitParam(value = "邀请状态", name = "linkStatus", paramType = "query"),
+                    @ApiImplicitParam(value = "邀请状态", name = "linkStatus", paramType = "query", allowMultiple = true),
                     @ApiImplicitParam(value = "被邀请人id", name = "toUserWxId", paramType = "query"),
                     @ApiImplicitParam(value = "有效标识", name = "invalidStatus", paramType = "query"),
-                    @ApiImplicitParam(value = "验证群标识", name = "verifyStatus", paramType = "query")
+                    @ApiImplicitParam(value = "验证群标识", name = "verifyStatus", paramType = "query"),
+                    @ApiImplicitParam(value = "企业微信群标识", name = "companyStatus", paramType = "query")
             }
     )
-    public RespBean query(@ApiIgnore WeixinGroupLinkDetail weixinGroupLinkDetail) {
+    public RespBean query(@ApiIgnore WeixinGroupLinkDetail weixinGroupLinkDetail, @ApiIgnore List<String> linkStatus) {
         return RespBean.sucess("获取邀请链接", weixinGroupLinkDetailService
                 .list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvitationTime()), WeixinGroupLinkDetail::getInvitationTime, weixinGroupLinkDetail.getInvitationTime())
                         .like(StrUtil.isNotEmpty(weixinGroupLinkDetail.getFromUserName()), WeixinGroupLinkDetail::getFromUserName, weixinGroupLinkDetail.getFromUserName())
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getLinkStatus()), WeixinGroupLinkDetail::getLinkStatus, weixinGroupLinkDetail.getLinkStatus())
+                        .in(StrUtil.isNotEmpty(weixinGroupLinkDetail.getLinkStatus()), WeixinGroupLinkDetail::getLinkStatus, linkStatus)
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getToUserWxId()), WeixinGroupLinkDetail::getToUserWxId, weixinGroupLinkDetail.getToUserWxId())
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvalidStatus()), WeixinGroupLinkDetail::getInvalidStatus, weixinGroupLinkDetail.getInvalidStatus())
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getVerifyStatus()), WeixinGroupLinkDetail::getVerifyStatus, weixinGroupLinkDetail.getVerifyStatus())));
+                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getVerifyStatus()), WeixinGroupLinkDetail::getVerifyStatus, weixinGroupLinkDetail.getVerifyStatus())
+                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getCompanyStatus()), WeixinGroupLinkDetail::getCompanyStatus, weixinGroupLinkDetail.getCompanyStatus())));
     }
 
     @GetMapping("batchScanIntoUrlGroup")

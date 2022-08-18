@@ -167,7 +167,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                 // 记录已操作过的群聊信息，并标识为正在处理中
                 WeixinTemplateSendDetail weixinTemplateSendDetail =
                         new WeixinTemplateSendDetail()
-                                .setCreateTime(LocalDateTime.now())
+                                .setCreateTime(new Date())
                                 .setWxId(wxId)
                                 .setChatRoomId(chatRoomName)
                                 .setStatus("99")

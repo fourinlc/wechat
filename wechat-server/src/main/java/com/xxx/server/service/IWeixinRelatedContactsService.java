@@ -1,8 +1,9 @@
 package com.xxx.server.service;
 
-import com.xxx.server.pojo.RespBean;
-import com.xxx.server.pojo.WeixinRelatedContacts;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xxx.server.pojo.RespBean;
+import com.xxx.server.pojo.WeixinBaseInfo;
+import com.xxx.server.pojo.WeixinRelatedContacts;
 
 import java.util.List;
 
@@ -21,4 +22,6 @@ public interface IWeixinRelatedContactsService extends IService<WeixinRelatedCon
     RespBean getRelatedFriends(String wxId);
 
     RespBean cancelRelatedFriends(String wxId, List<String> relatedWxIds);
+
+    List<WeixinBaseInfo> queryRelatedList(String wxId);
 }

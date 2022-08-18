@@ -25,6 +25,7 @@ import java.util.List;
 @Slf4j
 @Api(tags = "关联好友")
 public class WeixinRelatedContactsController {
+
     IWeixinRelatedContactsService weixinRelatedContactsService;
 
     @ApiOperation(value = "关联好友")
@@ -43,5 +44,11 @@ public class WeixinRelatedContactsController {
     @PostMapping("/cancelRelatedFriends")
     public RespBean cancelRelatedFriends(String wxId, @RequestBody List<String> relatedWxIds){
         return weixinRelatedContactsService.cancelRelatedFriends(wxId, relatedWxIds);
+    }
+
+    @ApiOperation("获取同级子号信息")
+    @GetMapping("/queryRelatedList")
+    public RespBean cancelRelatedFriends(String wxId){
+        return RespBean.sucess("获取信息成功", weixinRelatedContactsService.queryRelatedList(wxId));
     }
 }

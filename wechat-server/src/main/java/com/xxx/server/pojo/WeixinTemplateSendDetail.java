@@ -12,10 +12,11 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author lc
@@ -25,7 +26,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("t_weixin_template_send_detail")
-@ApiModel(value="WeixinTemplateSendDetail对象", description="")
+@ApiModel(value = "WeixinTemplateSendDetail对象", description = "")
 public class WeixinTemplateSendDetail implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -61,7 +62,7 @@ public class WeixinTemplateSendDetail implements Serializable {
 
     @ApiModelProperty(value = "创建时间")
     @TableField("create_time")
-    private LocalDateTime createTime;
+    private Date createTime;
 
     @TableField("wxId")
     private String wxId;

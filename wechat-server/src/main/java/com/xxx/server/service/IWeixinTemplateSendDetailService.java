@@ -1,7 +1,9 @@
 package com.xxx.server.service;
 
-import com.xxx.server.pojo.WeixinTemplateSendDetail;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xxx.server.pojo.WeixinTemplateSendDetail;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,5 +14,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2022-08-16
  */
 public interface IWeixinTemplateSendDetailService extends IService<WeixinTemplateSendDetail> {
+    /**获取好友群列表*/
+    List<WeixinTemplateSendDetail> queryList(String wxId, boolean refresh);
 
 }
