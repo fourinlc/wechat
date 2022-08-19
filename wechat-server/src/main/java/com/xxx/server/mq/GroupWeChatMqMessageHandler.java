@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component("groupChatTag")
+/*@Component("groupChatTag")*/
 @Slf4j
 public class GroupWeChatMqMessageHandler implements MqMessageHandler {
 

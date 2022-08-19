@@ -35,4 +35,6 @@ public interface IWeixinTemplateService extends IService<WeixinTemplate> {
     boolean deleteByName(String templateName);
 
     JSONObject groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime);
+
+    JSONObject groupChatNew(List<String> chatRoomNames, String wxIdA, String wxIdB, List<Long> templateIds, Date fixedTime);
 }

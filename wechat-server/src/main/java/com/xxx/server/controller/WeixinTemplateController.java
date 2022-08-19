@@ -2,10 +2,7 @@ package com.xxx.server.controller;
 
 
 import com.alibaba.fastjson2.JSONObject;
-import com.xxx.server.pojo.GroupChatParam;
-import com.xxx.server.pojo.RespBean;
-import com.xxx.server.pojo.WeixinTemplate;
-import com.xxx.server.pojo.WeixinTemplateParam;
+import com.xxx.server.pojo.*;
 import com.xxx.server.service.IWeixinTemplateService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -67,6 +64,12 @@ public class WeixinTemplateController {
     public RespBean deleteByName( String templateName){
         Assert.hasText(templateName, "模板名称不能为空");
         return RespBean.sucess(weixinTemplateService.deleteByName(templateName) ? "删除成功" : "删除失败");
+    }
+
+    @ApiOperation("构建群发模板子账号发起")
+    @PostMapping("groupChatNew")
+    public JSONObject groupChatNew(@RequestBody GroupChatNewParam groupChatNew){
+        return weixinTemplateService.groupChatNew(groupChatNew.getChatRoomNames(), groupChatNew.getWxIdA(), groupChatNew.getWxIdB(), groupChatNew.getTemplateIds(), groupChatNew.getFixedTime());
     }
 
 }
