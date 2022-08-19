@@ -94,6 +94,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             } else {
                 weixinBaseInfo
                         .setKey(key)
+                        .setState("1")
                         .setLastTime(weixinBaseInfo.getUpdateTime())
                         .setUpdateTime(LocalDateTime.now())
                         .setHeadImgUrl(headImgUrl);
