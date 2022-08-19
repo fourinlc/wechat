@@ -42,10 +42,11 @@ public class WeixinGroupLinkDetailController {
                     @ApiImplicitParam(value = "被邀请人id", name = "toUserWxId", paramType = "query"),
                     @ApiImplicitParam(value = "有效标识", name = "invalidStatus", paramType = "query"),
                     @ApiImplicitParam(value = "验证群标识", name = "verifyStatus", paramType = "query"),
-                    @ApiImplicitParam(value = "企业微信群标识", name = "companyStatus", paramType = "query")
+                    @ApiImplicitParam(value = "企业微信群标识", name = "companyStatus", paramType = "query"),
+                    @ApiImplicitParam(value = "重复标识", name = "repeatStatus", paramType = "query")
             }
     )
-    public RespBean query(@ApiIgnore WeixinGroupLinkDetail weixinGroupLinkDetail, @ApiIgnore List<String> linkStatus) {
+    public RespBean query(@ApiIgnore WeixinGroupLinkDetail weixinGroupLinkDetail, @ApiIgnore @RequestParam("linkStatus") List<String> linkStatus) {
         return RespBean.sucess("获取邀请链接", weixinGroupLinkDetailService
                 .list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvitationTime()), WeixinGroupLinkDetail::getInvitationTime, weixinGroupLinkDetail.getInvitationTime())
@@ -54,6 +55,7 @@ public class WeixinGroupLinkDetailController {
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getToUserWxId()), WeixinGroupLinkDetail::getToUserWxId, weixinGroupLinkDetail.getToUserWxId())
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvalidStatus()), WeixinGroupLinkDetail::getInvalidStatus, weixinGroupLinkDetail.getInvalidStatus())
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getVerifyStatus()), WeixinGroupLinkDetail::getVerifyStatus, weixinGroupLinkDetail.getVerifyStatus())
+                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getRepeatStatus()), WeixinGroupLinkDetail::getRepeatStatus, weixinGroupLinkDetail.getRepeatStatus())
                         .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getCompanyStatus()), WeixinGroupLinkDetail::getCompanyStatus, weixinGroupLinkDetail.getCompanyStatus())));
     }
 
