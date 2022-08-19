@@ -76,20 +76,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             String headImgUrl = "";
             if (resultJson.getJSONObject("Data").containsKey("head_img_url")){
                 headImgUrl = resultJson.getJSONObject("Data").getString("head_img_url");
-            } else {
-                map.clear();
-                map.add("key",key);
-                JSONObject profileJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_PROFILE.invoke(null,map)));
-                if(profileJson.containsKey("Code")){
-                    code = profileJson.getString("Code");
-                }else {
-                    code = profileJson.getString("code");
-                }
-                if (code.equals("200")){
-                    if (profileJson.getJSONObject("data").getJSONObject("userInfoExt").containsKey("smallHeadImgUrl")){
-                        headImgUrl = profileJson.getJSONObject("data").getJSONObject("userInfoExt").getString("smallHeadImgUrl");
-                    }
-                }
             }
             WeixinBaseInfo weixinBaseInfo;
             weixinBaseInfo = weixinBaseInfoMapper.selectOne(new QueryWrapper<WeixinBaseInfo>().eq("wx_id",resultJson.getJSONObject("Data").get("wxid")));
@@ -106,7 +92,9 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                         .setHeadImgUrl(headImgUrl);
                 weixinBaseInfoMapper.insert(weixinBaseInfo);
             } else {
-                weixinBaseInfo.setLastTime(weixinBaseInfo.getUpdateTime())
+                weixinBaseInfo
+                        .setKey(key)
+                        .setLastTime(weixinBaseInfo.getUpdateTime())
                         .setUpdateTime(LocalDateTime.now())
                         .setHeadImgUrl(headImgUrl);
                 weixinBaseInfoMapper.updateById(weixinBaseInfo);
