@@ -225,7 +225,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         }
         contactDetailedInfoMap.add("friendsDetail",friendDetaileList);
         contactDetailedInfoMap.add("chatRoomDetaile",chatRoomDetaileList);
-        return RespBean.sucess("查询成功",contactDetailedInfoMap);
+        return RespBean.sucess("查询成功",JSONObject.parseObject(JSONObject.toJSONString(contactDetailedInfoMap)));
     }
 
     @Override
