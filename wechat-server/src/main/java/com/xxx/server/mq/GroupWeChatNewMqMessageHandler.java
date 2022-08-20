@@ -217,23 +217,25 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
         }
         // 未出现异常时将群模板顺序移动至下一个节点
         redisTemplate.opsForValue().set("count::" + type + wxId, ++count);
+        weixinTemplateSendDetailService.updateById(
+                weixinTemplateSendDetail
+                        .setTemplateId(weixinTemplate.getTemplateId())
+                        .setFinishTime(LocalDateTime.now())
+                        .setStatus("200")
+                        .setResult("群发完成"));
         // 当前时间大于计划完成时间
         if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
             log.info("该轮群发完成");
-            weixinTemplateSendDetailService.updateById(
-                    weixinTemplateSendDetail
-                            .setTemplateId(weixinTemplate.getTemplateId())
-                            .setFinishTime(LocalDateTime.now())
-                            .setStatus("200")
-                            .setResult("该批次群发完成"));
+
             weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("群发完成").setRealTime(LocalDateTime.now()));
             // 重置count
             redisTemplate.opsForValue().set("count::double" + wxId, 0);
             redisTemplate.opsForValue().set("count::single" + wxId, 0);
+            return true;
         }
-        // 异常状态
-        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("主号查询群成员信息异常").setRealTime(LocalDateTime.now()));
-        weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("主号查询群成员信息异常"));
+       /* // 异常状态
+        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("系统异常").setRealTime(LocalDateTime.now()));
+        weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("系统异常"));*/
         return true;
     }
 }

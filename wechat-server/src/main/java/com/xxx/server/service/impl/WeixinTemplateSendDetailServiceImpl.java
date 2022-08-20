@@ -1,6 +1,9 @@
 package com.xxx.server.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xxx.server.mapper.WeixinTemplateSendDetailMapper;
@@ -8,14 +11,12 @@ import com.xxx.server.pojo.*;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import com.xxx.server.service.IWeixinRelatedContactsService;
 import com.xxx.server.service.IWeixinTemplateSendDetailService;
+import com.xxx.server.service.IWeixinTemplateService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -35,60 +36,70 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
 
     private IWeixinBaseInfoService weixinBaseInfoService;
 
+    public IWeixinTemplateService weixinTemplateService;
+
     // 获取群发或者待群发列表
     public List<WeixinTemplateSendDetail> queryList(String wxId, boolean refresh) {
         List<WeixinBaseInfo> weixinBaseInfos = weixinRelatedContactsService.queryRelatedList(wxId);
         WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getOne(Wrappers.lambdaQuery(WeixinRelatedContacts.class).eq(WeixinRelatedContacts::getRelated1, wxId).or().eq(WeixinRelatedContacts::getRelated2, wxId));
         List<WeixinContactDetailedInfo> weixinContactDetailedInfos = Lists.newArrayList();
-
+        List<WeixinTemplateSendDetail> weixinTemplateSendDetails = Lists.newArrayList();
         if (weixinBaseInfos.size() == 1) {
-            List<WeixinTemplateSendDetail> weixinTemplateSendDetails = Lists.newArrayList();
             WeixinBaseInfo weixinBaseInfo = weixinBaseInfos.get(0);
             // 暂时未关联或者已关联但只有一个账号
             RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getUuid(), true);
-            MultiValueMap<String, ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = (MultiValueMap) friendsAndChatRooms.getObj();
-            List<ArrayList<WeixinContactDetailedInfo>> chatRoomDetaile = contactDetailedInfoMap.get("chatRoomDetaile");
+            JSONObject jsonObject = (JSONObject)friendsAndChatRooms.getObj();
+            JSONArray chatRoomDetaile = jsonObject.getJSONArray("chatRoomDetaile");
             if (chatRoomDetaile.size() > 0) {
-                ArrayList<WeixinContactDetailedInfo> weixinContactDetailedInfo = chatRoomDetaile.get(0);
-                weixinContactDetailedInfos.addAll(weixinContactDetailedInfo);
+                JSONArray weixinContactDetailedInfo = (JSONArray) chatRoomDetaile.get(0);
+                weixinContactDetailedInfos.addAll(weixinContactDetailedInfo.toList(WeixinContactDetailedInfo.class));
             }
             weixinContactDetailedInfos.forEach(weixinContactDetailedInfo -> {
                 // 构建具体的数据
                 WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
-                        .setChatRoomId(weixinContactDetailedInfo.getWxId())
-                        .setChatRoomName(weixinContactDetailedInfo.getUserName());
+                        .setChatRoomId(weixinContactDetailedInfo.getWxId());
                 weixinTemplateSendDetails.add(weixinTemplateSendDetail);
             });
             return weixinTemplateSendDetails;
         } else {
             // 存在关联信息且已关联,先去存储数据表中获取是否已经生成模板信息
-            List<WeixinTemplateSendDetail> weixinTemplateSendDetails = getBaseMapper().selectList(
+            List<WeixinTemplateSendDetail> weixinTemplateSendDetailsVo = getBaseMapper().selectList(
                     Wrappers.lambdaQuery(WeixinTemplateSendDetail.class)
                             .eq(WeixinTemplateSendDetail::getWxId, weixinRelatedContacts.getWxId())
-                            .eq(WeixinTemplateSendDetail::getCreateTime, new Date()));
-            if (weixinTemplateSendDetails.size() < 1) {
-                // 构造模板参数并入库
-                // 查询两个微信的所有群信息详情
-                for (WeixinBaseInfo weixinBaseInfo : weixinBaseInfos) {
-                    // 校验账号登录情况
-                    if (!StrUtil.equals(weixinBaseInfo.getState(), "1")) continue;
-                    RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getUuid(), refresh);
-                    MultiValueMap<String, ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = (MultiValueMap) friendsAndChatRooms.getObj();
-                    List<ArrayList<WeixinContactDetailedInfo>> chatRoomDetaile = contactDetailedInfoMap.get("chatRoomDetaile");
-                    if (chatRoomDetaile.size() > 0) {
-                        ArrayList<WeixinContactDetailedInfo> weixinContactDetailedInfo = chatRoomDetaile.get(0);
-                        weixinContactDetailedInfos.addAll(weixinContactDetailedInfo);
-                    }
+                            .eq(WeixinTemplateSendDetail::getCreateTime, DateUtil.today())
+                            .select(WeixinTemplateSendDetail::getChatRoomId, WeixinTemplateSendDetail::getTemplateId));
+            // 构造模板参数并入库
+            // 查询两个微信的所有群信息详情
+            for (WeixinBaseInfo weixinBaseInfo : weixinBaseInfos) {
+                // 校验账号登录情况
+                if (!StrUtil.equals(weixinBaseInfo.getState(), "1")) continue;
+                RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getUuid(), refresh);
+                JSONObject jsonObject = (JSONObject)friendsAndChatRooms.getObj();
+                JSONArray chatRoomDetaile = jsonObject.getJSONArray("chatRoomDetaile");
+                if (chatRoomDetaile.size() > 0) {
+                    JSONArray weixinContactDetailedInfo = (JSONArray) chatRoomDetaile.get(0);
+                    weixinContactDetailedInfos.addAll(weixinContactDetailedInfo.toList(WeixinContactDetailedInfo.class));
                 }
-                // 去重相同的数据
-                weixinContactDetailedInfos.stream().distinct().forEach(weixinContactDetailedInfo -> {
-                    // 构建具体的数据
-                    WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
-                            .setChatRoomId(weixinContactDetailedInfo.getWxId())
-                            .setChatRoomName(weixinContactDetailedInfo.getUserName());
-                    weixinTemplateSendDetails.add(weixinTemplateSendDetail);
-                });
             }
+            // 去重相同的数据
+            weixinContactDetailedInfos.stream().distinct().forEach(weixinContactDetailedInfo -> {
+                // 构建具体的数据
+                WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
+                        .setChatRoomId(weixinContactDetailedInfo.getWxId()).setChatRoomName(weixinContactDetailedInfo.getUserName());
+                weixinTemplateSendDetails.add(weixinTemplateSendDetail);
+                // 如果包含在列表中，更新对应的模板
+                weixinTemplateSendDetailsVo
+                        .stream()
+                        .filter(weixinTemplateSendDetailVo -> StrUtil.equals(weixinTemplateSendDetailVo.getChatRoomId(), weixinContactDetailedInfo.getWxId()))
+                        .findAny()
+                        .ifPresent(templateSendDetail -> {
+                            weixinTemplateSendDetail.setTemplateId(templateSendDetail.getTemplateId());
+                            // 查询对应的模板名称
+                            WeixinTemplate weixinTemplate = weixinTemplateService.getById(templateSendDetail.getTemplateId());
+                            weixinTemplateSendDetail.setTemplateName(weixinTemplate.getTemplateName());
+                            weixinTemplateSendDetail.setStatus(templateSendDetail.getStatus());
+                        });
+            });
             return weixinTemplateSendDetails;
         }
     }

@@ -20,4 +20,6 @@ public interface IWeixinGroupLinkDetailService extends IService<WeixinGroupLinkD
     /**批量保存邀请链接，并处理对应链接状态*/
     boolean saveBatch(List<WeixinGroupLinkDetail> weixinGroupLinkDetails);
 
+    Object query(WeixinGroupLinkDetail weixinGroupLinkDetail, List<String> linkStatus);
+
 }

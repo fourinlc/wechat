@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.common.message.Message;
 import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -44,9 +45,6 @@ import java.util.stream.Collectors;
 public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper, WeixinTemplate> implements IWeixinTemplateService {
 
     @Resource
-    private IWeixinFileService weixinFileService;
-
-    @Resource
     private DelayMqProducer delayMqProducer;
 
     @Resource
@@ -59,6 +57,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     private IWeixinAsyncEventCallService weixinAsyncEventCallService;
 
     @Resource
+    @Lazy
     private IWeixinTemplateSendDetailService weixinTemplateSendDetailService;
 
     @Resource

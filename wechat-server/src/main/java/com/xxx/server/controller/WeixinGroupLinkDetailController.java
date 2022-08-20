@@ -47,21 +47,12 @@ public class WeixinGroupLinkDetailController {
             }
     )
     public RespBean query(@ApiIgnore WeixinGroupLinkDetail weixinGroupLinkDetail, @ApiIgnore @RequestParam("linkStatus") List<String> linkStatus) {
-        return RespBean.sucess("获取邀请链接", weixinGroupLinkDetailService
-                .list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvitationTime()), WeixinGroupLinkDetail::getInvitationTime, weixinGroupLinkDetail.getInvitationTime())
-                        .like(StrUtil.isNotEmpty(weixinGroupLinkDetail.getFromUserName()), WeixinGroupLinkDetail::getFromUserName, weixinGroupLinkDetail.getFromUserName())
-                        .in(StrUtil.isNotEmpty(weixinGroupLinkDetail.getLinkStatus()), WeixinGroupLinkDetail::getLinkStatus, linkStatus)
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getToUserWxId()), WeixinGroupLinkDetail::getToUserWxId, weixinGroupLinkDetail.getToUserWxId())
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvalidStatus()), WeixinGroupLinkDetail::getInvalidStatus, weixinGroupLinkDetail.getInvalidStatus())
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getVerifyStatus()), WeixinGroupLinkDetail::getVerifyStatus, weixinGroupLinkDetail.getVerifyStatus())
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getRepeatStatus()), WeixinGroupLinkDetail::getRepeatStatus, weixinGroupLinkDetail.getRepeatStatus())
-                        .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getCompanyStatus()), WeixinGroupLinkDetail::getCompanyStatus, weixinGroupLinkDetail.getCompanyStatus())));
+        return RespBean.sucess("查询成功", weixinGroupLinkDetailService.query(weixinGroupLinkDetail, linkStatus));
     }
 
     @GetMapping("batchScanIntoUrlGroup")
     @ApiOperation("批量进群")
-    public RespBean batchScanIntoUrlGroup(@RequestParam(value = "linkIds") List<Long> linkIds){
+    public RespBean batchScanIntoUrlGroup(@RequestParam("linkIds") List<Long> linkIds){
         return RespBean.sucess(weixinGroupLinkDetailService.batchScanIntoUrlGroup(linkIds) ? "成功" : "该群链接已被处理过");
     }
 
