@@ -57,7 +57,8 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
             weixinContactDetailedInfos.forEach(weixinContactDetailedInfo -> {
                 // 构建具体的数据
                 WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
-                        .setChatRoomId(weixinContactDetailedInfo.getWxId());
+                        .setChatRoomId(weixinContactDetailedInfo.getWxId())
+                        .setChatRoomName(weixinContactDetailedInfo.getUserName());
                 weixinTemplateSendDetails.add(weixinTemplateSendDetail);
             });
             return weixinTemplateSendDetails;
