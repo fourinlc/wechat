@@ -47,7 +47,7 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
         if (weixinBaseInfos.size() == 1) {
             WeixinBaseInfo weixinBaseInfo = weixinBaseInfos.get(0);
             // 暂时未关联或者已关联但只有一个账号
-            RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getUuid(), true);
+            RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getUuid(), refresh);
             JSONObject jsonObject = (JSONObject)friendsAndChatRooms.getObj();
             JSONArray chatRoomDetaile = jsonObject.getJSONArray("chatRoomDetaile");
             if (chatRoomDetaile.size() > 0) {
