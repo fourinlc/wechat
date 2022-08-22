@@ -137,7 +137,11 @@ public class WeixinRelatedContactsServiceImpl extends ServiceImpl<WeixinRelatedC
                 errorMap.add(relatedWxId, "取消关联失败");
             }
         }
-        weixinRelatedContactsMapper.updateById(relatedContacts);
+        if (relatedContacts.getRelated1().equals("") && relatedContacts.getRelated2().equals("")) {
+            weixinRelatedContactsMapper.deleteById(relatedContacts);
+        } else {
+            weixinRelatedContactsMapper.updateById(relatedContacts);
+        }
         if (errorMap.isEmpty()) {
             return RespBean.sucess("取消关联成功");
         } else {
