@@ -143,39 +143,50 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     @CacheEvict(value = "contacts", key="#wxid", condition = "#refresh", beforeInvocation=true)
     public RespBean getFriendsAndChatRooms(String key, String wxid, boolean refresh) {
         //获取所有联系人wxid
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("CurrentWxcontactSeq",0);
-        jsonObject.put("CurrentChatRoomContactSeq",0);
-        MultiValueMap<String,String> getContactListMap = new LinkedMultiValueMap<>();
-        getContactListMap.add("key", key);
-        JSONObject resultJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,getContactListMap)));
         String code;
-        if(resultJson.containsKey("Code")){
-            code = resultJson.getString("Code");
-        }else {
-            code = resultJson.getString("code");
-        }
-        if (!code.equals("200")){
-            return RespBean.error("获取好友列表失败",resultJson);
-        }
-        //通过wxid获取详细信息
-        JSONArray userNameList = resultJson.getJSONObject("Data").getJSONObject("ContactList").getJSONArray("contactUsernameList");
+        int currentWxcontactSeq = 0;
+        int currentChatRoomContactSeq = 0;
+        int continueFlag = 0;
         ArrayList<String> friendList = new ArrayList<>();
         ArrayList<String> contactList = new ArrayList<>();
-        for (Object o : userNameList) {
-            String userName = o.toString();
-            if (userName.endsWith("@chatroom")) {
-                contactList.add(userName);
-            } else if(!userName.equals("weixin") &&
-                    !userName.equals("medianote") &&
-                    !userName.equals("floatbottle") &&
-                    !userName.equals("fmessage") &&
-                    !userName.equals("filehelper") &&
-                    !userName.startsWith("gh_")){
-                friendList.add(userName);
-                contactList.add(userName);
+        do {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("CurrentWxcontactSeq",currentWxcontactSeq);
+            jsonObject.put("CurrentChatRoomContactSeq",currentChatRoomContactSeq);
+            MultiValueMap<String,String> getContactListMap = new LinkedMultiValueMap<>();
+            getContactListMap.add("key", key);
+            JSONObject resultJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,getContactListMap)));
+            if(resultJson.containsKey("Code")){
+                code = resultJson.getString("Code");
+            }else {
+                code = resultJson.getString("code");
             }
-        }
+            if (!code.equals("200")){
+                return RespBean.error("获取好友列表失败",resultJson);
+            }
+            currentWxcontactSeq = resultJson.getJSONObject("Data").getJSONObject("ContactList").getInteger("currentWxcontactSeq");
+            currentChatRoomContactSeq = resultJson.getJSONObject("Data").getJSONObject("ContactList").getInteger("currentChatRoomContactSeq");
+            continueFlag = resultJson.getJSONObject("Data").getJSONObject("ContactList").getInteger("continueFlag");
+            JSONArray userNameList = resultJson.getJSONObject("Data").getJSONObject("ContactList").getJSONArray("contactUsernameList");
+            for (Object o : userNameList) {
+                String userName = o.toString();
+                System.out.println(userName);
+                if (userName.endsWith("@chatroom")) {
+                    contactList.add(userName);
+                } else if(!userName.equals("weixin") &&
+                        !userName.equals("medianote") &&
+                        !userName.equals("floatbottle") &&
+                        !userName.equals("fmessage") &&
+                        !userName.equals("filehelper") &&
+                        !userName.startsWith("gh_")){
+                    friendList.add(userName);
+                    contactList.add(userName);
+                }
+            }
+            System.out.println("contactList size "+contactList.size());
+            System.out.println("continueFlag  "+continueFlag);
+        } while (continueFlag == 1);
+        //通过wxid获取详细信息
         MultiValueMap<String,String> getDetailsListMap = new LinkedMultiValueMap<>();
         getDetailsListMap.add("key",key);
         JSONObject getDetailersObject = new JSONObject();
