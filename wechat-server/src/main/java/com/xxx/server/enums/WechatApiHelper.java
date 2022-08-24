@@ -31,7 +31,8 @@ public enum WechatApiHelper {
     MOVETO_CONTRACT("保存群聊", "/v1/group/MoveToContract", HttpMethod.POST),
     /**包含群基本信息*/
     GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST),
-    GET_CHATROOM_MEMBER_DETAIL("群成员列表", "/v1/group/GetChatroomMemberDetail", HttpMethod.POST);
+    GET_CHATROOM_MEMBER_DETAIL("群成员列表", "/v1/group/GetChatroomMemberDetail", HttpMethod.POST),
+    CREATE_CHATROOM("创建群聊", "/v1/group/CreateChatRoom", HttpMethod.POST);
 
     private String desc;
 
