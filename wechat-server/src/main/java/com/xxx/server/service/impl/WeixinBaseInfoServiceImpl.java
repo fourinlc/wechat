@@ -23,7 +23,9 @@ import org.springframework.util.MultiValueMap;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -193,7 +195,9 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         MultiValueMap<String,String> getDetailsKeyMap = new LinkedMultiValueMap<>();
         getDetailsKeyMap.add("key",key);
         ArrayList<String> contactDetailsList = new ArrayList<>();
-        MultiValueMap<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new LinkedMultiValueMap<>();
+        Map<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new HashMap<>();
+        contactDetailedInfoMap.put("friendsDetail",new ArrayList<>());
+        contactDetailedInfoMap.put("chatRoomDetaile",new ArrayList<>());
         for (int i = 0; i < contactList.size(); i++) {
             contactDetailsList.add(contactList.get(i));
             if (contactDetailsList.size() == 20 || i == contactList.size() -1) {
@@ -210,8 +214,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                 }
                 //过滤出好友和群
                 JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
-                ArrayList<WeixinContactDetailedInfo> chatRoomDetaileList = new ArrayList<>();
-                ArrayList<WeixinContactDetailedInfo> friendDetaileList = new ArrayList<>();
                 for (Object o : detailsList) {
                     JSONObject detailJson = JSONObject.parseObject(o.toString());
                     WeixinContactDetailedInfo contactDetailedInfo = new WeixinContactDetailedInfo();
@@ -229,14 +231,12 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                         } else {
                             contactDetailedInfo.setRelated("0");
                         }
-                        friendDetaileList.add(contactDetailedInfo);
+                        contactDetailedInfoMap.get("friendsDetail").add(contactDetailedInfo);
                     } else {
                         contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
-                        chatRoomDetaileList.add(contactDetailedInfo);
+                        contactDetailedInfoMap.get("chatRoomDetaile").add(contactDetailedInfo);
                     }
                 }
-                contactDetailedInfoMap.add("friendsDetail",friendDetaileList);
-                contactDetailedInfoMap.add("chatRoomDetaile",chatRoomDetaileList);
                 contactDetailsList.clear();
             }
         }
