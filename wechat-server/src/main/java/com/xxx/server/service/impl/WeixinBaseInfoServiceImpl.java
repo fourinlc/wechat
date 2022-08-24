@@ -170,7 +170,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             JSONArray userNameList = resultJson.getJSONObject("Data").getJSONObject("ContactList").getJSONArray("contactUsernameList");
             for (Object o : userNameList) {
                 String userName = o.toString();
-                System.out.println(userName);
                 if (userName.endsWith("@chatroom")) {
                     contactList.add(userName);
                 } else if(!userName.equals("weixin") &&
@@ -183,59 +182,64 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                     contactList.add(userName);
                 }
             }
-            System.out.println("contactList size "+contactList.size());
-            System.out.println("continueFlag  "+continueFlag);
         } while (continueFlag == 1);
-        //通过wxid获取详细信息
-        MultiValueMap<String,String> getDetailsListMap = new LinkedMultiValueMap<>();
-        getDetailsListMap.add("key",key);
-        JSONObject getDetailersObject = new JSONObject();
-        getDetailersObject.put("UserNames",contactList);
-        JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsListMap)));
-        if(detailsJson.containsKey("Code")){
-            code = detailsJson.getString("Code");
-        }else if(detailsJson.containsKey("code")){
-            code = detailsJson.getString("code");
-        }
-        if(!code.equals("200")){
-            return RespBean.error("获取好友详情失败",detailsJson);
-        }
         WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsMapper.selectById(wxid);
         ArrayList<String> relatedList = new ArrayList<>();
         if (weixinRelatedContacts != null) {
             relatedList.add(weixinRelatedContacts.getRelated1());
             relatedList.add(weixinRelatedContacts.getRelated2());
         }
-        //过滤出好友和群
-        JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
+        //通过wxid获取详细信息
+        MultiValueMap<String,String> getDetailsKeyMap = new LinkedMultiValueMap<>();
+        getDetailsKeyMap.add("key",key);
+        ArrayList<String> contactDetailsList = new ArrayList<>();
         MultiValueMap<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new LinkedMultiValueMap<>();
-        ArrayList<WeixinContactDetailedInfo> chatRoomDetaileList = new ArrayList<>();
-        ArrayList<WeixinContactDetailedInfo> friendDetaileList = new ArrayList<>();
-        for (Object o : detailsList) {
-            JSONObject detailJson = JSONObject.parseObject(o.toString());
-            WeixinContactDetailedInfo contactDetailedInfo = new WeixinContactDetailedInfo();
-            contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
-            if (detailJson.getString("nickName").length() > 7) {
-                contactDetailedInfo.setUserName(detailJson.getString("nickName").substring(8,detailJson.getString("nickName").length()-2));
-            }
-            contactDetailedInfo.setSex(detailJson.getString("sex"));
-            contactDetailedInfo.setSmallHeadImgUrl(detailJson.getString("smallHeadImgUrl"));
-            if (friendList.contains(contactDetailedInfo.getWxId())){
-                contactDetailedInfo.setSignature(detailJson.getString("signature"));
-                contactDetailedInfo.setBigHeadImgUrl(detailJson.getString("bigHeadImgUrl"));
-                if (relatedList.contains(contactDetailedInfo.getWxId())){
-                    contactDetailedInfo.setRelated("1");
-                } else {
-                    contactDetailedInfo.setRelated("0");
+        for (int i = 0; i < contactList.size(); i++) {
+            contactDetailsList.add(contactList.get(i));
+            if (contactDetailsList.size() == 20 || i == contactList.size() -1) {
+                JSONObject getDetailersObject = new JSONObject();
+                getDetailersObject.put("UserNames",contactDetailsList);
+                JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsKeyMap)));
+                if(detailsJson.containsKey("Code")){
+                    code = detailsJson.getString("Code");
+                }else if(detailsJson.containsKey("code")){
+                    code = detailsJson.getString("code");
                 }
-                friendDetaileList.add(contactDetailedInfo);
-            } else {
-                contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
-                chatRoomDetaileList.add(contactDetailedInfo);
+                if(!code.equals("200")){
+                    return RespBean.error("获取好友详情失败",detailsJson);
+                }
+                //过滤出好友和群
+                JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
+                ArrayList<WeixinContactDetailedInfo> chatRoomDetaileList = new ArrayList<>();
+                ArrayList<WeixinContactDetailedInfo> friendDetaileList = new ArrayList<>();
+                for (Object o : detailsList) {
+                    JSONObject detailJson = JSONObject.parseObject(o.toString());
+                    WeixinContactDetailedInfo contactDetailedInfo = new WeixinContactDetailedInfo();
+                    contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
+                    if (detailJson.getString("nickName").length() > 7) {
+                        contactDetailedInfo.setUserName(detailJson.getString("nickName").substring(8,detailJson.getString("nickName").length()-2));
+                    }
+                    contactDetailedInfo.setSex(detailJson.getString("sex"));
+                    contactDetailedInfo.setSmallHeadImgUrl(detailJson.getString("smallHeadImgUrl"));
+                    if (friendList.contains(contactDetailedInfo.getWxId())){
+                        contactDetailedInfo.setSignature(detailJson.getString("signature"));
+                        contactDetailedInfo.setBigHeadImgUrl(detailJson.getString("bigHeadImgUrl"));
+                        if (relatedList.contains(contactDetailedInfo.getWxId())){
+                            contactDetailedInfo.setRelated("1");
+                        } else {
+                            contactDetailedInfo.setRelated("0");
+                        }
+                        friendDetaileList.add(contactDetailedInfo);
+                    } else {
+                        contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
+                        chatRoomDetaileList.add(contactDetailedInfo);
+                    }
+                }
+                contactDetailedInfoMap.add("friendsDetail",friendDetaileList);
+                contactDetailedInfoMap.add("chatRoomDetaile",chatRoomDetaileList);
+                contactDetailsList.clear();
             }
         }
-        contactDetailedInfoMap.add("friendsDetail",friendDetaileList);
-        contactDetailedInfoMap.add("chatRoomDetaile",chatRoomDetaileList);
         return RespBean.sucess("查询成功",JSONObject.parseObject(JSONObject.toJSONString(contactDetailedInfoMap)));
     }
 
@@ -243,4 +247,5 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     public List<WeixinBaseInfo> queryList(){
         return baseMapper.selectList(Wrappers.lambdaQuery(WeixinBaseInfo.class).eq(WeixinBaseInfo::getState, 1).orderByDesc(WeixinBaseInfo::getCreateTime));
     }
+
 }
