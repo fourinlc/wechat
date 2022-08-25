@@ -64,8 +64,7 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
             List<WeixinTemplateSendDetail> weixinTemplateSendDetailsVo = getBaseMapper().selectList(
                     Wrappers.lambdaQuery(WeixinTemplateSendDetail.class)
                             .eq(WeixinTemplateSendDetail::getWxId, weixinRelatedContacts.getWxId())
-                            .eq(WeixinTemplateSendDetail::getCreateTime, DateUtil.today())
-                            .select(WeixinTemplateSendDetail::getChatRoomId, WeixinTemplateSendDetail::getTemplateId));
+                            .eq(WeixinTemplateSendDetail::getCreateTime, DateUtil.today()));
             // 构造模板参数并入库
             // 查询两个微信的所有群信息详情
             for (WeixinBaseInfo weixinBaseInfo : weixinBaseInfos) {
@@ -96,6 +95,8 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                                 weixinTemplateSendDetail.setTemplateName(weixinTemplate.getTemplateName());
                             }
                             weixinTemplateSendDetail.setStatus(templateSendDetail.getStatus());
+                            weixinTemplateSendDetail.setFinishTime(templateSendDetail.getFinishTime());
+                            weixinTemplateSendDetail.setResult(templateSendDetail.getResult());
                         });
             });
             return weixinTemplateSendDetails;
