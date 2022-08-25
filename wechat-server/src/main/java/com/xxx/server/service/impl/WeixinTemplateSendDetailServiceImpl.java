@@ -47,13 +47,10 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
         if (weixinBaseInfos.size() == 1) {
             WeixinBaseInfo weixinBaseInfo = weixinBaseInfos.get(0);
             // 暂时未关联或者已关联但只有一个账号
-            RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getUuid(), refresh);
-            JSONObject jsonObject = (JSONObject)friendsAndChatRooms.getObj();
+            RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getWxId(), refresh);
+            JSONObject jsonObject = (JSONObject) friendsAndChatRooms.getObj();
             JSONArray chatRoomDetaile = jsonObject.getJSONArray("chatRoomDetaile");
-            if (chatRoomDetaile.size() > 0) {
-                JSONArray weixinContactDetailedInfo = (JSONArray) chatRoomDetaile.get(0);
-                weixinContactDetailedInfos.addAll(weixinContactDetailedInfo.toList(WeixinContactDetailedInfo.class));
-            }
+            weixinContactDetailedInfos.addAll(chatRoomDetaile.toList(WeixinContactDetailedInfo.class));
             weixinContactDetailedInfos.forEach(weixinContactDetailedInfo -> {
                 // 构建具体的数据
                 WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
@@ -74,13 +71,10 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
             for (WeixinBaseInfo weixinBaseInfo : weixinBaseInfos) {
                 // 校验账号登录情况
                 if (!StrUtil.equals(weixinBaseInfo.getState(), "1")) continue;
-                RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getUuid(), refresh);
-                JSONObject jsonObject = (JSONObject)friendsAndChatRooms.getObj();
+                RespBean friendsAndChatRooms = weixinBaseInfoService.getFriendsAndChatRooms(weixinBaseInfo.getKey(), weixinBaseInfo.getWxId(), refresh);
+                JSONObject jsonObject = (JSONObject) friendsAndChatRooms.getObj();
                 JSONArray chatRoomDetaile = jsonObject.getJSONArray("chatRoomDetaile");
-                if (chatRoomDetaile.size() > 0) {
-                    JSONArray weixinContactDetailedInfo = (JSONArray) chatRoomDetaile.get(0);
-                    weixinContactDetailedInfos.addAll(weixinContactDetailedInfo.toList(WeixinContactDetailedInfo.class));
-                }
+                weixinContactDetailedInfos.addAll(chatRoomDetaile.toList(WeixinContactDetailedInfo.class));
             }
             // 去重相同的数据
             weixinContactDetailedInfos.stream().distinct().forEach(weixinContactDetailedInfo -> {
