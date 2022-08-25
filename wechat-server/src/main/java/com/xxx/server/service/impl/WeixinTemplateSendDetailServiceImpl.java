@@ -91,7 +91,10 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                             weixinTemplateSendDetail.setTemplateId(templateSendDetail.getTemplateId());
                             // 查询对应的模板名称
                             WeixinTemplate weixinTemplate = weixinTemplateService.getById(templateSendDetail.getTemplateId());
-                            weixinTemplateSendDetail.setTemplateName(weixinTemplate.getTemplateName());
+                            // 存在正在处理中情况
+                            if(weixinTemplate != null){
+                                weixinTemplateSendDetail.setTemplateName(weixinTemplate.getTemplateName());
+                            }
                             weixinTemplateSendDetail.setStatus(templateSendDetail.getStatus());
                         });
             });

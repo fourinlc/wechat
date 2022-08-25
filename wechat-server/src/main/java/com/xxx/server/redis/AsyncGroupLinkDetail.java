@@ -179,6 +179,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         // 转义获取群链接地址,不一定是群链接
                         String url = data.getContent();
                         JSONObject jsonObject = buildUrl(url);
+                        if(jsonObject.size() == 0) continue;
                         data.setContent(jsonObject.getString("url"));
                         data.setChatroomName(jsonObject.getString("title"));
                         data.setThumbUrl(jsonObject.getString("thumbUrl"));
@@ -216,7 +217,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
     private JSONObject buildUrl(String url) {
         try {
             // "半勺小奶酪?"邀请你加入群聊"海娜生活超市特价公告送货群"，进入可查看详情。
-            log.debug("打印群链接信息：{}", url);
+
             Document document = DocumentHelper.parseText(url);
             Node node = document.selectSingleNode("/msg/appmsg/url");
             String des = document.selectSingleNode("/msg/appmsg/des").getText();
@@ -231,7 +232,8 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
             String roomName = roomNames.get(3);
             return JSONObject.of("url", node.getText(), "title", roomName, "thumbUrl", thumbUrl);
         } catch (DocumentException e) {
-            e.printStackTrace();
+            log.error("获取群链接失败：{}", e);
+            log.info("打印群链接信息：{}", url);
         }
         return new JSONObject();
     }
