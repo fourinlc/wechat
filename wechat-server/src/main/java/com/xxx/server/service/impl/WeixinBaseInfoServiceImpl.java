@@ -200,7 +200,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         contactDetailedInfoMap.put("chatRoomDetaile",new ArrayList<>());
         for (int i = 0; i < contactList.size(); i++) {
             contactDetailsList.add(contactList.get(i));
-            if (contactDetailsList.size() == 20 || i == contactList.size() -1) {
+            if (contactDetailsList.size() == 4 || i == contactList.size() -1) {
                 JSONObject getDetailersObject = new JSONObject();
                 getDetailersObject.put("UserNames",contactDetailsList);
                 JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsKeyMap)));
