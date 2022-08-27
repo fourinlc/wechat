@@ -105,10 +105,8 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 // 自己存在
                 JSONArray memberDatasVo = chatroomMemberDetailVo.getJSONObject(ResConstant.DATA).getJSONObject("member_data").getJSONArray("chatroom_member_list");
                 if(memberDatasVo == null){
-                    log.info("该账号登录状态异常，key信息为：{}", key);
-                    weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("该账号登录状态异常，key信息为：" + key));
-                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("该账号登录状态异常，key信息为：" + key).setRealTime(LocalDateTime.now()));
-                    return true;
+                    log.info("该账号登录状态不在这个群内key:{}", key);
+                    continue;
                 }
                 // 先获取对应的子账号列表
                 countVo = memberDatasVo.stream().filter(o -> {
