@@ -138,7 +138,7 @@ public class WeixinRelatedContactsServiceImpl extends ServiceImpl<WeixinRelatedC
             }
         }
         if (relatedContacts.getRelated1().equals("") && relatedContacts.getRelated2().equals("")) {
-            weixinRelatedContactsMapper.deleteById(relatedContacts);
+            weixinRelatedContactsMapper.deleteById(wxId);
         } else {
             weixinRelatedContactsMapper.updateById(relatedContacts);
         }
