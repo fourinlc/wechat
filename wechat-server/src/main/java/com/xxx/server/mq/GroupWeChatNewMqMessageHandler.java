@@ -1,5 +1,6 @@
 package com.xxx.server.mq;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -46,6 +47,9 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
     @Resource
     private IWeixinTemplateService weixinTemplateService;
 
+    @Resource
+    private IWeixinDictionaryService weixinDictionaryService;
+
     @Value("${wechat.file.basePath}")
     private String basePath;
 
@@ -54,8 +58,13 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
         Long asyncEventCallId = message.getLong("asyncEventCallId");
         String chatRoomName = message.getString("chatRoomName");
         WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
+
         if (Objects.isNull(weixinAsyncEventCall) || StrUtil.isEmpty(chatRoomName)) {
             log.info("数据格式不正确,忽略该数据流程提前结束:{}", message);
+            return true;
+        }
+        if(weixinAsyncEventCall.getResultCode() == 200){
+            log.info("流程已结束，无须处理");
             return true;
         }
         WeixinTemplateSendDetail weixinTemplateSendDetail = weixinTemplateSendDetailService.getOne(Wrappers.lambdaQuery(WeixinTemplateSendDetail.class)
@@ -95,7 +104,12 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             JSONObject chatroomMemberDetailVo = WechatApiHelper.GET_CHATROOM_MEMBER_DETAIL.invoke(jsonObject, queryBase);
             if (ResConstant.CODE_SUCCESS.equals(chatroomMemberDetailVo.getInteger(ResConstant.CODE))) {
                 // 自己存在
+                // 获取群头像信息
                 JSONArray memberDatasVo = chatroomMemberDetailVo.getJSONObject(ResConstant.DATA).getJSONObject("member_data").getJSONArray("chatroom_member_list");
+                if(memberDatasVo == null){
+                    log.info("该账号登录状态不在这个群内key:{}", key);
+                    continue;
+                }
                 // 先获取对应的子账号列表
                 countVo = memberDatasVo.stream().filter(o -> {
                     Map map = (Map) o;
@@ -104,6 +118,23 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 }).count();
             }
             if (countVo > 0) break;
+        }
+        log.info("开始获取配置信息");
+        List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("groupChat"));
+        // Assert.isTrue(scanIntoUrlGroupTimes.size() >= 2, "系统进群消息配置异常");
+        // 获取对应随机数字1-5, 默认2-4秒
+        JSONObject dices = new JSONObject();
+        scanIntoUrlGroupTimes.forEach(scanIntoUrlGroupTime -> {
+            dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
+        });
+        // 增加缓存信息
+        int max = dices.getIntValue("msg_mass_max", 1500);
+        int min = dices.getIntValue("msg_mass_min", 1000);
+        log.info("群发群间模板隔配置时间min:{},max:{}", min, max);
+        if(max < min){
+            log.info("配置信息异常");
+            weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("群消息发送配置最大值最小值有误").setRealTime(LocalDateTime.now()));
+            return true;
         }
         // 校验这两个子账号是否还在群聊中
         if (countVo == 0) {
@@ -132,7 +163,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
         if (weixinTemplateDetails.size() > 0) {
             WeixinTemplateDetail weixinTemplateDetail1 = weixinTemplateDetails.get(0);
             weixinTemplate = weixinTemplateService.getById(weixinTemplateDetail1.getTemplateId());
-            log.info("当前模板信息：{}", weixinTemplate);
+            log.info("当前具体模板信息：{}", weixinTemplate);
         }
         log.info("当前count值：{}", count);
         // 每隔两秒执行一次
@@ -163,7 +194,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             if ("1".equals(weixinTemplateDetail.getMsgType())) {
                 param.put("AtWxIDList", null);
                 param.put("MsgType", 1);
-                param.put("TextContent", weixinTemplateDetail.getMsgContent());
+                param.put("TextContent", weixinTemplateDetail.getMsgContent() + "执行时间："+DateUtil.formatDateTime(new Date()));
                 // 发送文字信息
                 JSONObject textMessage = WechatApiHelper.SEND_TEXT_MESSAGE.invoke(paramVo, query);
                 log.info("step four 发送文本消息：当前时间：{}，发送内容：{}， 返回值：{}，", new Date(), weixinTemplateDetail.getMsgContent(), textMessage);
@@ -175,7 +206,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 } else {
                     // 随机延时两秒进行下一个话术操作
                     try {
-                        int i1 = RandomUtil.randomInt(1000, 1500);
+                        int i1 = RandomUtil.randomInt(min, max);
                         log.info("下次延时时间为{}ms", i1);
                         Thread.sleep(i1);
                     } catch (InterruptedException e) {
@@ -205,7 +236,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 } else {
                     // 随机延时两秒进行下一个话术操作
                     try {
-                        Thread.sleep(RandomUtil.randomInt(1000, 1500));
+                        Thread.sleep(RandomUtil.randomInt(min, max));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -238,4 +269,5 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
         weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("系统异常"));*/
         return true;
     }
+
 }

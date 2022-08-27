@@ -52,7 +52,6 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler {
         LinkedTreeMap query = (LinkedTreeMap) message.get("query");
         JSONObject param = message.getJSONObject("param");
         MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap(query);
-        // TODO 增加校验该用户是否还在群中，从获取联系人列表查看自己是否在这个群里
         // Date delay = new Date();
         // 校验该批次是否还是有些状态
         Long asyncEventCallId = message.getLong("asyncEventCallId");
@@ -121,7 +120,7 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler {
                     }
                     // 获取子账号信息，如果不存在，则无须邀请进群了
                     WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(weixinAsyncEventCall.getWxId());
-                    if (!(StrUtil.isEmpty(weixinRelatedContacts.getRelated1()) || StrUtil.isEmpty(weixinRelatedContacts.getRelated2()))) {
+                    if (!(StrUtil.isEmpty(weixinRelatedContacts.getRelated1()) || !StrUtil.isEmpty(weixinRelatedContacts.getRelated2()))) {
                         JSONObject jsonObject2 = JSONObject.of("ChatRoomName", chatroomName, "UserList", Lists.newArrayList(weixinRelatedContacts.getRelated1(), weixinRelatedContacts.getRelated2()));
                         // TODO 判断群是否是验证群，验证群跳过,或者是不是好友关系跳过
                         JSONObject addChatroomMembers = WechatApiHelper.INVITE_CHATROOM_MEMBERS.invoke(jsonObject2, multiValueMap);

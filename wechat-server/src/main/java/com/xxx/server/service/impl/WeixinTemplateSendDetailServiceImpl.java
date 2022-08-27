@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -55,7 +56,8 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                 // 构建具体的数据
                 WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
                         .setChatRoomId(weixinContactDetailedInfo.getWxId())
-                        .setChatRoomName(weixinContactDetailedInfo.getUserName());
+                        .setChatRoomName(weixinContactDetailedInfo.getUserName())
+                        .setHeadImgUrl(weixinContactDetailedInfo.getSmallHeadImgUrl());
                 weixinTemplateSendDetails.add(weixinTemplateSendDetail);
             });
             return weixinTemplateSendDetails;
@@ -79,7 +81,9 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
             weixinContactDetailedInfos.stream().distinct().forEach(weixinContactDetailedInfo -> {
                 // 构建具体的数据
                 WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
-                        .setChatRoomId(weixinContactDetailedInfo.getWxId()).setChatRoomName(weixinContactDetailedInfo.getUserName());
+                        .setChatRoomId(weixinContactDetailedInfo.getWxId())
+                        .setChatRoomName(weixinContactDetailedInfo.getUserName())
+                        .setHeadImgUrl(weixinContactDetailedInfo.getSmallHeadImgUrl());
                 weixinTemplateSendDetails.add(weixinTemplateSendDetail);
                 // 如果包含在列表中，更新对应的模板
                 weixinTemplateSendDetailsVo
@@ -98,6 +102,8 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                             weixinTemplateSendDetail.setFinishTime(templateSendDetail.getFinishTime());
                             weixinTemplateSendDetail.setResult(templateSendDetail.getResult());
                         });
+                // 排序操作
+                weixinTemplateSendDetails.sort(Comparator.comparing(WeixinTemplateSendDetail::getStatus,Comparator.nullsFirst(String::compareTo)).reversed());
             });
             return weixinTemplateSendDetails;
         }

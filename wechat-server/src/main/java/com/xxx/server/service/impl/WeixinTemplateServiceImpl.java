@@ -63,6 +63,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Resource
     private IWeixinBaseInfoService weixinBaseInfoService;
 
+    @Resource
+    private IWeixinDictionaryService weixinDictionaryService;
+
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
@@ -207,9 +210,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             List<Long> ids = weixinTemplateVos.stream().map(WeixinTemplate::getTemplateId).collect(Collectors.toList());
             templateIdVos.put(templateType, ids);
         });
-        Assert.isTrue(templateIdVos.size() == 2, "缺少模板类型");
+        Assert.isTrue(templateIdVos.size() == 2, "需同时包含单人双人模板");
         // 构建回调参数，用于额外操作
         // 获取父节点id信息
+        log.info("开始获取父节点信息开始");
         WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getOne(Wrappers.lambdaQuery(WeixinRelatedContacts.class).eq(WeixinRelatedContacts::getRelated1, wxIdA).or().eq(WeixinRelatedContacts::getRelated2, wxIdA));
         Assert.notNull(weixinRelatedContacts, "父节点信息异常");
         String wxId = weixinRelatedContacts.getWxId();
@@ -222,7 +226,22 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
         Date delay = new Date();
         if (old != null) {
-            if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
+            log.info("校验上次微信执行是否完成");
+            LocalDateTime planTime = old.getPlanTime();
+            if (planTime == null) {
+                // 结束上次异常群聊
+                weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
+                // 生成对应的批次号，重新赋值
+                weixinAsyncEventCall = new WeixinAsyncEventCall()
+                        // 群邀请类型
+                        .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
+                        .setBusinessId(UUID.fastUUID().toString())
+                        .setWxId(wxId)
+                        .setPlanStartTime(LocalDateTimeUtil.of(delay))
+                        // 设置99为处理中状态
+                        .setResultCode(99);
+                weixinAsyncEventCallService.save(weixinAsyncEventCall);
+            }else if (planTime.compareTo(LocalDateTime.now()) > 0) {
                 // 直接提醒还存在待完成的数据，返回开始预计开始时间和预计完成时间
                 log.info("该微信上次群聊还没执行完成：{}", wxId);
                 result.put("code", 500);
@@ -274,6 +293,17 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
         }
+        List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("groupChat"));
+        // 获取对应随机数字1-5, 默认2-4秒
+        JSONObject dices = new JSONObject();
+        scanIntoUrlGroupTimes.forEach(scanIntoUrlGroupTime -> {
+            dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
+        });
+        // 增加缓存信息
+        int max = dices.getIntValue("mass_max", 10000);
+        int min = dices.getIntValue("mass_min", 8000);
+        log.info("群发群间隔配置时间min:{},max:{}", min, max);
+        Assert.isTrue(max > min, "群发间隔时间配置有误");
         for (String chatRoomName : chatRoomNames) {
             // 构建延时消息操作，暂时按照一个群5秒操作
             JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
@@ -284,11 +314,12 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             jsonObject.put("wxIdB", wxIdB);
             // 开始构建延时消息
             Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
-            // 设置随机时间10-15秒执行时间
-            delay = RandomUtil.randomDate(delay, DateField.SECOND, 32, 45);
-            log.info("发送延时消息延时时间为：{}", delay);
+            // 每个群发之间的间隔时间
             try {
+                log.info("发送延时消息延时时间为：{}", delay);
                 delayMqProducer.sendDelay(message, delay);
+                // 设置随机时间10-15秒执行时间
+                delay = RandomUtil.randomDate(delay, DateField.MILLISECOND, min, max);
                 // 记录已操作过的群聊信息，并标识为正在处理中
                 WeixinTemplateSendDetail weixinTemplateSendDetail =
                         new WeixinTemplateSendDetail()
