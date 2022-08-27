@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -98,6 +99,8 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                             weixinTemplateSendDetail.setFinishTime(templateSendDetail.getFinishTime());
                             weixinTemplateSendDetail.setResult(templateSendDetail.getResult());
                         });
+                // 排序操作
+                weixinTemplateSendDetails.sort(Comparator.comparing(WeixinTemplateSendDetail::getStatus,Comparator.nullsFirst(String::compareTo)).reversed());
             });
             return weixinTemplateSendDetails;
         }
