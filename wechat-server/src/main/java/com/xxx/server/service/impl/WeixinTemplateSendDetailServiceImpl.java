@@ -56,7 +56,8 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                 // 构建具体的数据
                 WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
                         .setChatRoomId(weixinContactDetailedInfo.getWxId())
-                        .setChatRoomName(weixinContactDetailedInfo.getUserName());
+                        .setChatRoomName(weixinContactDetailedInfo.getUserName())
+                        .setHeadImgUrl(weixinContactDetailedInfo.getSmallHeadImgUrl());
                 weixinTemplateSendDetails.add(weixinTemplateSendDetail);
             });
             return weixinTemplateSendDetails;
@@ -80,7 +81,9 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
             weixinContactDetailedInfos.stream().distinct().forEach(weixinContactDetailedInfo -> {
                 // 构建具体的数据
                 WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail()
-                        .setChatRoomId(weixinContactDetailedInfo.getWxId()).setChatRoomName(weixinContactDetailedInfo.getUserName());
+                        .setChatRoomId(weixinContactDetailedInfo.getWxId())
+                        .setChatRoomName(weixinContactDetailedInfo.getUserName())
+                        .setHeadImgUrl(weixinContactDetailedInfo.getSmallHeadImgUrl());
                 weixinTemplateSendDetails.add(weixinTemplateSendDetail);
                 // 如果包含在列表中，更新对应的模板
                 weixinTemplateSendDetailsVo

@@ -104,6 +104,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             JSONObject chatroomMemberDetailVo = WechatApiHelper.GET_CHATROOM_MEMBER_DETAIL.invoke(jsonObject, queryBase);
             if (ResConstant.CODE_SUCCESS.equals(chatroomMemberDetailVo.getInteger(ResConstant.CODE))) {
                 // 自己存在
+                // 获取群头像信息
                 JSONArray memberDatasVo = chatroomMemberDetailVo.getJSONObject(ResConstant.DATA).getJSONObject("member_data").getJSONArray("chatroom_member_list");
                 if(memberDatasVo == null){
                     log.info("该账号登录状态不在这个群内key:{}", key);

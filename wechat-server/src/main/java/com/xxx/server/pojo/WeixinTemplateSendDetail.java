@@ -70,4 +70,7 @@ public class WeixinTemplateSendDetail implements Serializable {
 
     @TableField("wxId")
     private String wxId;
+
+    @TableField("head_img_url")
+    private String headImgUrl;
 }

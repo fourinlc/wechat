@@ -96,7 +96,9 @@ public class DictAspect {
                             if (!StrUtil.isBlank(text)) {
                                 item.put(text, textValue);
                             }else {
-                                item.put(field.getName() , textValue);
+                                if(StrUtil.isNotEmpty(textValue)){
+                                    item.put(field.getName() , textValue);
+                                }
                             }
                         }
                         // date类型默认转换string格式化日期
