@@ -315,11 +315,11 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             // 开始构建延时消息
             Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
             // 每个群发之间的间隔时间
-            // 设置随机时间10-15秒执行时间
-            delay = RandomUtil.randomDate(delay, DateField.MILLISECOND, min, max);
-            log.info("发送延时消息延时时间为：{}", delay);
             try {
+                log.info("发送延时消息延时时间为：{}", delay);
                 delayMqProducer.sendDelay(message, delay);
+                // 设置随机时间10-15秒执行时间
+                delay = RandomUtil.randomDate(delay, DateField.MILLISECOND, min, max);
                 // 记录已操作过的群聊信息，并标识为正在处理中
                 WeixinTemplateSendDetail weixinTemplateSendDetail =
                         new WeixinTemplateSendDetail()

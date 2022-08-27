@@ -1,5 +1,6 @@
 package com.xxx.server.mq;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -192,7 +193,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             if ("1".equals(weixinTemplateDetail.getMsgType())) {
                 param.put("AtWxIDList", null);
                 param.put("MsgType", 1);
-                param.put("TextContent", weixinTemplateDetail.getMsgContent());
+                param.put("TextContent", weixinTemplateDetail.getMsgContent() + "执行时间："+DateUtil.formatDateTime(new Date()));
                 // 发送文字信息
                 JSONObject textMessage = WechatApiHelper.SEND_TEXT_MESSAGE.invoke(paramVo, query);
                 log.info("step four 发送文本消息：当前时间：{}，发送内容：{}， 返回值：{}，", new Date(), weixinTemplateDetail.getMsgContent(), textMessage);

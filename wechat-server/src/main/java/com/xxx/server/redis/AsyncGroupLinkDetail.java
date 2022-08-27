@@ -217,7 +217,6 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
     private JSONObject buildUrl(String url) {
         try {
             // "半勺小奶酪?"邀请你加入群聊"海娜生活超市特价公告送货群"，进入可查看详情。
-
             Document document = DocumentHelper.parseText(url);
             Node node = document.selectSingleNode("/msg/appmsg/url");
             String des = document.selectSingleNode("/msg/appmsg/des").getText();
