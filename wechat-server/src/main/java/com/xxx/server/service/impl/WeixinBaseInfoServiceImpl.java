@@ -120,6 +120,11 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             code = resultJson.getString("code");
         }
         if (code.equals("200")){
+            WeixinBaseInfo weixinBaseInfo = new WeixinBaseInfo();
+            weixinBaseInfo
+                    .setKey(key)
+                    .setState("0");
+            weixinBaseInfoMapper.updateById(weixinBaseInfo);
             return RespBean.sucess("退出成功",resultJson);
         } else {
             return RespBean.error("退出失败",resultJson);
