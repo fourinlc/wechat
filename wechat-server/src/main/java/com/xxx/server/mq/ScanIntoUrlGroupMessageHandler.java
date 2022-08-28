@@ -62,6 +62,8 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler {
         }
         if (weixinAsyncEventCall.getResultCode() == 500) {
             log.info("流程提前结束：{}", message);
+            // 更新原始数据进群详情信息,增加描述信息
+            weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("500").setLinkId(linkId));
             return true;
         }
         // 额外校验群链接生效情况

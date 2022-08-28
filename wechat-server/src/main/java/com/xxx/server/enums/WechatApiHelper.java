@@ -1,10 +1,14 @@
 package com.xxx.server.enums;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.dachen.starter.mq.annotation.MQProducer;
+import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.util.RestClient;
 import com.xxx.server.util.SpringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.common.message.Message;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.MultiValueMap;
 
@@ -42,6 +46,8 @@ public enum WechatApiHelper {
 
     private static final RestClient restclient = SpringUtils.getBean(RestClient.class);
 
+    private static final DelayMqProducer delayMqProducer = SpringUtils.getBean(DelayMqProducer.class);
+
     // 通用调用参数处理
     public JSONObject invoke(Object param, MultiValueMap<String,String> multiValueMap){
         log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, query:{}", getDesc(), param, multiValueMap);
@@ -57,7 +63,11 @@ public enum WechatApiHelper {
             default:
                 return null;
         }
-        // 对应接口自行开启日志
+        // 对应接口自行开启日志,增加记录微信返回异常信息
+        // 走mq单边消息消息通知
+        /*JSONObject jsonObject = JSONObject.of("methodName", getDesc(), "param", param, "query", multiValueMap);
+        Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(jsonObject));
+        delayMqProducer.sendOneway(message);*/
         log.debug("调用wechat统一返回结果：{}", o);
         return o;
     }

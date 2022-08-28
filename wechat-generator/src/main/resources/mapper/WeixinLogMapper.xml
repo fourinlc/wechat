@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxx.server.mapper.WeixinLogMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.xxx.server.pojo.WeixinLog">
+        <id column="weixin_log_id" property="weixinLogId" />
+        <result column="method_name" property="methodName" />
+        <result column="method_param" property="methodParam" />
+        <result column="method_query" property="methodQuery" />
+        <result column="result" property="result" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        weixin_log_id, method_name, method_param, method_query, result, status, create_time
+    </sql>
+
+</mapper>

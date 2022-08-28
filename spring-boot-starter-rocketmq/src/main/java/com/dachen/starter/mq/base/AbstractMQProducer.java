@@ -87,4 +87,15 @@ public abstract class AbstractMQProducer {
             throw new MQException("消息发送失败，topic :" + message.getTopic() + ",e:" + e.getMessage());
         }
     }
+
+    /**单边消息发送*/
+    public void sendOneway(Message message) throws MQException {
+        try {
+            producer.sendOneway(message);
+            log.debug("send rocketmq message sendOneway");
+        } catch (Exception e) {
+            log.error("消息发送失败，topic : {}, msgObj {}", message.getTopic(), message);
+            throw new MQException("消息发送失败，topic :" + message.getTopic() + ",e:" + e.getMessage());
+        }
+    }
 }
