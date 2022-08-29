@@ -196,7 +196,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             relatedList.add(weixinRelatedContacts.getRelated1());
             relatedList.add(weixinRelatedContacts.getRelated2());
         }
-        //通过wxid获取详细信息
+        //通过wxid获取详细信息23b3b60c-34b2-4e36-976e-ba93f99bfc0e&wxid=wxid_tk8ml7phzo3y12&refresh=true
         MultiValueMap<String,String> getDetailsKeyMap = new LinkedMultiValueMap<>();
         getDetailsKeyMap.add("key",key);
         ArrayList<String> contactDetailsList = new ArrayList<>();
@@ -205,10 +205,10 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         contactDetailedInfoMap.put("chatRoomDetaile",new ArrayList<>());
         for (int i = 0; i < contactList.size(); i++) {
             contactDetailsList.add(contactList.get(i));
-            if (contactDetailsList.size() == 4 || i == contactList.size() -1) {
+            if (contactDetailsList.size() == 20 || i == contactList.size() -1) {
                 JSONObject getDetailersObject = new JSONObject();
-                getDetailersObject.put("UserNames",contactDetailsList);
-                JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(getDetailersObject,getDetailsKeyMap)));
+                getDetailersObject.put("ChatRoomWxIdList",contactDetailsList);
+                JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CHAT_ROOM_INFO.invoke(getDetailersObject,getDetailsKeyMap)));
                 if(detailsJson.containsKey("Code")){
                     code = detailsJson.getString("Code");
                 }else if(detailsJson.containsKey("code")){
