@@ -1,16 +1,17 @@
 package com.xxx.server.enums;
 
+import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.dachen.starter.mq.annotation.MQProducer;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
+import com.xxx.server.constant.ResConstant;
 import com.xxx.server.util.RestClient;
 import com.xxx.server.util.SpringUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.rocketmq.common.message.Message;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.MultiValueMap;
+
+import java.net.SocketTimeoutException;
 
 /**
  * 微信枚举信息
@@ -36,7 +37,8 @@ public enum WechatApiHelper {
     /**包含群基本信息*/
     GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST),
     GET_CHATROOM_MEMBER_DETAIL("群成员列表", "/v1/group/GetChatroomMemberDetail", HttpMethod.POST),
-    CREATE_CHATROOM("创建群聊", "/v1/group/CreateChatRoom", HttpMethod.POST);
+    CREATE_CHATROOM("创建群聊", "/v1/group/CreateChatRoom", HttpMethod.POST),
+    GET_FRIEND_RELATION("判断好友关系", "/v1/user/GetFriendRelation",HttpMethod.POST);
 
     private String desc;
 
@@ -51,18 +53,31 @@ public enum WechatApiHelper {
     // 通用调用参数处理
     public JSONObject invoke(Object param, MultiValueMap<String,String> multiValueMap){
         log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, query:{}", getDesc(), param, multiValueMap);
-        JSONObject o;
-        switch (getHttpMethod()){
-            case POST:
-                o = restclient.postJson(getCode(), param, multiValueMap);
-                break;
-            case GET:
-                // 是否再区别更细分，依据Content-Type,当然可以直接子类重写相关
-                o = restclient.getForm(getCode(), param, multiValueMap);
-                break;
-            default:
-                return null;
+        JSONObject o = JSONObject.of();
+        try {
+            switch (getHttpMethod()){
+                case POST:
+                    o = restclient.postJson(getCode(), param, multiValueMap);
+                    break;
+                case GET:
+                    // 是否再区别更细分，依据Content-Type,当然可以直接子类重写相关
+                    o = restclient.getForm(getCode(), param, multiValueMap);
+                    break;
+                default:
+                    return null;
+            }
+        }catch (Exception exception ){
+            log.info("微信处理异常信息:{}", ExceptionUtil.getMessage(exception));
+            // 处理连接异常
+            if (exception instanceof SocketTimeoutException) {
+                o.put(ResConstant.CODE, 500);
+                o.put("Text", "连接超时");
+            }else {
+                o.put(ResConstant.CODE, 500);
+                o.put("Text", "未知异常");
+            }
         }
+
         // 对应接口自行开启日志,增加记录微信返回异常信息
         // 走mq单边消息消息通知
         /*JSONObject jsonObject = JSONObject.of("methodName", getDesc(), "param", param, "query", multiValueMap);

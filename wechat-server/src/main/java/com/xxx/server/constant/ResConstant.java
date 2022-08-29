@@ -20,5 +20,8 @@ public interface ResConstant {
     /**群聊类型*/
     String ASYNC_EVENT_GROUP_CHAT = "groupChat";
 
+    /**群聊类型*/
+    String ASYNC_EVENT_GROUP_SEND = "groupSend";
+
 
 }
