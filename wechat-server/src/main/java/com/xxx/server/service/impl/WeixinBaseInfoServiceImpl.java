@@ -13,6 +13,7 @@ import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.pojo.WeixinContactDetailedInfo;
 import com.xxx.server.pojo.WeixinRelatedContacts;
 import com.xxx.server.service.IWeixinBaseInfoService;
+import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
@@ -150,10 +151,11 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     @CacheEvict(value = "contacts", key="#wxid", condition = "#refresh", beforeInvocation=true)
     public RespBean getFriendsAndChatRooms(String key, String wxid, boolean refresh) {
         //获取所有联系人wxid
-        String code;
+        String code = null;
         int currentWxcontactSeq = 0;
         int currentChatRoomContactSeq = 0;
         int continueFlag = 0;
+        int retry = 0;
         ArrayList<String> friendList = new ArrayList<>();
         ArrayList<String> contactList = new ArrayList<>();
         do {
@@ -162,14 +164,30 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             jsonObject.put("CurrentChatRoomContactSeq",currentChatRoomContactSeq);
             MultiValueMap<String,String> getContactListMap = new LinkedMultiValueMap<>();
             getContactListMap.add("key", key);
-            JSONObject resultJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,getContactListMap)));
+            JSONObject resultJson = null;
+            try {
+                resultJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,getContactListMap)));
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (retry == 3) {
+                    return RespBean.error("获取好友列表失败",resultJson);
+                }
+                retry++;
+                continueFlag = 1;
+                continue;
+            }
             if(resultJson.containsKey("Code")){
                 code = resultJson.getString("Code");
             }else {
                 code = resultJson.getString("code");
             }
             if (!code.equals("200")){
-                return RespBean.error("获取好友列表失败",resultJson);
+                if (retry == 3) {
+                    return RespBean.error("获取好友列表失败",resultJson);
+                }
+                retry++;
+                continueFlag = 1;
+                continue;
             }
             currentWxcontactSeq = resultJson.getJSONObject("Data").getJSONObject("ContactList").getInteger("currentWxcontactSeq");
             currentChatRoomContactSeq = resultJson.getJSONObject("Data").getJSONObject("ContactList").getInteger("currentChatRoomContactSeq");
@@ -196,27 +214,45 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             relatedList.add(weixinRelatedContacts.getRelated1());
             relatedList.add(weixinRelatedContacts.getRelated2());
         }
-        //通过wxid获取详细信息23b3b60c-34b2-4e36-976e-ba93f99bfc0e&wxid=wxid_tk8ml7phzo3y12&refresh=true
+        //通过wxid获取详细信息
         MultiValueMap<String,String> getDetailsKeyMap = new LinkedMultiValueMap<>();
         getDetailsKeyMap.add("key",key);
         ArrayList<String> contactDetailsList = new ArrayList<>();
         Map<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new HashMap<>();
         contactDetailedInfoMap.put("friendsDetail",new ArrayList<>());
         contactDetailedInfoMap.put("chatRoomDetaile",new ArrayList<>());
+        retry = 0;
         for (int i = 0; i < contactList.size(); i++) {
             contactDetailsList.add(contactList.get(i));
             if (contactDetailsList.size() == 20 || i == contactList.size() -1) {
                 JSONObject getDetailersObject = new JSONObject();
                 getDetailersObject.put("ChatRoomWxIdList",contactDetailsList);
-                JSONObject detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CHAT_ROOM_INFO.invoke(getDetailersObject,getDetailsKeyMap)));
-                if(detailsJson.containsKey("Code")){
-                    code = detailsJson.getString("Code");
-                }else if(detailsJson.containsKey("code")){
-                    code = detailsJson.getString("code");
-                }
-                if(!code.equals("200")){
-                    return RespBean.error("获取好友详情失败",detailsJson);
-                }
+                JSONObject detailsJson = null;
+                do {
+                    try {
+                        detailsJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CHAT_ROOM_INFO.invoke(getDetailersObject,getDetailsKeyMap)));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        if (retry == 3) {
+                            return RespBean.error("获取好友列表失败",detailsJson);
+                        }
+                        retry++;
+                        continue;
+                    }
+                    if(detailsJson.containsKey("Code")){
+                        code = detailsJson.getString("Code");
+                    }else if(detailsJson.containsKey("code")){
+                        code = detailsJson.getString("code");
+                    }
+                    if(!code.equals("200")){
+                        if (retry == 3) {
+                            return RespBean.error("获取好友详情失败",detailsJson);
+                        }
+                        retry++;
+                    } else {
+                        break;
+                    }
+                }while (true);
                 //过滤出好友和群
                 JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
                 for (Object o : detailsList) {
