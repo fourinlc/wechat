@@ -2,12 +2,15 @@ package com.xxx.server.enums;
 
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.constant.ResConstant;
 import com.xxx.server.util.RestClient;
 import com.xxx.server.util.SpringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.common.message.Message;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.MultiValueMap;
 
@@ -50,6 +53,8 @@ public enum WechatApiHelper {
 
     private static final DelayMqProducer delayMqProducer = SpringUtils.getBean(DelayMqProducer.class);
 
+    private static final ConfigurableEnvironment configurableEnvironment = SpringUtils.getBean(ConfigurableEnvironment .class);
+
     // 通用调用参数处理
     public JSONObject invoke(Object param, MultiValueMap<String,String> multiValueMap){
         log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, query:{}", getDesc(), param, multiValueMap);
@@ -83,6 +88,19 @@ public enum WechatApiHelper {
         /*JSONObject jsonObject = JSONObject.of("methodName", getDesc(), "param", param, "query", multiValueMap);
         Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(jsonObject));
         delayMqProducer.sendOneway(message);*/
+        // 默认情况下只保存异常信息
+        if (!ResConstant.CODE_SUCCESS.equals(o.getInteger(ResConstant.CODE))) {
+            // 对应接口自行开启日志,增加记录微信返回异常信息
+            // 走mq单边消息消息通知
+            String wechatLogTag = configurableEnvironment.getProperty("spring.rocketmq.tags.wechatLog");
+            String consumerTopic = configurableEnvironment.getProperty("spring.rocketmq.consumer-topic");
+            JSONObject jsonObject = JSONObject.of("methodName", getDesc(),
+                    "methodParam", param,
+                    "methodQuery", multiValueMap);
+            jsonObject.put("result", o);
+            Message message = new Message(consumerTopic, wechatLogTag, JSON.toJSONBytes(jsonObject));
+            delayMqProducer.sendOneway(message);
+        }
         log.debug("调用wechat统一返回结果：{}", o);
         return o;
     }

@@ -190,6 +190,10 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                     return true;
                 }
             }
+            // 从缓存中获取随机间隔时间缓存
+            List<WeixinDictionary> weixinDictionaries = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicKey("groupChat"));
+            // 获取随机间隔时间最大值和最小值
+
             // 1默认为普通文字消息
             if ("1".equals(weixinTemplateDetail.getMsgType())) {
                 param.put("AtWxIDList", null);
