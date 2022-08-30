@@ -256,7 +256,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         retry = 0;
         for (int i = 0; i < contactList.size(); i++) {
             contactDetailsList.add(contactList.get(i));
-            if (contactDetailsList.size() == 20 || i == contactList.size() -1) {
+            if (contactDetailsList.size() == 7 || i == contactList.size() -1) {
                 JSONObject getDetailersObject = new JSONObject();
                 getDetailersObject.put("ChatRoomWxIdList",contactDetailsList);
                 JSONObject detailsJson = null;
