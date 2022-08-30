@@ -11,6 +11,7 @@ import com.xxx.server.mapper.WeixinRelatedContactsMapper;
 import com.xxx.server.pojo.*;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import io.jsonwebtoken.Jwts;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
@@ -35,6 +36,7 @@ import java.util.Map;
  */
 @Service
 @CacheConfig(cacheNames = "contacts")
+@Slf4j
 public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper, WeixinBaseInfo> implements IWeixinBaseInfoService {
 
     @Autowired
@@ -281,8 +283,8 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                             return RespBean.error("获取好友详情失败",detailsJson);
                         }
                         retry++;
-                        log.debug("获取好友详情失败："+detailsJson);
-                        log.debug("获取好友详情重试："+retry);
+                        log.info("获取好友详情失败："+detailsJson);
+                        log.info("获取好友详情重试："+retry);
                     } else {
                         break;
                     }
@@ -315,6 +317,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                 contactDetailsList.clear();
             }
         }
+        log.info("好友详情查询成功");
         return RespBean.sucess("查询成功",JSONObject.parseObject(JSONObject.toJSONString(contactDetailedInfoMap)));
     }
 
