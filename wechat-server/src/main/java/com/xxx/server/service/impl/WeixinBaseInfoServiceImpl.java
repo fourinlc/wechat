@@ -8,10 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinBaseInfoMapper;
 import com.xxx.server.mapper.WeixinRelatedContactsMapper;
-import com.xxx.server.pojo.RespBean;
-import com.xxx.server.pojo.WeixinBaseInfo;
-import com.xxx.server.pojo.WeixinContactDetailedInfo;
-import com.xxx.server.pojo.WeixinRelatedContacts;
+import com.xxx.server.pojo.*;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,6 +126,41 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             return RespBean.sucess("退出成功",resultJson);
         } else {
             return RespBean.error("退出失败",resultJson);
+        }
+    }
+
+    @Override
+    public RespBean get62Data(String key) {
+        MultiValueMap<String,String> get62DataMap = new LinkedMultiValueMap<>();
+        get62DataMap.add("key", key);
+        JSONObject resultJson = JSONObject.parseObject(WechatApiHelper.GET_62_DATA.invoke(null,get62DataMap).toString());
+        String code;
+        if(resultJson.containsKey("Code")){
+            code = resultJson.getString("Code");
+        }else{
+            code = resultJson.getString("code");
+        }
+        if (code.equals("200")){
+            return RespBean.sucess("查询成功",resultJson);
+        } else {
+            return RespBean.error("查询失败",resultJson);
+        }
+    }
+
+    @Override
+    public RespBean deviceLogin(DeviceLoginParam deviceLoginParam) {
+        JSONObject jsonObject = JSONObject.parseObject(deviceLoginParam.toString());
+        JSONObject resultJson = JSONObject.parseObject(WechatApiHelper.GET_LOGIN_QRCODE_NEW.invoke(jsonObject,null).toString());
+        String code;
+        if(resultJson.containsKey("Code")){
+            code = resultJson.getString("Code");
+        }else {
+            code = resultJson.getString("code");
+        }
+        if (code.equals("200")){
+            return RespBean.sucess("登录成功",resultJson);
+        } else {
+            return RespBean.error("获取失败",resultJson);
         }
     }
 

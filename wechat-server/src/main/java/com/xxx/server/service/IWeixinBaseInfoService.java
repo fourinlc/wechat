@@ -1,6 +1,7 @@
 package com.xxx.server.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xxx.server.pojo.DeviceLoginParam;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
 
@@ -28,4 +29,7 @@ public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
 
     RespBean logOut(String key);
 
+    RespBean get62Data(String key);
+
+    RespBean deviceLogin(DeviceLoginParam deviceLoginParam);
 }
