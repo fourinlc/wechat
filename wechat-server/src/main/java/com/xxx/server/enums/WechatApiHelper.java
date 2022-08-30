@@ -69,7 +69,7 @@ public enum WechatApiHelper {
                     o = restclient.getForm(getCode(), param, multiValueMap);
                     break;
                 default:
-                    return null;
+                    return new JSONObject();
             }
         }catch (Exception exception ){
             log.info("微信处理异常信息:{}", ExceptionUtil.getMessage(exception));
@@ -82,12 +82,6 @@ public enum WechatApiHelper {
                 o.put("Text", "未知异常");
             }
         }
-
-        // 对应接口自行开启日志,增加记录微信返回异常信息
-        // 走mq单边消息消息通知
-        /*JSONObject jsonObject = JSONObject.of("methodName", getDesc(), "param", param, "query", multiValueMap);
-        Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(jsonObject));
-        delayMqProducer.sendOneway(message);*/
         // 默认情况下只保存异常信息
         if (!ResConstant.CODE_SUCCESS.equals(o.getInteger(ResConstant.CODE))) {
             // 对应接口自行开启日志,增加记录微信返回异常信息
