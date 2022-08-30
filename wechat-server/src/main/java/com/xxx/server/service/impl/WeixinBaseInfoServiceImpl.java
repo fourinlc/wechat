@@ -281,6 +281,8 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                             return RespBean.error("获取好友详情失败",detailsJson);
                         }
                         retry++;
+                        log.debug("获取好友详情失败："+detailsJson);
+                        log.debug("获取好友详情重试："+retry);
                     } else {
                         break;
                     }
