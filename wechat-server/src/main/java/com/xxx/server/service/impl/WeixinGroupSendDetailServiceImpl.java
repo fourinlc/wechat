@@ -172,6 +172,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         int rate = dices.getIntValue("rate", 10);
         int between = dices.getIntValue("between", 1);
         // 开始循环进群操作
+        log.info("配置信息{}", dices);
         for (int i = 0; i < chatRoomIds.size(); i++) {
             if ((i + 1) % (sheaves * rate) == 0) {
                 // log.info("新的一轮操作：{}", i);
@@ -212,6 +213,11 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 throw new BusinessException("mq消息发送失败，请检测网络情况");
             }
         }
+        // 更新计划完成时间
+        if(flag){
+            delay = DateUtils.addSeconds(delay, 120);
+        }
+        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
         return result;
     }
 }

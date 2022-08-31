@@ -25,15 +25,19 @@ public class WechatMqConsumer extends AbstractMQPushConsumer<JSONObject> {
 
     @Override
     public boolean process(JSONObject message, Map<String, Object> extMap) {
+
         JSONObject jsonObject = new JSONObject(extMap);
         String tags = jsonObject.getString(MessageExtConst.PROPERTY_TAGS);
         log.info("接收消息 ：body:{}, tag:{}, messageId:{}", message, tags, jsonObject.getString(MessageExtConst.PROPERTY_EXT_MSG_ID));
+        //return true;
         // 先尝试直接用 WechatApiHelper进行处理
         WechatApiHelper wechatApiHelper = WechatApiHelper.getWechatApiHelper(jsonObject.getString("code"));
         if(mqMessageHandlers.containsKey(tags)){
+            log.info("特定tag处理入口tag:{}", tags);
             // 有子类实现直接策略处理
             return mqMessageHandlers.get(tags).process(message);
         }else if(wechatApiHelper != null){
+            log.info("默认微信接口操作入口");
             // 直接默认处理数据信息了
             LinkedTreeMap query = (LinkedTreeMap)message.get("query");
             JSONObject param = message.getJSONObject("param");

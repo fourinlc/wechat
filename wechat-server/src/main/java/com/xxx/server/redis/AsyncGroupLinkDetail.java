@@ -1,6 +1,7 @@
 package com.xxx.server.redis;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -49,10 +51,8 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        Timer timer = new Timer();
-        TimerTask timerTask = new TimerTask() {
-            @Override
-            public void run() {
+        for(;;){
+            try {
                 log.debug("开始定时处理群链接信息和在线好友信息");
                 // 获取所有存活微信信息
                 // Set<String> stringSet = redisTemplate.keys("*" + SUFFIX);
@@ -84,29 +84,30 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     // 获取发送人信息，判断是否为群消息，群消息过滤掉 from_user_name字段校验
                                     JSONObject fromUserNameVO = jsonObject.getJSONObject("from_user_name");
                                     String fromUserWxId = fromUserNameVO.getString("str");
-                                    // 过滤系统消息
+                                    // 过滤系统消息以及群消息
                                     if (SYSTEM_MESSAGE.contains(fromUserWxId) || StrUtil.contains(fromUserWxId, "@chatroom")) {
                                         continue;
                                     }
-                                    if(StrUtil.equals("49", jsonObject.getString("msg_type"))){
+                                    // 群邀请信息，也不一定
+                                    if (StrUtil.equals("49", jsonObject.getString("msg_type"))) {
                                         log.info(((JSONObject) data).toJSONString());
                                     }
                                     WeixinBaseInfo fromWeixinBaseInfo = weixinBaseInfoService.getById(fromUserWxId);
                                     // 这个参数只能从我的好友列表中获取对应的昵称
                                     // 如果存在直接添加至邀请连接中
-                                    if (fromWeixinBaseInfo != null){
-                                        // 移除自己发出去的消息
+                                    if (fromWeixinBaseInfo != null) {
+                                        // 移除自己本身发出去的消息
                                         if (StrUtil.equals(fromWeixinBaseInfo.getKey(), ((JSONObject) data).getString("UUID"))) {
                                             continue;
                                         }
                                         jsonObject.put("from_user_name", fromWeixinBaseInfo.getNickname());
-                                    }else {
+                                    } else {
                                         // 调用微信接口
                                         JSONObject param = JSONObject.of("UserNames", Lists.newArrayList(fromUserWxId));
                                         MultiValueMap multiValueMap = new LinkedMultiValueMap();
                                         multiValueMap.add("key", ((JSONObject) data).getString("UUID"));
-                                        JSONObject dataVo =  WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(param, multiValueMap);
-                                        if(ResConstant.CODE_SUCCESS.equals(dataVo.getInteger(ResConstant.CODE))){
+                                        JSONObject dataVo = WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(param, multiValueMap);
+                                        if (ResConstant.CODE_SUCCESS.equals(dataVo.getInteger(ResConstant.CODE))) {
                                             // 获取对应的微信昵称
                                             JSONObject contact = dataVo.getJSONObject(ResConstant.DATA).getJSONArray("contactList").getJSONObject(0);
                                             String string = contact.getJSONObject("nickName").getString("str");
@@ -120,7 +121,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     jsonObject.put("to_user_wxId", toUserWxId);
                                     // 先尝试从维护的列表中获取
                                     WeixinBaseInfo toWeixinBaseInfo = weixinBaseInfoService.getById(toUserWxId);
-                                    if (toWeixinBaseInfo != null){
+                                    if (toWeixinBaseInfo != null) {
                                         jsonObject.put("to_user_name", toWeixinBaseInfo.getNickname());
                                     }
                                     // content 消息内容
@@ -152,12 +153,12 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                     // 剔除相同的
                     if (weixinBaseInfoList.size() == 1) {
                         weixinBaseInfoListVo.addAll(weixinBaseInfoList);
-                    }else {
+                    } else {
                         // 获取状态为1的的数据，如果没有就取第一条数据
                         List<WeixinBaseInfo> collect = weixinBaseInfoList.stream().filter(weixinBaseInfo -> StrUtil.equals(weixinBaseInfo.getState(), "1")).collect(Collectors.toList());
-                        if(collect.size() == 1) {
+                        if (collect.size() == 1) {
                             weixinBaseInfoListVo.addAll(collect);
-                        }else {
+                        } else {
                             weixinBaseInfoListVo.add(weixinBaseInfoList.get(0));
                         }
                     }
@@ -179,7 +180,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         // 转义获取群链接地址,不一定是群链接
                         String url = data.getContent();
                         JSONObject jsonObject = buildUrl(url);
-                        if(jsonObject.size() == 0) continue;
+                        if (jsonObject.size() == 0) continue;
                         data.setContent(jsonObject.getString("url"));
                         data.setChatroomName(jsonObject.getString("title"));
                         data.setThumbUrl(jsonObject.getString("thumbUrl"));
@@ -198,7 +199,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                         // 提取备注信息,前提是这个消息类型是1,普通消息文本信息
                     } else if (msgType == 1) {
                         // 首次普通文本信息情况下，暂时过滤文本信息
-                        if(tmp == null) continue;
+                        if (tmp == null) continue;
                         String content = data.getContent();
                         tmp.setRemark(content);
                         WeixinGroupLinkDetail weixinGroupLinkDetail = tmp.clone();
@@ -207,10 +208,10 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 }
                 // 批量更新入库,手动判断入库，更新对应的
                 weixinGroupLinkDetailService.saveBatch(dataVos);
+            }catch (Exception e){
+                log.error("轮询异常：{}", ExceptionUtil.getMessage(e));
             }
-        };
-        // 每3分钟执行一次
-        timer.schedule(timerTask, 0, 3 * 60 * 1000);
+        }
     }
 
     // 提取群链接地址
@@ -229,12 +230,22 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 roomNames.remove(0);
             }*/
             String roomName = roomNames.get(3);
-            return JSONObject.of("url", node.getText(), "title", roomName, "thumbUrl", thumbUrl);
+            byte[] encode = Base64.getEncoder().encode(roomName.getBytes(StandardCharsets.UTF_8));
+            // 转化为base64
+            return JSONObject.of("url", node.getText(), "title", new String(encode), "thumbUrl", thumbUrl);
         } catch (DocumentException e) {
             log.error("获取群链接失败：{}", e);
             log.info("打印群链接信息：{}", url);
         }
         return new JSONObject();
+    }
+
+    public static void main(String[] args) {
+        String aa = "54mb5ZGz6YGT54Ok6IKJ5rmW5YmN5oC75bqXVklQ576k77yIMTDvvInnvqQ=";
+        /*byte[] encode = Base64.getEncoder().encode(aa.getBytes(StandardCharsets.UTF_8));
+        System.out.println(new String(encode));*/
+        byte[] encode1 = Base64.getDecoder().decode(aa);
+        System.out.println(new String(encode1));
     }
 }
 
