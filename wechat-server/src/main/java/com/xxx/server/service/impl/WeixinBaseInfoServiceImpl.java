@@ -355,13 +355,13 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             }
             contactDetailedInfo.setSex(detailJson.getString("sex"));
             contactDetailedInfo.setSmallHeadImgUrl(detailJson.getString("smallHeadImgUrl"));
-            if (contactDetailedInfo.getUserName() != null && contactDetailedInfo.getUserName().endsWith("@chatroom")){
+            if (contactDetailedInfo.getWxId().endsWith("@chatroom")){
+                contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
+                contactDetailedInfoMap.get("chatRoomDetaile").add(contactDetailedInfo);
+            } else {
                 contactDetailedInfo.setSignature(detailJson.getString("signature"));
                 contactDetailedInfo.setBigHeadImgUrl(detailJson.getString("bigHeadImgUrl"));
                 contactDetailedInfoMap.get("friendsDetail").add(contactDetailedInfo);
-            } else {
-                contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
-                contactDetailedInfoMap.get("chatRoomDetaile").add(contactDetailedInfo);
             }
         }
         return contactDetailedInfoMap;
