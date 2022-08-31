@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Lists;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.mapper.WeixinBaseInfoMapper;
 import com.xxx.server.mapper.WeixinRelatedContactsMapper;
@@ -19,6 +20,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -28,6 +30,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 
 /**
  * <p>
@@ -46,6 +51,8 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     WeixinRelatedContactsMapper weixinRelatedContactsMapper;
     @Autowired
     WeixinBaseInfoMapper weixinBaseInfoMapper;
+    @Autowired
+    ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
     @Override
     public RespBean getLoginQrcode() {
@@ -260,21 +267,52 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         contactDetailedInfoMap.put("friendsDetail",new ArrayList<>());
         contactDetailedInfoMap.put("chatRoomDetaile",new ArrayList<>());
         List<String> contactDetailsList = new ArrayList<>();
-        for (int i = 0; i < contactList.size(); i++) {
-            contactDetailsList.add(contactList.get(i));
-            if (contactDetailsList.size() == 7 || i == contactDetailsList.size() - 1) {
-                Map<String, ArrayList<WeixinContactDetailedInfo>> detailedInfo = getUserNameByWxId(key, contactDetailsList);
-                List<WeixinContactDetailedInfo> friendsDetails = detailedInfo.get("friendsDetail");
-                for (WeixinContactDetailedInfo weixinContactDetailedInfo : friendsDetails) {
-                    contactDetailedInfoMap.get("friendsDetail").add(weixinContactDetailedInfo);
+        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(
+                threadPoolTaskExecutor);
+
+        List<List<String>> lists = Lists.partition(contactList, 7);
+        lists.forEach(item -> {
+            // 这里做的事情就是 根据lists大小确认要多少个线程 给每个线程分配任务
+            completionService.submit(new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    Map<String, ArrayList<WeixinContactDetailedInfo>> detailedInfo = getUserNameByWxId(key, item);
+                    List<WeixinContactDetailedInfo> friendsDetails = detailedInfo.get("friendsDetail");
+                    for (WeixinContactDetailedInfo weixinContactDetailedInfo : friendsDetails) {
+                        contactDetailedInfoMap.get("friendsDetail").add(weixinContactDetailedInfo);
+                    }
+                    List<WeixinContactDetailedInfo> chatRoomDetailes = detailedInfo.get("chatRoomDetaile");
+                    for (WeixinContactDetailedInfo weixinContactDetailedInfo : chatRoomDetailes) {
+                        contactDetailedInfoMap.get("chatRoomDetaile").add(weixinContactDetailedInfo);
+                    }
+                    return null;
                 }
-                List<WeixinContactDetailedInfo> chatRoomDetailes = detailedInfo.get("chatRoomDetaile");
-                for (WeixinContactDetailedInfo weixinContactDetailedInfo : chatRoomDetailes) {
-                    contactDetailedInfoMap.get("chatRoomDetaile").add(weixinContactDetailedInfo);
-                }
-                contactDetailsList.clear();
+            });
+        });
+        // 这里是让多线程开始执行
+        lists.forEach(item -> {
+            try {
+                completionService.take().get();
+            } catch (InterruptedException | ExecutionException e) {
+                System.out.println(e);
             }
-        }
+        });
+
+//        for (int i = 0; i < contactList.size(); i++) {
+//            contactDetailsList.add(contactList.get(i));
+//            if (contactDetailsList.size() == 7 || i == contactDetailsList.size() - 1) {
+//                Map<String, ArrayList<WeixinContactDetailedInfo>> detailedInfo = getUserNameByWxId(key, contactDetailsList);
+//                List<WeixinContactDetailedInfo> friendsDetails = detailedInfo.get("friendsDetail");
+//                for (WeixinContactDetailedInfo weixinContactDetailedInfo : friendsDetails) {
+//                    contactDetailedInfoMap.get("friendsDetail").add(weixinContactDetailedInfo);
+//                }
+//                List<WeixinContactDetailedInfo> chatRoomDetailes = detailedInfo.get("chatRoomDetaile");
+//                for (WeixinContactDetailedInfo weixinContactDetailedInfo : chatRoomDetailes) {
+//                    contactDetailedInfoMap.get("chatRoomDetaile").add(weixinContactDetailedInfo);
+//                }
+//                contactDetailsList.clear();
+//            }
+//        }
         log.info("好友详情查询成功");
         return RespBean.sucess("查询成功",JSONObject.parseObject(JSONObject.toJSONString(contactDetailedInfoMap)));
     }
