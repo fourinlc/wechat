@@ -1,7 +1,6 @@
 package com.xxx.server.controller;
 
 
-import com.xxx.server.pojo.DeviceLoginParam;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.service.IWeixinBaseInfoService;
@@ -9,8 +8,6 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * <p>
@@ -64,15 +61,9 @@ public class WeixinBaseInfoController{
         return RespBean.sucess("查询成功", weixinBaseInfoService.queryList());
     }
 
-    @ApiOperation(value = "提取62数据")
-    @GetMapping("/get62Data")
-    public RespBean get62Data(String key){
-        return weixinBaseInfoService.get62Data(key);
-    }
-
     @ApiOperation(value = "A16/62登录")
     @PostMapping("/DeviceLogin")
-    public RespBean deviceLogin(@RequestBody DeviceLoginParam deviceLoginParam){
-        return weixinBaseInfoService.deviceLogin(deviceLoginParam);
+    public RespBean deviceLogin(String wxid, String passWord){
+        return weixinBaseInfoService.deviceLogin(wxid,passWord);
     }
 }

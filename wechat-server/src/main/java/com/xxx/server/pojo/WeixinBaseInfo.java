@@ -83,4 +83,7 @@ public class WeixinBaseInfo implements Serializable {
 
     @TableField("head_img_url")
     private String headImgUrl;
+
+    @TableField("device_id")
+    private String deviceId;
 }

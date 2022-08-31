@@ -37,8 +37,8 @@ public enum WechatApiHelper {
     ADD_CHATROOM_MEMBERS("添加进群", "/v1/group/AddChatRoomMembers", HttpMethod.POST),
     INVITE_CHATROOM_MEMBERS("邀请好友进群", "/v1/group/InviteChatroomMembers", HttpMethod.POST),
     MOVETO_CONTRACT("保存群聊", "/v1/group/MoveToContract", HttpMethod.POST),
-    GET_62_DATA("提取62数据", "/v1/user/Get62Data",HttpMethod.GET),
-    DEVICE_LOGIN("登录检测", "/v1/login/DeviceLogin", HttpMethod.POST),
+    GET_62_DATA("提取62数据", "/v1/login/Get62Data",HttpMethod.GET),
+    DEVICE_LOGIN("A16/62登录", "/v1/login/DeviceLogin", HttpMethod.POST),
     /**包含群基本信息*/
     GET_CHAT_ROOM_INFO("群详情", "/v1/group/GetChatRoomInfo", HttpMethod.POST),
     GET_CHATROOM_MEMBER_DETAIL("群成员列表", "/v1/group/GetChatroomMemberDetail", HttpMethod.POST),
