@@ -22,4 +22,5 @@ public interface IWeixinGroupLinkDetailService extends IService<WeixinGroupLinkD
 
     Object query(WeixinGroupLinkDetail weixinGroupLinkDetail, List<String> linkStatus);
 
+    /*boolean batchScanIntoUrlGroupNew(List<Long> linkIds, List<String> wxIds, String fixedTime);*/
 }

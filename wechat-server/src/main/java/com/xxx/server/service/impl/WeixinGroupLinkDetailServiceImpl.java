@@ -287,4 +287,9 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
         }*/
         return weixinGroupLinkDetails;
     }
+
+//    boolean batchScanIntoUrlGroupNew(List<Long> linkIds, List<String> wxIds, String fixedTime){
+//        return false;
+//    }
+
 }

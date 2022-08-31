@@ -101,6 +101,9 @@ public class WeixinGroupLinkDetail implements Serializable, Cloneable {
     @TableField("thumb_url")
     private String thumbUrl;
 
+    @TableField("result")
+    private String result;
+
 
     @Override
     public WeixinGroupLinkDetail clone() {
