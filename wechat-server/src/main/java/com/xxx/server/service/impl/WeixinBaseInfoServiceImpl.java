@@ -266,13 +266,11 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         Map<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new HashMap<>();
         contactDetailedInfoMap.put("friendsDetail",new ArrayList<>());
         contactDetailedInfoMap.put("chatRoomDetaile",new ArrayList<>());
-        List<String> contactDetailsList = new ArrayList<>();
-        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(
+        ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(
                 threadPoolTaskExecutor);
 
         List<List<String>> lists = Lists.partition(contactList, 7);
         lists.forEach(item -> {
-            // 这里做的事情就是 根据lists大小确认要多少个线程 给每个线程分配任务
             completionService.submit(new Callable() {
                 @Override
                 public Object call() throws Exception {
@@ -289,7 +287,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                 }
             });
         });
-        // 这里是让多线程开始执行
         lists.forEach(item -> {
             try {
                 completionService.take().get();
@@ -297,22 +294,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                 System.out.println(e);
             }
         });
-
-//        for (int i = 0; i < contactList.size(); i++) {
-//            contactDetailsList.add(contactList.get(i));
-//            if (contactDetailsList.size() == 7 || i == contactDetailsList.size() - 1) {
-//                Map<String, ArrayList<WeixinContactDetailedInfo>> detailedInfo = getUserNameByWxId(key, contactDetailsList);
-//                List<WeixinContactDetailedInfo> friendsDetails = detailedInfo.get("friendsDetail");
-//                for (WeixinContactDetailedInfo weixinContactDetailedInfo : friendsDetails) {
-//                    contactDetailedInfoMap.get("friendsDetail").add(weixinContactDetailedInfo);
-//                }
-//                List<WeixinContactDetailedInfo> chatRoomDetailes = detailedInfo.get("chatRoomDetaile");
-//                for (WeixinContactDetailedInfo weixinContactDetailedInfo : chatRoomDetailes) {
-//                    contactDetailedInfoMap.get("chatRoomDetaile").add(weixinContactDetailedInfo);
-//                }
-//                contactDetailsList.clear();
-//            }
-//        }
         log.info("好友详情查询成功");
         return RespBean.sucess("查询成功",JSONObject.parseObject(JSONObject.toJSONString(contactDetailedInfoMap)));
     }
@@ -324,15 +305,12 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
 
     @Async("asyncServiceExecutor")
     public Map<String,ArrayList<WeixinContactDetailedInfo>> getUserNameByWxId(String key,List<String> wxIds){
-        log.info("线程"+Thread.currentThread().getId());
         //通过wxid获取详细信息
         MultiValueMap<String,String> getDetailsKeyMap = new LinkedMultiValueMap<>();
         getDetailsKeyMap.add("key",key);
         Map<String,ArrayList<WeixinContactDetailedInfo>> contactDetailedInfoMap = new HashMap<>();
         contactDetailedInfoMap.put("friendsDetail",new ArrayList<>());
         contactDetailedInfoMap.put("chatRoomDetaile",new ArrayList<>());
-
-        ArrayList<String> friendList = new ArrayList<>();
 
         int retry = 0;
         String code = "";
