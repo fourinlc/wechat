@@ -99,12 +99,14 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                         .setDeviceId(deviceId);
                 weixinBaseInfoMapper.insert(weixinBaseInfo);
             } else {
+                String deviceId = get62Data(key);
                 weixinBaseInfo
                         .setKey(key)
                         .setState("1")
                         .setLastTime(weixinBaseInfo.getUpdateTime())
                         .setUpdateTime(LocalDateTime.now())
-                        .setHeadImgUrl(headImgUrl);
+                        .setHeadImgUrl(headImgUrl)
+                        .setDeviceId(deviceId);
                 weixinBaseInfoMapper.updateById(weixinBaseInfo);
             }
             return RespBean.sucess("登录成功",weixinBaseInfo);
