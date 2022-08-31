@@ -89,7 +89,7 @@ public enum WechatApiHelper {
         if (!ResConstant.CODE_SUCCESS.equals(o.getInteger(ResConstant.CODE))) {
             // 对应接口自行开启日志,增加记录微信返回异常信息
             // 走mq单边消息消息通知
-            String wechatLogTag = configurableEnvironment.getProperty("spring.rocketmq.tags.groupSend");
+            String wechatLogTag = configurableEnvironment.getProperty("spring.rocketmq.tags.wechatLog");
             String consumerTopic = configurableEnvironment.getProperty("spring.rocketmq.consumer-topic");
             JSONObject jsonObject = JSONObject.of("methodName", getDesc(),
                     "methodParam", param,
