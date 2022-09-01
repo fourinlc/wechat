@@ -194,12 +194,12 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                     weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功"));
                     weixinAsyncEventCall.setResultCode(200);
                     weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
-                    log.info("now:{},PlanTime:{}", LocalDateTime.now(), weixinAsyncEventCall);
                 }
-                /*if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
+                log.info("now:{},PlanTime:{}", LocalDateTime.now(), weixinAsyncEventCall);
+                if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
                     log.info("该轮批量拉群完成");
                     weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("群发完成").setRealTime(LocalDateTime.now()));
-                }*/
+                }
             }
             return true;
         }catch (Exception e){
