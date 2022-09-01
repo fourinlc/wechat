@@ -230,6 +230,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 roomNames.remove(0);
             }*/
             String roomName = roomNames.get(3);
+            // 转化为base64
             byte[] encode = Base64.getEncoder().encode(roomName.getBytes(StandardCharsets.UTF_8));
             // 转化为base64
             return JSONObject.of("url", node.getText(), "title", new String(encode), "thumbUrl", thumbUrl);
@@ -238,14 +239,6 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
             log.info("打印群链接信息：{}", url);
         }
         return new JSONObject();
-    }
-
-    public static void main(String[] args) {
-        String aa = "54mb5ZGz6YGT54Ok6IKJ5rmW5YmN5oC75bqXVklQ576k77yIMTDvvInnvqQ=";
-        /*byte[] encode = Base64.getEncoder().encode(aa.getBytes(StandardCharsets.UTF_8));
-        System.out.println(new String(encode));*/
-        byte[] encode1 = Base64.getDecoder().decode(aa);
-        System.out.println(new String(encode1));
     }
 }
 

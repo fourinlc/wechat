@@ -1,6 +1,7 @@
 package com.xxx.server.controller;
 
 
+import com.alibaba.fastjson2.JSONObject;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.service.IWeixinGroupSendDetailService;
 import io.swagger.annotations.ApiOperation;
@@ -30,8 +31,8 @@ public class WeixinGroupSendDetailController {
 
     @GetMapping("batchGroupSendDetail")
     @ApiOperation("批量拉群")
-    public RespBean groupSendDetail(@RequestParam("chatRoomIds") List<String> chatRoomIds, String masterWxId, @RequestParam("slaveWxIds") List<String> slaveWxIds, boolean flag/*, Date fixedTime*/){
-        return RespBean.sucess("处理完成", weixinGroupSendDetailService.groupSendDetail(chatRoomIds, masterWxId, slaveWxIds, flag, new Date()));
+    public JSONObject groupSendDetail(@RequestParam("chatRoomIds") List<String> chatRoomIds, String masterWxId, @RequestParam("slaveWxIds") List<String> slaveWxIds, boolean flag/*, Date fixedTime*/){
+        return weixinGroupSendDetailService.groupSendDetail(chatRoomIds, masterWxId, slaveWxIds, flag, new Date());
     }
 
 }

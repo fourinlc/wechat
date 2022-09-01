@@ -104,6 +104,9 @@ public class WeixinGroupLinkDetail implements Serializable, Cloneable {
     @TableField("result")
     private String result;
 
+    @TableField("group_send_detail_id")
+    private Long groupSendDetailId;
+
 
     @Override
     public WeixinGroupLinkDetail clone() {

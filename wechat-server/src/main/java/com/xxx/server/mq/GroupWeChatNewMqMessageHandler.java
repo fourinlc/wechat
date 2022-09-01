@@ -263,7 +263,6 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             // 当前时间大于计划完成时间
             if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
                 log.info("该轮群发完成");
-
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("群发完成").setRealTime(LocalDateTime.now()));
                 // 重置count
                 redisTemplate.opsForValue().set("count::double" + wxId, 0);

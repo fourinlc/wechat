@@ -2,6 +2,7 @@ package com.xxx.server.controller;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinGroupLinkDetail;
@@ -52,8 +53,8 @@ public class WeixinGroupLinkDetailController {
 
     @GetMapping("batchScanIntoUrlGroup")
     @ApiOperation("批量进群")
-    public RespBean batchScanIntoUrlGroup(@RequestParam("linkIds") List<Long> linkIds){
-        return RespBean.sucess(weixinGroupLinkDetailService.batchScanIntoUrlGroup(linkIds) ? "成功" : "该群链接已被处理过");
+    public JSONObject batchScanIntoUrlGroup(@RequestParam("linkIds") List<Long> linkIds, @RequestParam("wxIds") List<String> wxIds, String wxId){
+        return weixinGroupLinkDetailService.batchScanIntoUrlGroup(linkIds, wxIds, wxId);
     }
 
 }

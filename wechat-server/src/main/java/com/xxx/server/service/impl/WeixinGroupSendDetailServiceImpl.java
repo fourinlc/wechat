@@ -66,7 +66,6 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
     @Value("${spring.rocketmq.tags.groupSend}")
     private String groupSendTag;
 
-
     public JSONObject groupSendDetail(List<String> chatRoomIds, String masterWxId, List<String> slaveWxIds, boolean flag, Date fixedTime) {
         WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(masterWxId);
         Assert.isTrue(weixinBaseInfo != null && StrUtil.equals("1", weixinBaseInfo.getState()), "主账号已不在线");
@@ -166,13 +165,13 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
         });
         // 进群间隔时间
-        int max = dices.getIntValue("max", 6);
-        int min = dices.getIntValue("min", 4);
+        int max = dices.getIntValue("max", 15);
+        int min = dices.getIntValue("min", 10);
         int sheaves = dices.getIntValue("sheaves", 2);
         int rate = dices.getIntValue("rate", 10);
         int between = dices.getIntValue("between", 1);
         // 开始循环进群操作
-        log.info("配置信息{}", dices);
+        log.info("拉群配置信息{}", dices);
         for (int i = 0; i < chatRoomIds.size(); i++) {
             if ((i + 1) % (sheaves * rate) == 0) {
                 // log.info("新的一轮操作：{}", i);
@@ -198,6 +197,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                         .setMasterWxId(masterWxId)
                         .setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId())
                         .setCreateTime(LocalDateTime.now().toLocalDate())
+                        .setChatRoomId(chatRoomId)
                         .setStatus("99");
                 save(weixinGroupSendDetail);
                 msg.put("groupSendDetailId", weixinGroupSendDetail.getGroupSendDetailId());
@@ -213,11 +213,13 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 throw new BusinessException("mq消息发送失败，请检测网络情况");
             }
         }
-        // 更新计划完成时间
-        if(flag){
-            delay = DateUtils.addSeconds(delay, 120);
-        }
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
+        result.put("planTime", weixinAsyncEventCall.getPlanTime());
         return result;
+    }
+
+    // 批量拉群列表展示
+    public void queryList(String wxId){
+
     }
 }

@@ -46,6 +46,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap<>();
             // 操作群链接对应的id
             Long linkId = message.getLong("linkId");
+            // 批量拉群特有字段
             WeixinGroupLinkDetail weixinGroupLinkDetail;
             Long asyncEventCallId = message.getLong("asyncEventCallId");
             // 子号信息
@@ -58,6 +59,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                 return true;
             }
             if(linkId == null){
+                log.info("批量拉群自动进群开始");
                 // 自动进群操作
                 JSONObject paramVo = message.getJSONObject("paramVo");
                 String toUserWxId = paramVo.getString("toUserWxId");
@@ -70,6 +72,9 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                         .eq(WeixinGroupLinkDetail::getLinkStatus, 0));
                 if(weixinGroupLinkDetails.size() > 0){
                     weixinGroupLinkDetail = weixinGroupLinkDetails.get(0);
+                    Long groupSendDetailId = message.getLong("groupSendDetailId");
+                    // 批量拉群特殊标识字段
+                    weixinGroupLinkDetail.setGroupSendDetailId(groupSendDetailId);
                 }else {
                     // 结束自动进群
                     log.info("获取群链接失败");
@@ -99,15 +104,15 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             multiValueMap.add("key", weixinBaseInfo.getKey());
             // 额外校验群链接生效情况
             JSONObject data = WechatApiHelper.SCAN_INTO_URL_GROUP.invoke(JSONObject.of("Url", weixinGroupLinkDetail.getContent()), multiValueMap);
-            log.info("step one: 主号自己进群,返回值：{}", data);
+            log.info("step one: 群链接进群,返回值：{}", data);
             if (!(ResConstant.CODE_SUCCESS.equals(data.getInteger(ResConstant.CODE)) && "进群成功".equals(data.getString("Text")))) {
-                log.info("主号自己进群失败");
+                log.info("群链接进群失败");
                 weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setResult("主号自己进群失败").setLinkStatus("500"));
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("主号自己进群失败"));
                 return true;
             }
             // 更新链接状态为进群完成
-            weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("1").setLinkId(linkId));
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("1"));
             JSONObject jsonObject = data.getJSONObject(ResConstant.DATA);
             // Assert.isTrue(Objects.nonNull(jsonObject), "群操作数据结构异常");
             String chatroomUrl = jsonObject.getString("chatroomUrl");
@@ -137,7 +142,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                 log.info("step two: 校验是否还在群中同时更新群是否验证标识:群信息{}", contact);
                 String chatroomAccessType = contact.getString("chatroomAccessType");
                 // 更新群验证状态
-                weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setVerifyStatus(chatroomAccessType).setLinkId(linkId));
+                weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setVerifyStatus(chatroomAccessType));
                 // 开始组装保存群聊
                 // 进群成功后，保存群聊，更新邀请链接状态
                 // 延迟2-3秒，开始保存群聊信息，组装对应参数，获取群id
@@ -162,7 +167,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                 }
                 // 更新系统状态批次状态
                 // 更新链接状态为保存群聊消息
-                weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("2").setLinkId(linkId));
+                weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("2").setResult("保存群聊成功"));
                 // 保存群聊成功时，邀请两个子号进行进群操作
                 try {
                     Thread.sleep(RandomUtil.randomInt(1000, 1500));
@@ -181,16 +186,18 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                         weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setResult("邀请子号进群异常").setLinkStatus("500"));
                         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("邀请子号进群异常"));
                     }
+                    weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功").setLinkStatus("500"));
+                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200));
                 }else {
                     log.info("没有子号进群，校验是否是完成");
                     // 更新群聊消息状态
-                    weixinGroupLinkDetailService.updateById(new WeixinGroupLinkDetail().setLinkStatus("4").setLinkId(linkId));
+                    weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功"));
                     weixinAsyncEventCall.setResultCode(200);
                     weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
                     log.info("now:{},PlanTime:{}", LocalDateTime.now(), weixinAsyncEventCall);
                 }
                 /*if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
-                    log.info("该轮群发完成");
+                    log.info("该轮批量拉群完成");
                     weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("群发完成").setRealTime(LocalDateTime.now()));
                 }*/
             }

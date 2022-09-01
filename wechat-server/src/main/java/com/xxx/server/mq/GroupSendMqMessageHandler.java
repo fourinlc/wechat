@@ -147,6 +147,8 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                         // 模拟延时90秒到120秒进群
                         Date delay = RandomUtil.randomDate(new Date(), DateField.SECOND, 60, 90);
                         JSONObject msg = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(), "paramVo", paramVo);
+                        // 用于回调子账号进群情况
+                        msg.put("groupSendDetailId", groupSendDetailId);
                         Message param = new Message(consumerTopic, qunGroupNew, JSON.toJSONBytes(msg));
                         // 从邀请列表中获取对应的群链接
                         log.info("开始自动进群消息：{}", param);
