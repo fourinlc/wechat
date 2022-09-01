@@ -98,7 +98,7 @@ public class DelayMqProducer extends AbstractMQProducer {
         }
         msg.setDelayTimeLevel(level);
         msg.setTopic(proxyTopic);
-        log.info("消息uuid {} 开发发送时间为{},延时等级本次建议为{},预计发送时间：{}", uuid, String.format("%tF %<tT", new Date()), level, startSendTime);
+        log.info("消息uuid {},预计发送时间：{}", uuid, startSendTime);
     }
 
 }

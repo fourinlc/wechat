@@ -4,6 +4,7 @@ import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxx.server.constant.ResConstant;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.pojo.WeixinAsyncEventCall;
@@ -42,22 +43,49 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
     @Override
     public boolean process(JSONObject message) {
         try {
-            MultiValueMap multiValueMap = new LinkedMultiValueMap();
+            MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap<>();
             // 操作群链接对应的id
             Long linkId = message.getLong("linkId");
-            // Date delay = new Date();
-            // 校验该批次是否还是有些状态
+            WeixinGroupLinkDetail weixinGroupLinkDetail;
             Long asyncEventCallId = message.getLong("asyncEventCallId");
             // 子号信息
             List<String> wxIds = message.getList("wxIds", String.class);
             WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
-            WeixinGroupLinkDetail weixinGroupLinkDetail = weixinGroupLinkDetailService.getById(linkId);
-            if (Objects.isNull(weixinAsyncEventCall) || Objects.isNull(weixinGroupLinkDetail) || weixinAsyncEventCall.getResultCode() == 500) {
+            if (Objects.isNull(weixinAsyncEventCall)  || weixinAsyncEventCall.getResultCode() == 500) {
                 log.info("流程提前结束：{}", message);
                 // 更新原始数据进群详情信息,增加描述信息
-                weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("500").setResult(weixinAsyncEventCall.getResult()));
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("流程提前结束"));
                 return true;
             }
+            if(linkId == null){
+                // 自动进群操作
+                JSONObject paramVo = message.getJSONObject("paramVo");
+                String toUserWxId = paramVo.getString("toUserWxId");
+                String fromUserWxId = paramVo.getString("fromUserWxId");
+                String chatroomName = paramVo.getString("chatroomName");
+                List<WeixinGroupLinkDetail> weixinGroupLinkDetails = weixinGroupLinkDetailService.list(Wrappers.lambdaQuery(WeixinGroupLinkDetail.class)
+                        .eq(WeixinGroupLinkDetail::getToUserWxId, toUserWxId)
+                        .eq(WeixinGroupLinkDetail::getFromUserWxId, fromUserWxId)
+                        .eq(WeixinGroupLinkDetail::getChatroomName, chatroomName)
+                        .eq(WeixinGroupLinkDetail::getLinkStatus, 0));
+                if(weixinGroupLinkDetails.size() > 0){
+                    weixinGroupLinkDetail = weixinGroupLinkDetails.get(0);
+                }else {
+                    // 结束自动进群
+                    log.info("获取群链接失败");
+                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("获取群链接失败"));
+                    return true;
+                }
+            }else {
+                weixinGroupLinkDetail = weixinGroupLinkDetailService.getById(linkId);
+            }
+            if(weixinGroupLinkDetail == null){
+                log.info("获取群链接失败");
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("获取群链接失败"));
+                return true;
+            }
+            // Date delay = new Date();
+            // 校验该批次是否还是有些状态
             String toUserWxId = weixinGroupLinkDetail.getToUserWxId();
             WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(toUserWxId);
             // 获取对应的key值
