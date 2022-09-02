@@ -223,6 +223,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                 resultJson = JSONObject.parseObject(JSONObject.toJSONString(WechatApiHelper.GET_CONTACT_LIST.invoke(jsonObject,getContactListMap)));
             } catch (Exception e) {
                 e.printStackTrace();
+                log.info("好友详情查询失败，重试"+retry);
                 if (retry == 3) {
                     return RespBean.error("获取好友列表失败",resultJson);
                 }
@@ -236,6 +237,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                 code = resultJson.getString("code");
             }
             if (!code.equals("200")){
+                log.info("好友详情查询失败，重试"+retry);
                 if (retry == 3) {
                     return RespBean.error("获取好友列表失败",resultJson);
                 }
