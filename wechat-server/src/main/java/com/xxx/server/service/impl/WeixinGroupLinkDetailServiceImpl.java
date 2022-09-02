@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -179,6 +180,19 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
             String content = weixinGroupLinkDetail.getContent();
             weixinGroupLinkDetail.setCompanyStatus(StrUtil.contains(content, COMPANY_STATUS) ? "1" : "0");
             baseMapper.insert(weixinGroupLinkDetail);
+        }
+        // 获取对应文本信息的数据
+        List<WeixinGroupLinkDetail> groupLinkDetails = weixinGroupLinkDetails.stream().filter(weixinGroupLinkDetail -> weixinGroupLinkDetail.getMsgType() == 1).collect(Collectors.toList());
+        // 更新对应的wxId列表remark字段
+        for (WeixinGroupLinkDetail groupLinkDetail : groupLinkDetails) {
+            // 获取单个好友当天群聊信息
+            List<WeixinGroupLinkDetail> weixinGroupLinkDetailList = list(Wrappers.lambdaQuery(WeixinGroupLinkDetail.class)
+                    .eq(WeixinGroupLinkDetail::getToUserWxId, groupLinkDetail.getToUserWxId())
+                    .eq(WeixinGroupLinkDetail::getFromUserWxId, groupLinkDetail.getFromUserWxId())
+                    .isNull(WeixinGroupLinkDetail::getRemark));
+            // 批量更新这些列表remark状态
+            weixinGroupLinkDetailList.forEach(weixinGroupLinkDetail -> weixinGroupLinkDetail.setRemark(groupLinkDetail.getContent()));
+            updateBatchById(weixinGroupLinkDetailList);
         }
         return true;
     }

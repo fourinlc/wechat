@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 /**
  * 异步同步redis聊天消息
  */
-/*@Component*/
+@Component
 @AllArgsConstructor
 @Slf4j
 public class AsyncGroupLinkDetail implements CommandLineRunner {
@@ -166,47 +166,30 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 // 异步批量更新至在线列表数据
                 weixinBaseInfoService.saveOrUpdateBatch(weixinBaseInfoListVo);
                 // 处理所有消息列表数据
-                WeixinGroupLinkDetail tmp = new WeixinGroupLinkDetail();
                 List<WeixinGroupLinkDetail> dataVos = new LinkedList<>();
-                for (int i = 0; i < datas.size(); i++) {
-                    WeixinGroupLinkDetail data = datas.get(i);
+                for (WeixinGroupLinkDetail data : datas) {
                     // 未处理状态
                     data.setLinkStatus("0");
                     data.setInvitationTime(DateUtil.format(new Date(), "yyyy-MM-dd"));
                     // 处理具体数据，每两条数据为一组，可能还得剔除部分无效数据,msg_type为49的消息即为群邀请操作
                     Integer msgType = data.getMsgType();
                     if (msgType == 49) {
-                        //log.info("接收链接类消息处理：{}", data);
                         // 转义获取群链接地址,不一定是群链接
                         String url = data.getContent();
                         JSONObject jsonObject = buildUrl(url);
+                        // 并非群消息，跳过
                         if (jsonObject.size() == 0) continue;
                         data.setContent(jsonObject.getString("url"));
                         data.setChatroomName(jsonObject.getString("title"));
                         data.setThumbUrl(jsonObject.getString("thumbUrl"));
-                        // 判断上一组数据是否入库,群链接信息有了
-                        if (tmp != null && StrUtil.isEmpty(tmp.getRemark()) && StrUtil.isNotEmpty(tmp.getContent())) {
-                            // 直接入库
-                            WeixinGroupLinkDetail weixinGroupLinkDetail = tmp.clone();
-                            dataVos.add(weixinGroupLinkDetail);
-                        }
-                        // 直接入库至本地数据
-                        tmp = data.clone();
-                        // 如果此处为最后一条信息，直接入库
-                        if (datas.size() - 1 == i) {
-                            dataVos.add(data);
-                        }
-                        // 提取备注信息,前提是这个消息类型是1,普通消息文本信息
+                        dataVos.add(data);
                     } else if (msgType == 1) {
-                        // 首次普通文本信息情况下，暂时过滤文本信息
-                        if (tmp == null) continue;
-                        String content = data.getContent();
-                        tmp.setRemark(content);
-                        WeixinGroupLinkDetail weixinGroupLinkDetail = tmp.clone();
-                        dataVos.add(weixinGroupLinkDetail);
+                        // 首次普通文本信息情况下，暂时过滤文本信息,便于后期批量执行
+                        dataVos.add(data);
                     }
                 }
                 // 批量更新入库,手动判断入库，更新对应的
+                if(dataVos.size() > 0)
                 weixinGroupLinkDetailService.saveBatch(dataVos);
             }catch (Exception e){
                 log.error("轮询异常：{}", ExceptionUtil.getMessage(e));
