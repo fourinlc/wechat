@@ -269,7 +269,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(
                 threadPoolTaskExecutor);
 
-        List<List<String>> lists = Lists.partition(contactList, 7);
+        List<List<String>> lists = Lists.partition(contactList, 4);
         lists.forEach(item -> {
             completionService.submit(new Callable() {
                 @Override
