@@ -300,7 +300,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
 
     @Override
     public List<WeixinBaseInfo> queryList(){
-        return baseMapper.selectList(Wrappers.lambdaQuery(WeixinBaseInfo.class).eq(WeixinBaseInfo::getState, 1).orderByDesc(WeixinBaseInfo::getCreateTime));
+        return baseMapper.selectList(Wrappers.lambdaQuery(WeixinBaseInfo.class)/*.eq(WeixinBaseInfo::getState, 1)*/.orderByDesc(WeixinBaseInfo::getCreateTime));
     }
 
     @Async("asyncServiceExecutor")

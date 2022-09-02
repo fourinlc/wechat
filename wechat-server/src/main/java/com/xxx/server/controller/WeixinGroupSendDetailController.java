@@ -35,4 +35,10 @@ public class WeixinGroupSendDetailController {
         return weixinGroupSendDetailService.groupSendDetail(chatRoomIds, masterWxId, slaveWxIds, flag, new Date());
     }
 
+    @GetMapping("queryList")
+    @ApiOperation("指定批次号获取拉群详情")
+    public RespBean queryList(Long asyncEventCallId){
+        return RespBean.sucess("获取拉群详情成功", weixinGroupSendDetailService.queryList(asyncEventCallId));
+    }
+
 }

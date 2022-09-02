@@ -7,33 +7,27 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.dachen.starter.mq.custom.producer.DelayMqProducer;
-import com.google.common.collect.Lists;
-import com.xxx.server.constant.ResConstant;
-import com.xxx.server.enums.WechatApiHelper;
-import com.xxx.server.exception.BusinessException;
-import com.xxx.server.pojo.*;
-import com.xxx.server.mapper.WeixinGroupSendDetailMapper;
-import com.xxx.server.service.*;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.AllArgsConstructor;
+import com.dachen.starter.mq.custom.producer.DelayMqProducer;
+import com.xxx.server.constant.ResConstant;
+import com.xxx.server.exception.BusinessException;
+import com.xxx.server.mapper.WeixinGroupSendDetailMapper;
+import com.xxx.server.pojo.*;
+import com.xxx.server.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.rocketmq.common.message.Message;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +50,12 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
 
     @Resource
     private IWeixinAsyncEventCallService weixinAsyncEventCallService;
+
+    @Resource
+    private IWeixinGroupSendDetailService weixinGroupSendDetailService;
+
+    @Resource
+    private IWeixinGroupLinkDetailService weixinGroupLinkDetailService;
 
     @Resource
     private DelayMqProducer delayMqProducer;
@@ -218,8 +218,30 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         return result;
     }
 
-    // 批量拉群列表展示
-    public void queryList(String wxId){
-
+    // 批量拉群实时列表展示
+    public JSONArray queryList(Long asyncEventCallId){
+        // 查询当前微信是否存在拉群操作
+        WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
+        Assert.notNull(weixinAsyncEventCall, "批次号不存在");
+        // 获取该批次所有的列表
+        JSONArray jsonArray = JSONArray.of();
+        List<WeixinGroupSendDetail> weixinGroupSendDetails = weixinGroupSendDetailService.list(Wrappers.lambdaQuery(WeixinGroupSendDetail.class).eq(WeixinGroupSendDetail::getAsyncEventCallId, weixinAsyncEventCall.getAsyncEventCallId()));
+        for (WeixinGroupSendDetail weixinGroupSendDetail : weixinGroupSendDetails) {
+            // 组装子号成功失败信息
+            Long groupSendDetailId = weixinGroupSendDetail.getGroupSendDetailId();
+            List<WeixinGroupLinkDetail> weixinGroupLinkDetails = weixinGroupLinkDetailService.list(Wrappers.lambdaQuery(WeixinGroupLinkDetail.class).eq(WeixinGroupLinkDetail::getGroupSendDetailId, groupSendDetailId));
+            JSONObject jsonObject = JSONObject.parseObject(JSON.toJSONString(weixinGroupSendDetail));
+            if(weixinGroupLinkDetails.size() > 0){
+                // 增加子号信息基本信息至数据单条数据,提取被邀请人昵称以及处理状态
+                List<JSONObject> collect = weixinGroupLinkDetails
+                        .stream()
+                        .map(weixinGroupLinkDetail -> JSONObject.of("linkStatus", weixinGroupLinkDetail.getLinkStatus(), "toUserName", weixinGroupLinkDetail.getToUserName()))
+                        .collect(Collectors.toList());
+                jsonObject.put("child", collect);
+            }
+            jsonArray.add(jsonObject);
+        }
+        return jsonArray;
     }
+
 }
