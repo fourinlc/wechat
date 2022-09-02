@@ -5,20 +5,15 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.dachen.starter.mq.custom.consumer.DelayMqConsumer;
 import com.dachen.starter.mq.custom.producer.DelayMqProducer;
 import com.xxx.server.constant.ResConstant;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.pojo.WeixinAsyncEventCall;
 import com.xxx.server.pojo.WeixinBaseInfo;
-import com.xxx.server.pojo.WeixinGroupLinkDetail;
 import com.xxx.server.pojo.WeixinGroupSendDetail;
 import com.xxx.server.service.IWeixinAsyncEventCallService;
 import com.xxx.server.service.IWeixinBaseInfoService;
-import com.xxx.server.service.IWeixinGroupLinkDetailService;
 import com.xxx.server.service.IWeixinGroupSendDetailService;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.common.message.Message;
 import org.assertj.core.util.Lists;
@@ -52,9 +47,6 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
     private IWeixinBaseInfoService weixinBaseInfoService;
 
     @Resource
-    private IWeixinGroupLinkDetailService weixinGroupLinkDetailService;
-
-    @Resource
     private DelayMqProducer delayMqProducer;
 
     @Value("${spring.rocketmq.consumer-topic}")
@@ -63,6 +55,11 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
     @Value("${spring.rocketmq.tags.qunGroupNew}")
     private String qunGroupNew;
 
+    /**
+     * 批量拉群消息处理类
+     * @param message
+     * @return
+     */
     @Override
     public boolean process(JSONObject message) {
         try {
@@ -116,6 +113,8 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                     weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("主微信号不在群中"));
                     return true;
                 }
+                // 设置群名，用于展示
+                weixinGroupSendDetail.setChatRoomName(new String(Base64.getEncoder().encode(nickName.getBytes(StandardCharsets.UTF_8))));
             }
             try {
                 // 随机休眠1-2秒,
@@ -162,13 +161,13 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
             }
             // 更新群聊消息状态
             if (weixinAsyncEventCall.getPlanTime() != null && LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
-                log.info("该轮群发完成");
-                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("群发完成").setRealTime(LocalDateTime.now()));
+                log.info("该拉群完成");
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("拉群完成").setRealTime(LocalDateTime.now()));
                 weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setResult("处理成功").setStatus("200"));
                 return true;
             }
-            log.info("该群处理完成，群名：{}", nickName);
-            weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setResult("处理成功").setStatus("200"));
+            log.info("该群拉群完成，群名：{}", nickName);
+            weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setFinishTime(LocalDateTime.now()).setResult("处理成功").setStatus("200"));
             return true;
         } catch (Exception e) {
             e.printStackTrace();

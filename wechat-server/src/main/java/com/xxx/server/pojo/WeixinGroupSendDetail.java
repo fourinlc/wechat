@@ -39,6 +39,9 @@ public class WeixinGroupSendDetail implements Serializable {
     @TableField("chat_room_id")
     private String chatRoomId;
 
+    @TableField("chat_room_name")
+    private String chatRoomName;
+
     private String status;
 
     private String result;
