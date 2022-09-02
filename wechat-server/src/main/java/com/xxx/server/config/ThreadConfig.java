@@ -18,9 +18,9 @@ public class ThreadConfig {
     public ThreadPoolTaskExecutor executor(){
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         //配置核心线程数
-        executor.setCorePoolSize(100);
+        executor.setCorePoolSize(200);
         //配置最大线程数
-        executor.setMaxPoolSize(175);
+        executor.setMaxPoolSize(500);
         //配置队列大小
         executor.setQueueCapacity(1000);
         //线程的名称前缀
