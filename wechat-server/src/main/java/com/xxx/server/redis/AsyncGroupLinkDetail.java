@@ -90,16 +90,16 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     }
                                     // 群邀请信息，也不一定
                                     if (StrUtil.equals("49", jsonObject.getString("msg_type"))) {
-                                        log.info("打印群链接消息：{}", ((JSONObject) data).toJSONString());
+                                        log.info("打印群链接消息：{}", (jsonObject).toJSONString());
                                     }
                                     WeixinBaseInfo fromWeixinBaseInfo = weixinBaseInfoService.getById(fromUserWxId);
                                     // 这个参数只能从我的好友列表中获取对应的昵称
                                     // 如果存在直接添加至邀请连接中
                                     if (fromWeixinBaseInfo != null) {
                                         // 移除自己本身发出去的消息
-                                        if (StrUtil.equals(fromWeixinBaseInfo.getKey(), ((JSONObject) data).getString("UUID"))) {
+                                     /*   if (StrUtil.equals(fromWeixinBaseInfo.getKey(), ((JSONObject) data).getString("UUID"))) {
                                             continue;
-                                        }
+                                        }*/
                                         jsonObject.put("from_user_name", fromWeixinBaseInfo.getNickname());
                                     } else {
                                         // 调用微信接口
@@ -167,6 +167,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 weixinBaseInfoService.saveOrUpdateBatch(weixinBaseInfoListVo);
                 // 处理所有消息列表数据
                 List<WeixinGroupLinkDetail> dataVos = new LinkedList<>();
+                log.info("符合要求的普通信息和群聊信息：{}", datas);
                 for (WeixinGroupLinkDetail data : datas) {
                     // 未处理状态
                     data.setLinkStatus("0");

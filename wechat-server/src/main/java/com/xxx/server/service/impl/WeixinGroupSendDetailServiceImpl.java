@@ -153,10 +153,10 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             weixinAsyncEventCallService.save(weixinAsyncEventCall);
         }
         // 组装消息体
-        if (weixinAsyncEventCall.getPlanTime() != null) {
+       /* if (weixinAsyncEventCall.getPlanTime() != null) {
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
-        }
+        }*/
         // 增加批次号入参
         result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
         // 开始组装发送信息
@@ -189,8 +189,6 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             msg.put("chatRoomId", chatRoomId);
             msg.put("flag", flag);
 
-            // 设置随机时间
-            delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
             // 异步更新返回成功时或者失败时更新群链接状态
             try {
                 // 缓存中获取进群间隔时间，分发mq延时任务进行消费
@@ -206,6 +204,8 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 Message message = new Message(consumerTopic, groupSendTag, JSON.toJSONBytes(msg));
                 log.info("发送延时消息延时时间为：{}", delay);
                 delayMqProducer.sendDelay(message, delay);
+                // 设置随机时间
+                delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
                 // 设置状态为等待处理中
             } catch (Exception e) {
                 log.error("消息处理失败:{}", e.getMessage());
