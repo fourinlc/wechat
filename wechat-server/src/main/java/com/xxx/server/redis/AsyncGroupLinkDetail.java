@@ -167,7 +167,6 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                 weixinBaseInfoService.saveOrUpdateBatch(weixinBaseInfoListVo);
                 // 处理所有消息列表数据
                 List<WeixinGroupLinkDetail> dataVos = new LinkedList<>();
-                log.info("符合要求的普通信息和群聊信息：{}", datas);
                 for (WeixinGroupLinkDetail data : datas) {
                     // 未处理状态
                     data.setLinkStatus("0");

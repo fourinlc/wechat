@@ -167,12 +167,12 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                     "wxIds", wxIds);
             Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(msg));
             // 异步更新返回成功时或者失败时更新群链接状态
+            // 设置随机时间
+            delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
             try {
                 // 缓存中获取进群间隔时间，分发mq延时任务进行消费
                 log.info("发送延时消息延时时间为：{}", delay);
                 delayMqProducer.sendDelay(message, delay);
-                // 设置随机时间
-                delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
                 // 更新消息处理状态为消息正在处理中
                 baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("99"));
                 // 设置状态为等待处理中

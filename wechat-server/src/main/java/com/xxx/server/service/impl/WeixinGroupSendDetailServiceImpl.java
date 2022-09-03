@@ -202,10 +202,10 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 save(weixinGroupSendDetail);
                 msg.put("groupSendDetailId", weixinGroupSendDetail.getGroupSendDetailId());
                 Message message = new Message(consumerTopic, groupSendTag, JSON.toJSONBytes(msg));
-                log.info("发送延时消息延时时间为：{}", delay);
-                delayMqProducer.sendDelay(message, delay);
                 // 设置随机时间
                 delay = RandomUtil.randomDate(delay, DateField.SECOND, min, max);
+                log.info("发送延时消息延时时间为：{}", delay);
+                delayMqProducer.sendDelay(message, delay);
                 // 设置状态为等待处理中
             } catch (Exception e) {
                 log.error("消息处理失败:{}", e.getMessage());

@@ -117,9 +117,17 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                 if (!ResConstant.CODE_SUCCESS.equals(addChatroomMembers.getInteger(ResConstant.CODE))) {
                     // 结束后续操作，此处不在邀请子账号入群
                     return writeLog("发送邀请链接失败", weixinAsyncEventCall, weixinGroupSendDetail, start);
+                }else {
+                    // {"Code":200,"Data":{"baseResponse":{"ret":-2,"errMsg":{"str":"Check AccessVerify ticket failed,"}}},"Text":""}
+                    // 验证群暂时跳过
+                    JSONObject jsonObject = addChatroomMembers.getJSONObject(ResConstant.DATA).getJSONObject("baseResponse").getJSONObject("errMsg");
+                    String str = jsonObject.getString("str");
+                    if(StrUtil.equals("Check AccessVerify ticket failed,", str)) {
+                        // 该群为验证群
+                        return writeLog("验证群跳过后续操作", weixinAsyncEventCall, weixinGroupSendDetail, start);
+                    }
                 }
                 if (flag) {
-
                     // 延迟几分钟自动进群,获取对应的配置项
                     // 根据发送者、接收者以及群名，获取一个时刻唯一一条邀请链接，并将状态置为自动处理
                     for (String slaveWxId : slaveWxIds) {
@@ -142,6 +150,7 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                 }
             }
             // 更新群聊消息状态
+            log.info("计划完成时间：{}, 当前时间：{}", weixinAsyncEventCall.getPlanTime(), LocalDateTime.now());
             if (weixinAsyncEventCall.getPlanTime() != null && LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
                 log.info("该拉群完成");
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("拉群完成").setRealTime(LocalDateTime.now()));
