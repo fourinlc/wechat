@@ -124,7 +124,7 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                     String str = jsonObject.getString("str");
                     if(StrUtil.equals("Check AccessVerify ticket failed,", str)) {
                         // 该群为验证群
-                        return writeLog("验证群跳过后续操作", weixinAsyncEventCall, weixinGroupSendDetail, start);
+                        return writeLog("验证群跳过后续操作", null, weixinGroupSendDetail, start);
                     }
                 }
                 if (flag) {
@@ -170,7 +170,9 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
     private boolean writeLog(String message, WeixinAsyncEventCall weixinAsyncEventCall, WeixinGroupSendDetail weixinGroupSendDetail, long start) {
         log.info("流程提前结束：{}", message);
         // 更新原始数据进群详情信息,增加描述信息
-        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult(message));
+        if(weixinAsyncEventCall != null){
+            weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult(message));
+        }
         weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setStatus("500").setResult(message));
         log.info("拉群异常耗时：{} ms", System.currentTimeMillis() -start);
         return true;
