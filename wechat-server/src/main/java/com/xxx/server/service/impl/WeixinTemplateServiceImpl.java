@@ -149,6 +149,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                     .setResultCode(99);
             weixinAsyncEventCallService.save(weixinAsyncEventCall);
         }
+        // 增加批次号入参
+        result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
         // 组装消息体
         if (weixinAsyncEventCall.getPlanTime() != null) {
             // 重置老数据直接添加至队尾

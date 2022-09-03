@@ -111,7 +111,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 result.put("code", 500);
                 result.put("planTime", weixinAsyncEventCall.getPlanTime());
                 result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
-                result.put("msg", "该微信上次群聊还没执行完成");
+                result.put("msg", "该微信上次批量拉群还没执行完成");
                 result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
                 return result;
             } else {
@@ -157,6 +157,8 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
         }
+        // 增加批次号入参
+        result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
         // 开始组装发送信息
         List<WeixinDictionary> weixinDictionaries = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("groupSend"));
         // 获取对应随机数字1-5, 默认2-4秒

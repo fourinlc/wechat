@@ -90,7 +90,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     }
                                     // 群邀请信息，也不一定
                                     if (StrUtil.equals("49", jsonObject.getString("msg_type"))) {
-                                        log.info(((JSONObject) data).toJSONString());
+                                        log.info("打印群链接消息：{}", ((JSONObject) data).toJSONString());
                                     }
                                     WeixinBaseInfo fromWeixinBaseInfo = weixinBaseInfoService.getById(fromUserWxId);
                                     // 这个参数只能从我的好友列表中获取对应的昵称
@@ -104,7 +104,7 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     } else {
                                         // 调用微信接口
                                         JSONObject param = JSONObject.of("UserNames", Lists.newArrayList(fromUserWxId));
-                                        MultiValueMap multiValueMap = new LinkedMultiValueMap();
+                                        MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap<>();
                                         multiValueMap.add("key", ((JSONObject) data).getString("UUID"));
                                         JSONObject dataVo = WechatApiHelper.GET_CONTACT_DETAILS_LIST.invoke(param, multiValueMap);
                                         if (ResConstant.CODE_SUCCESS.equals(dataVo.getInteger(ResConstant.CODE))) {

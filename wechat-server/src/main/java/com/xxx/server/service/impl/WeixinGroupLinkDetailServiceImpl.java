@@ -68,8 +68,9 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
     private static final String COMPANY_STATUS = "openim";
 
     public JSONObject batchScanIntoUrlGroup(List<Long> linkIds, List<String> wxIds, String wxId) {
+        Date delay = new Date();
         //TODO 校验好友关系
-        JSONObject result = JSONObject.of("code", 200, "msg", "进群邀请已发送");
+        JSONObject result = JSONObject.of("code", 200, "msg", "链接进群已发送");
         WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
         WeixinAsyncEventCall old = weixinAsyncEventCallService.getOne(
                 Wrappers.lambdaQuery(WeixinAsyncEventCall.class)
@@ -77,26 +78,51 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                         // 获取正在处理的该微信数据
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
         if (old != null) {
-            // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
-            if (old.getPlanTime().compareTo(LocalDateTime.now()) > 0) {
-                log.info("计划完成时间大于当前时间，增加至尾部");
-                weixinAsyncEventCall = old;
-            } else {
-                // 更新这条异常数据
-                log.info("计划完成时间小于当前时间，结束上次流程，开启新的流程");
+            log.info("校验上次微信执行是否完成");
+            LocalDateTime planTime = old.getPlanTime();
+            if (planTime == null) {
+                // 结束上次异常群聊
                 weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
-                // 生成对应的批次号
+                // 生成对应的批次号，重新赋值
                 weixinAsyncEventCall = new WeixinAsyncEventCall()
                         // 群邀请类型
-                        .setEventType(ResConstant.ASYNC_EVENT_SCAN_INTO_URL_GROUP)
+                        .setEventType(ResConstant.ASYNC_EVENT_GROUP_SEND)
                         .setBusinessId(UUID.fastUUID().toString())
                         .setWxId(wxId)
+                        .setPlanStartTime(LocalDateTimeUtil.of(delay))
+                        // 设置99为处理中状态
+                        .setResultCode(99);
+                weixinAsyncEventCallService.save(weixinAsyncEventCall);
+            } else if (planTime.compareTo(LocalDateTime.now()) > 0) {
+                // 直接提醒还存在待完成的数据，返回开始预计开始时间和预计完成时间
+                log.info("该微信上次群聊还没执行完成：{}", wxId);
+                result.put("code", 500);
+                result.put("planTime", weixinAsyncEventCall.getPlanTime());
+                result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
+                result.put("msg", "该微信上次批量拉群还没执行完成");
+                result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
+                return result;
+            } else {
+                // 更新这条异常数据
+                // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
+                weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
+                /*if (fixedTime != null) {
+                    if (fixedTime.compareTo(new Date()) > 0) {
+                        delay = fixedTime;
+                    }
+                }*/
+                // 生成对应的批次号，重新赋值
+                weixinAsyncEventCall = new WeixinAsyncEventCall()
+                        // 群邀请类型
+                        .setEventType(ResConstant.ASYNC_EVENT_GROUP_SEND)
+                        .setBusinessId(UUID.fastUUID().toString())
+                        .setWxId(wxId)
+                        .setPlanStartTime(LocalDateTimeUtil.of(delay))
                         // 设置99为处理中状态
                         .setResultCode(99);
                 weixinAsyncEventCallService.save(weixinAsyncEventCall);
             }
-            // 获取计划完成时间参数
-        } else {
+        }else {
             // 生成对应的批次号
             weixinAsyncEventCall
                     // 群邀请类型
@@ -107,6 +133,8 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                     .setResultCode(99);
             weixinAsyncEventCallService.save(weixinAsyncEventCall);
         }
+        // 增加批次号入参
+        result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
         List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
         // Assert.isTrue(scanIntoUrlGroupTimes.size() >= 2, "系统进群消息配置异常");
         // 获取对应随机数字1-5, 默认2-4秒
@@ -120,7 +148,6 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
         int rate = dices.getIntValue("rate", 10);
         int between = dices.getIntValue("between", 1);
         log.info("群邀请配置信息：{}", dices);
-        Date delay = new Date();
         if (weixinAsyncEventCall.getPlanTime() != null) {
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
