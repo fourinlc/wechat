@@ -26,10 +26,10 @@ public class WeixinTemplateSendDetailController {
 
     private IWeixinTemplateSendDetailService weixinTemplateSendDetailService;
 
-    @ApiOperation("获取子账号所有群信息")
+    @ApiOperation("话术群发详情")
     @GetMapping("/queryList")
-    public RespBean queryList(String wxId, boolean refresh){
-        return RespBean.sucess("获取信息成功", weixinTemplateSendDetailService.queryList(wxId, refresh));
+    public RespBean queryList(Long asyncEventCallId){
+        return RespBean.sucess("获取信息成功", weixinTemplateSendDetailService.queryList(asyncEventCallId));
     }
 
 }

@@ -8,15 +8,14 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xxx.server.mapper.WeixinTemplateSendDetailMapper;
 import com.xxx.server.pojo.*;
-import com.xxx.server.service.IWeixinBaseInfoService;
-import com.xxx.server.service.IWeixinRelatedContactsService;
-import com.xxx.server.service.IWeixinTemplateSendDetailService;
-import com.xxx.server.service.IWeixinTemplateService;
-import lombok.AllArgsConstructor;
+import com.xxx.server.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
+import javax.annotation.Resource;
 import java.util.Comparator;
 import java.util.List;
 
@@ -29,15 +28,20 @@ import java.util.List;
  * @since 2022-08-16
  */
 @Service
-@AllArgsConstructor
 @Slf4j
 public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTemplateSendDetailMapper, WeixinTemplateSendDetail> implements IWeixinTemplateSendDetailService {
 
+    @Resource
     private IWeixinRelatedContactsService weixinRelatedContactsService;
-
+    @Resource
     private IWeixinBaseInfoService weixinBaseInfoService;
-
-    public IWeixinTemplateService weixinTemplateService;
+    @Resource
+    private IWeixinTemplateService weixinTemplateService;
+    @Resource
+    private IWeixinAsyncEventCallService weixinAsyncEventCallService;
+    @Resource
+    @Lazy
+    private IWeixinTemplateSendDetailService weixinTemplateSendDetailService;
 
     // 获取群发或者待群发列表
     public List<WeixinTemplateSendDetail> queryList(String wxId, boolean refresh) {
@@ -95,7 +99,7 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                             // 查询对应的模板名称
                             WeixinTemplate weixinTemplate = weixinTemplateService.getById(templateSendDetail.getTemplateId());
                             // 存在正在处理中情况
-                            if(weixinTemplate != null){
+                            if (weixinTemplate != null) {
                                 weixinTemplateSendDetail.setTemplateName(weixinTemplate.getTemplateName());
                             }
                             weixinTemplateSendDetail.setStatus(templateSendDetail.getStatus());
@@ -103,9 +107,25 @@ public class WeixinTemplateSendDetailServiceImpl extends ServiceImpl<WeixinTempl
                             weixinTemplateSendDetail.setResult(templateSendDetail.getResult());
                         });
                 // 排序操作
-                weixinTemplateSendDetails.sort(Comparator.comparing(WeixinTemplateSendDetail::getStatus,Comparator.nullsFirst(String::compareTo)).reversed());
+                weixinTemplateSendDetails.sort(Comparator.comparing(WeixinTemplateSendDetail::getStatus, Comparator.nullsFirst(String::compareTo)).reversed());
             });
             return weixinTemplateSendDetails;
         }
+    }
+
+    public List<WeixinTemplateSendDetail> queryList(Long asyncEventCallId) {
+        // 查询当前微信是否存在拉群操作
+        WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
+        Assert.notNull(weixinAsyncEventCall, "该批次号不存在");
+        // 获取该批次所有的列表
+        List<WeixinTemplateSendDetail> weixinTemplateSendDetails = weixinTemplateSendDetailService.list(Wrappers.lambdaQuery(WeixinTemplateSendDetail.class).eq(WeixinTemplateSendDetail::getAsyncEventCallId, weixinAsyncEventCall.getAsyncEventCallId()));
+        for (WeixinTemplateSendDetail weixinTemplateSendDetail : weixinTemplateSendDetails) {
+            // 填充模板名
+            WeixinTemplate weixinTemplate = weixinTemplateService.getById(weixinTemplateSendDetail.getTemplateId());
+            if (weixinTemplate != null) {
+                weixinTemplateSendDetail.setTemplateName(weixinTemplate.getTemplateName());
+            }
+        }
+        return weixinTemplateSendDetails;
     }
 }

@@ -17,4 +17,6 @@ public interface IWeixinTemplateSendDetailService extends IService<WeixinTemplat
     /**获取好友群列表*/
     List<WeixinTemplateSendDetail> queryList(String wxId, boolean refresh);
 
+    List<WeixinTemplateSendDetail> queryList(Long asyncEventCallId);
+
 }

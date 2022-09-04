@@ -1,7 +1,6 @@
 package com.xxx.server.service.impl;
 
 import cn.hutool.core.date.DateField;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
@@ -221,7 +220,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
     }
 
     // 批量拉群实时列表展示
-    public JSONArray queryList(Long asyncEventCallId){
+    public JSONArray queryList(Long asyncEventCallId) {
         // 查询当前微信是否存在拉群操作
         WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
         Assert.notNull(weixinAsyncEventCall, "批次号不存在");
@@ -233,7 +232,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             Long groupSendDetailId = weixinGroupSendDetail.getGroupSendDetailId();
             List<WeixinGroupLinkDetail> weixinGroupLinkDetails = weixinGroupLinkDetailService.list(Wrappers.lambdaQuery(WeixinGroupLinkDetail.class).eq(WeixinGroupLinkDetail::getGroupSendDetailId, groupSendDetailId));
             JSONObject jsonObject = JSONObject.parseObject(JSON.toJSONString(weixinGroupSendDetail));
-            if(weixinGroupLinkDetails.size() > 0){
+            if (weixinGroupLinkDetails.size() > 0) {
                 // 增加子号信息基本信息至数据单条数据,提取被邀请人昵称以及处理状态
                 List<JSONObject> collect = weixinGroupLinkDetails
                         .stream()

@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
 /**
  * <p>
  *  前端控制器
@@ -42,7 +44,11 @@ public class WexxinAsyncEventCallController {
                         .eq(WeixinAsyncEventCall::getEventType, eventType)
                         // 获取正在处理的该微信数据
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
+        // 如果存在计划完成时间小于当前时间，直接将状态置为500的系统异常
         if(weixinAsyncEventCall != null){
+            if(weixinAsyncEventCall.getPlanTime() == null || LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) > 0){
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("系统异常"));
+            }
             return weixinAsyncEventCall.getAsyncEventCallId().toString();
         }
         return "";

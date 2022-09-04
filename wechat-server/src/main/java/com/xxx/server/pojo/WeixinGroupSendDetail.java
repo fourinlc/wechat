@@ -50,15 +50,18 @@ public class WeixinGroupSendDetail implements Serializable {
     @TableField("master_wx_id")
     private String masterWxId;
 
-    @ApiModelProperty(value = "被邀请微信id")
+    /*@ApiModelProperty(value = "被邀请微信id")
     @TableField("slave_wx_id")
-    private String slaveWxId;
+    private String slaveWxId;*/
 
     @TableField("finish_time")
     private LocalDateTime finishTime;
 
     @TableField("create_time")
     private LocalDate createTime;
+
+    @TableField("small_headImg_url")
+    private String smallHeadImgUrl;
 
 
 }

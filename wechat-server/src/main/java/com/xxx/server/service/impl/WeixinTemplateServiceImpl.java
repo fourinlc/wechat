@@ -74,7 +74,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
 
     @Override
     public JSONObject groupChat(List<String> chatRoomNames, String wxId, List<Long> templateIds, Date fixedTime) {
-        checkWxId(wxId);
+        // checkWxId(wxId);
         JSONObject result = JSONObject.of("code", 200, "msg", "发送消息成功");
         // 增加开始时间返回以及预计完成时间
         // 检查模板的准确性
@@ -115,8 +115,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                 // 更新这条异常数据
                 // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResult("系统异常").setResultCode(500));
-                if(fixedTime != null){
-                    if (fixedTime.compareTo(new Date()) >  0) {
+                if (fixedTime != null) {
+                    if (fixedTime.compareTo(new Date()) > 0) {
                         delay = fixedTime;
                     }
                 }
@@ -133,8 +133,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             }
         } else {
             // 该微信首次创建话术，直接延时至指定时间
-            if(fixedTime != null){
-                if (fixedTime.compareTo(new Date()) >  0) {
+            if (fixedTime != null) {
+                if (fixedTime.compareTo(new Date()) > 0) {
                     delay = fixedTime;
                 }
             }
@@ -197,14 +197,24 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     }
 
     @Override
-    public JSONObject groupChatNew(List<String> chatRoomNames, String wxIdA, String wxIdB, List<Long> templateIds, Date fixedTime) {
+    public JSONObject groupChatNew(List<String> chatRoomNames, List<String> wxIds, List<Long> templateIds, Date fixedTime) {
         // 校验两个小号是否在线
-        checkId(wxIdA, wxIdB);
-        JSONObject result = JSONObject.of("code", 200, "msg", "发送消息成功");
+        wxIds.removeIf(wxId -> {
+            WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(wxId);
+            return !(weixinBaseInfo != null && StrUtil.isNotEmpty(weixinBaseInfo.getKey()) && StrUtil.equals(weixinBaseInfo.getState(), "1"));
+        });
+        JSONObject result = JSONObject.of("code", 200, "msg", "群发送消息成功");
         // 增加开始时间返回以及预计完成时间
         // 检查模板的准确性
+        StringBuilder wxId = new StringBuilder();
         List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class).in(WeixinTemplate::getTemplateId, templateIds));
-        Assert.isTrue(weixinTemplates.size() == templateIds.size(), "模板数据有误,必须包含单人和双人模板");
+        // 拼装组合微信id
+        for (String wxIdVo : wxIds) {
+            wxId.append(wxIdVo);
+        }
+        if(wxIds.size() == 2){
+            Assert.isTrue(weixinTemplates.size() == templateIds.size(), "模板数据有误,必须同时包含单人和双人模板");
+        }
         // 获取单人和双人模板，作为统一入参
         Map<String, List<WeixinTemplate>> maps = weixinTemplates.stream().collect(Collectors.groupingBy(WeixinTemplate::getTemplateType));
         JSONObject templateIdVos = JSONObject.of();
@@ -215,14 +225,11 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         Assert.isTrue(templateIdVos.size() == 2, "需同时包含单人双人模板");
         // 构建回调参数，用于额外操作
         // 获取父节点id信息
-        log.info("开始获取父节点信息开始");
-        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getOne(Wrappers.lambdaQuery(WeixinRelatedContacts.class).eq(WeixinRelatedContacts::getRelated1, wxIdA).or().eq(WeixinRelatedContacts::getRelated2, wxIdA));
-        Assert.notNull(weixinRelatedContacts, "父节点信息异常");
-        String wxId = weixinRelatedContacts.getWxId();
+        log.info("1、构建批次号开始");
         WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
         WeixinAsyncEventCall old = weixinAsyncEventCallService.getOne(
                 Wrappers.lambdaQuery(WeixinAsyncEventCall.class)
-                        .eq(WeixinAsyncEventCall::getWxId, wxId)
+                        .eq(WeixinAsyncEventCall::getWxId, wxId.toString())
                         .eq(WeixinAsyncEventCall::getEventType, ResConstant.ASYNC_EVENT_GROUP_CHAT)
                         // 获取正在处理的该微信数据
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
@@ -238,12 +245,12 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         // 群邀请类型
                         .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
                         .setBusinessId(UUID.fastUUID().toString())
-                        .setWxId(wxId)
+                        .setWxId(wxId.toString())
                         .setPlanStartTime(LocalDateTimeUtil.of(delay))
                         // 设置99为处理中状态
                         .setResultCode(99);
                 weixinAsyncEventCallService.save(weixinAsyncEventCall);
-            }else if (planTime.compareTo(LocalDateTime.now()) > 0) {
+            } else if (planTime.compareTo(LocalDateTime.now()) > 0) {
                 // 直接提醒还存在待完成的数据，返回开始预计开始时间和预计完成时间
                 log.info("该微信上次群聊还没执行完成：{}", wxId);
                 result.put("code", 500);
@@ -256,8 +263,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                 // 更新这条异常数据
                 // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
                 weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
-                if(fixedTime != null){
-                    if (fixedTime.compareTo(new Date()) >  0) {
+                if (fixedTime != null) {
+                    if (fixedTime.compareTo(new Date()) > 0) {
                         delay = fixedTime;
                     }
                 }
@@ -266,7 +273,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         // 群邀请类型
                         .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
                         .setBusinessId(UUID.fastUUID().toString())
-                        .setWxId(wxId)
+                        .setWxId(wxId.toString())
                         .setPlanStartTime(LocalDateTimeUtil.of(delay))
                         // 设置99为处理中状态
                         .setResultCode(99);
@@ -274,8 +281,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             }
         } else {
             // 该微信首次创建话术，直接延时至指定时间
-            if(fixedTime != null){
-                if (fixedTime.compareTo(new Date()) >  0) {
+            if (fixedTime != null) {
+                if (fixedTime.compareTo(new Date()) > 0) {
                     delay = fixedTime;
                 }
             }
@@ -284,7 +291,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                     // 群邀请类型
                     .setEventType(ResConstant.ASYNC_EVENT_GROUP_CHAT)
                     .setBusinessId(UUID.fastUUID().toString())
-                    .setWxId(wxId)
+                    .setWxId(wxId.toString())
                     .setPlanStartTime(LocalDateTimeUtil.of(delay))
                     // 设置99为处理中状态
                     .setResultCode(99);
@@ -311,22 +318,21 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
                     "chatRoomName", chatRoomName,
                     "templateIds", templateIdVos);
-            jsonObject.put("wxIdA", wxIdA);
+            jsonObject.put("wxIds", wxIds);
             jsonObject.put("wxId", wxId);
-            jsonObject.put("wxIdB", wxIdB);
             // 开始构建延时消息
             Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
             // 每个群发之间的间隔时间
+            // 设置随机时间10-15秒执行时间
+            delay = RandomUtil.randomDate(delay, DateField.MILLISECOND, min, max);
             try {
                 log.info("发送延时消息延时时间为：{}", delay);
                 delayMqProducer.sendDelay(message, delay);
-                // 设置随机时间10-15秒执行时间
-                delay = RandomUtil.randomDate(delay, DateField.MILLISECOND, min, max);
                 // 记录已操作过的群聊信息，并标识为正在处理中
                 WeixinTemplateSendDetail weixinTemplateSendDetail =
                         new WeixinTemplateSendDetail()
                                 .setCreateTime(new Date())
-                                .setWxId(wxId)
+                                .setWxId(wxId.toString())
                                 .setChatRoomId(chatRoomName)
                                 .setStatus("99")
                                 .setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId());
@@ -337,7 +343,6 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                 log.error("mq发送延迟消息失败{}，wxId:{}", e.getMessage(), wxId);
                 result.put("code", 500);
                 result.put("msg", "mq发送延迟消息失败");
-                // TODO 已发送出去消息还是正常处理，记录下发送成功的群id信息，防止二次发送
                 return result;
             }
         }
@@ -350,21 +355,6 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         return result;
     }
 
-    private void checkId(String wxIdA, String wxIdB) {
-        WeixinBaseInfo weixinBaseInfoA = weixinBaseInfoService.getById(wxIdA);
-        Assert.isTrue(!(weixinBaseInfoA == null || StrUtil.isEmpty(weixinBaseInfoA.getKey()) || !StrUtil.equals(weixinBaseInfoA.getState(), "1")), "子账号wxId" + wxIdA + "未登录系统或者不在线");
-        WeixinBaseInfo weixinBaseInfoB = weixinBaseInfoService.getById(wxIdB);
-        Assert.isTrue(!(weixinBaseInfoB == null || StrUtil.isEmpty(weixinBaseInfoB.getKey()) || !StrUtil.equals(weixinBaseInfoB.getState(), "1")), "子账号wxId" + wxIdB + "未登录系统或者不在线");
-    }
-
-    private void checkWxId(String wxId){
-        // 先获取对应的子账号列表
-        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(wxId);
-        String wxIdA = weixinRelatedContacts.getRelated1();
-        String wxIdB = weixinRelatedContacts.getRelated2();
-        // 获取对应的key值
-        checkId(wxIdA, wxIdB);
-    }
 
     @Transactional
     public boolean add(WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails) {

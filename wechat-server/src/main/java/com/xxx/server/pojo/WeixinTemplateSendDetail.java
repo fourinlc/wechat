@@ -47,7 +47,7 @@ public class WeixinTemplateSendDetail implements Serializable {
     private String chatRoomId;
 
     @ApiModelProperty(value = "群名")
-    @TableField(exist = false)
+    @TableField("chat_room_name")
     private String chatRoomName;
 
     @ApiModelProperty(value = "模板名")

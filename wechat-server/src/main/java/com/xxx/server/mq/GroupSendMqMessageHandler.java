@@ -97,11 +97,13 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                 // 获取下群名称
                 JSONObject contact = chatRoomInfoRes.getJSONObject(ResConstant.DATA).getJSONArray("contactList").getJSONObject(0);
                 nickName = contact.getJSONObject("nickName").getString("str");
+                // 获取对应的群图片信息
+                String smallHeadImgUrl = contact.getString("smallHeadImgUrl");
                 if (StrUtil.isEmpty(nickName)) {
                     return writeLog("主号已被踢", weixinAsyncEventCall, weixinGroupSendDetail, start);
                 }
                 // 设置群名，用于展示
-                weixinGroupSendDetail.setChatRoomName(new String(Base64.getEncoder().encode(nickName.getBytes(StandardCharsets.UTF_8))));
+                weixinGroupSendDetail.setSmallHeadImgUrl(smallHeadImgUrl).setChatRoomName(new String(Base64.getEncoder().encode(nickName.getBytes(StandardCharsets.UTF_8))));
             }
             try {
                 // 随机休眠1-2秒,
