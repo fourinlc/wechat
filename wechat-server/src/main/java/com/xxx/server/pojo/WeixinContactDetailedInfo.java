@@ -32,4 +32,6 @@ public class WeixinContactDetailedInfo {
     String smallHeadImgUrl;
     @ApiModelProperty(value = "related")
     String related;
+    @ApiModelProperty(value = "chatroomAccessType")
+    String chatroomAccessType;
 }

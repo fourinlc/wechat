@@ -359,6 +359,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             contactDetailedInfo.setSmallHeadImgUrl(detailJson.getString("smallHeadImgUrl"));
             if (contactDetailedInfo.getWxId().endsWith("@chatroom")){
                 contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
+                contactDetailedInfo.setChatroomAccessType(detailJson.getString("chatroomAccessType"));
                 contactDetailedInfoMap.get("chatRoomDetaile").add(contactDetailedInfo);
             } else {
                 contactDetailedInfo.setSignature(detailJson.getString("signature"));
