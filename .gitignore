@@ -1,3 +1,4 @@
 # Project exclude paths
 /wechat-generator/target/
 /wechat-server/target/
+/wechat-server/src/main/resources/config/
