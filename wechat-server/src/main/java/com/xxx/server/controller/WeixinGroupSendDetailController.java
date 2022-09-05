@@ -2,14 +2,13 @@ package com.xxx.server.controller;
 
 
 import com.alibaba.fastjson2.JSONObject;
+import com.xxx.server.pojo.GroupSendParam;
 import com.xxx.server.pojo.RespBean;
+import com.xxx.server.pojo.WeixinContactDetailedInfo;
 import com.xxx.server.service.IWeixinGroupSendDetailService;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
@@ -31,8 +30,8 @@ public class WeixinGroupSendDetailController {
 
     @GetMapping("batchGroupSendDetail")
     @ApiOperation("批量拉群")
-    public JSONObject groupSendDetail(@RequestParam("chatRoomIds") List<String> chatRoomIds, String masterWxId, @RequestParam("slaveWxIds") List<String> slaveWxIds, boolean flag/*, Date fixedTime*/){
-        return weixinGroupSendDetailService.groupSendDetail(chatRoomIds, masterWxId, slaveWxIds, flag, new Date());
+    public JSONObject groupSendDetail(@RequestBody GroupSendParam groupSendParam){
+        return weixinGroupSendDetailService.groupSendDetail(groupSendParam.getWeixinContactDetailedInfos(), groupSendParam.getMasterWxId(), groupSendParam.getSlaveWxIds(), groupSendParam.isFlag(), new Date());
     }
 
     @GetMapping("queryList")

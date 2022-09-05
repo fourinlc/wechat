@@ -114,9 +114,9 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                         log.info("3.1、该账号key:{}已不在这个群内", key);
                         continue;
                     }
-                    String nickName = contact.getJSONObject("nickName").getString("str");
-                    String smallHeadImgUrl = contact.getString("smallHeadImgUrl");
-                    weixinTemplateSendDetail.setChatRoomName(new String(Base64.getEncoder().encode(nickName.getBytes(StandardCharsets.UTF_8)))).setHeadImgUrl(smallHeadImgUrl);
+                    // String nickName = contact.getJSONObject("nickName").getString("str");
+                    // String smallHeadImgUrl = contact.getString("smallHeadImgUrl");
+                    // weixinTemplateSendDetail.setChatRoomName(new String(Base64.getEncoder().encode(nickName.getBytes(StandardCharsets.UTF_8)))).setHeadImgUrl(smallHeadImgUrl);
                     JSONArray newChatroomData = contact.getJSONObject("newChatroomData").getJSONArray("chatroom_member_list");
                     // 先获取对应的子账号列表
                     countVo = newChatroomData.stream().filter(o -> {

@@ -24,7 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,7 +67,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
     @Value("${spring.rocketmq.tags.groupSend}")
     private String groupSendTag;
 
-    public JSONObject groupSendDetail(List<String> chatRoomIds, String masterWxId, List<String> slaveWxIds, boolean flag, Date fixedTime) {
+    public JSONObject groupSendDetail(List<WeixinContactDetailedInfo> weixinContactDetailedInfos, String masterWxId, List<String> slaveWxIds, boolean flag, Date fixedTime) {
         WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(masterWxId);
         Assert.isTrue(weixinBaseInfo != null && StrUtil.equals("1", weixinBaseInfo.getState()), "主账号已不在线");
         // 校验slaveWxIdA slaveWxIdB是否正常状态，查看是否需要自动进群
@@ -173,13 +175,14 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         int between = dices.getIntValue("between", 1);
         // 开始循环进群操作
         log.info("拉群配置信息{}", dices);
-        for (int i = 0; i < chatRoomIds.size(); i++) {
+        for (int i = 0; i < weixinContactDetailedInfos.size(); i++) {
             if ((i + 1) % (sheaves * rate) == 0) {
                 // log.info("新的一轮操作：{}", i);
                 // 说明一轮数据完成，增加间隔时间
                 delay = DateUtils.addSeconds(delay, between * 60);
             }
-            String chatRoomId = chatRoomIds.get(i);
+            WeixinContactDetailedInfo weixinContactDetailedInfo = weixinContactDetailedInfos.get(i);
+            String chatRoomId = weixinContactDetailedInfo.getWxId();
             // 获取对应的key值信息
             JSONObject msg = JSONObject.of("slaveWxIds", slaveWxIds,
                     "wxId", masterWxId,
@@ -197,6 +200,8 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                         .setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId())
                         .setCreateTime(LocalDateTime.now().toLocalDate())
                         .setChatRoomId(chatRoomId)
+                        .setSmallHeadImgUrl(weixinContactDetailedInfo.getSmallHeadImgUrl())
+                        .setChatRoomName(new String(Base64.getEncoder().encode(weixinContactDetailedInfo.getUserName().getBytes(StandardCharsets.UTF_8))))
                         .setStatus("99");
                 save(weixinGroupSendDetail);
                 msg.put("groupSendDetailId", weixinGroupSendDetail.getGroupSendDetailId());

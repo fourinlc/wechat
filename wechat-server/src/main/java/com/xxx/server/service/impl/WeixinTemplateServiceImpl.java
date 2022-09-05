@@ -25,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -197,7 +199,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     }
 
     @Override
-    public JSONObject groupChatNew(List<String> chatRoomNames, List<String> wxIds, List<Long> templateIds, Date fixedTime) {
+    public JSONObject groupChatNew(List<WeixinContactDetailedInfo> weixinContactDetailedInfos, List<String> wxIds, List<Long> templateIds, Date fixedTime) {
         // 校验两个小号是否在线
         wxIds.removeIf(wxId -> {
             WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(wxId);
@@ -313,10 +315,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         int min = dices.getIntValue("mass_min", 8000);
         log.info("群发群间隔配置时间min:{},max:{}", min, max);
         Assert.isTrue(max > min, "群发间隔时间配置有误");
-        for (String chatRoomName : chatRoomNames) {
+        for (WeixinContactDetailedInfo weixinContactDetailedInfo : weixinContactDetailedInfos) {
             // 构建延时消息操作，暂时按照一个群5秒操作
             JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
-                    "chatRoomName", chatRoomName,
+                    "chatRoomName", weixinContactDetailedInfo.getWxId(),
                     "templateIds", templateIdVos);
             jsonObject.put("wxIds", wxIds);
             jsonObject.put("wxId", wxId);
@@ -333,7 +335,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                         new WeixinTemplateSendDetail()
                                 .setCreateTime(new Date())
                                 .setWxId(wxId.toString())
-                                .setChatRoomId(chatRoomName)
+                                .setChatRoomId(weixinContactDetailedInfo.getWxId())
+                                .setHeadImgUrl(weixinContactDetailedInfo.getSmallHeadImgUrl())
+                                .setChatRoomName(new String(Base64.getEncoder().encode(weixinContactDetailedInfo.getUserName().getBytes(StandardCharsets.UTF_8))))
                                 .setStatus("99")
                                 .setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId());
                 // 先保存数据防止批量保存数据过多
