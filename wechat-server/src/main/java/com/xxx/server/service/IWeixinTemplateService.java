@@ -31,7 +31,7 @@ public interface IWeixinTemplateService extends IService<WeixinTemplate> {
     @Validated(UpdateValid.class)
     boolean update(@Valid WeixinTemplate weixinTemplate, List<WeixinTemplateDetail> weixinTemplateDetails);
 
-    List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate);
+    List<JSONObject> queryList(WeixinTemplate weixinTemplate);
 
     boolean deleteByName(String templateName);
 

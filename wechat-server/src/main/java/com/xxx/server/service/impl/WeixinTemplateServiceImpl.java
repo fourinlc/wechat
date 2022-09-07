@@ -68,6 +68,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
     @Resource
     private IWeixinDictionaryService weixinDictionaryService;
 
+    @Resource
+    private IWeixinAppMessageService weixinAppMessageService;
+
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
 
@@ -385,21 +388,32 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         return weixinTemplateDetailService.saveBatch(weixinTemplateDetails);
     }
 
-    public List<WeixinTemplateParam> queryList(WeixinTemplate weixinTemplate) {
-        List<WeixinTemplateParam> weixinTemplateParams = Lists.newArrayList();
+    public List<JSONObject> queryList(WeixinTemplate weixinTemplate) {
+        List<JSONObject> datas = Lists.newArrayList();
         List<WeixinTemplate> weixinTemplates = list(Wrappers.lambdaQuery(WeixinTemplate.class)
                 .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateName()), WeixinTemplate::getTemplateName, weixinTemplate.getTemplateName())
                 .eq(StrUtil.isNotEmpty(weixinTemplate.getTemplateType()), WeixinTemplate::getTemplateType, weixinTemplate.getTemplateType()));
         for (WeixinTemplate weixinTemplateVo : weixinTemplates) {
-            WeixinTemplateParam weixinTemplateParam = new WeixinTemplateParam();
-            weixinTemplateParam.setWeixinTemplate(weixinTemplateVo);
+            JSONObject data = JSONObject.of("weixinTemplate", weixinTemplateVo);
+            datas.add(data);
+            List<JSONObject> jsonObjectList = Lists.newArrayList();
             if (weixinTemplateVo != null) {
                 // 查询其模板详情
-                weixinTemplateParam.setWeixinTemplateDetailList(weixinTemplateDetailService.listByMap(JSONObject.of("template_id", weixinTemplateVo.getTemplateId())));
+                List<WeixinTemplateDetail> weixinTemplateDetails = weixinTemplateDetailService.listByMap(JSONObject.of("template_id", weixinTemplateVo.getTemplateId()));
+                for (WeixinTemplateDetail weixinTemplateDetail : weixinTemplateDetails) {
+                    JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(weixinTemplateDetail));
+                    // 将链接类型的模板特殊转化
+                    if (StrUtil.equals("2", weixinTemplateDetail.getMsgType())) {
+                        // 查询链接列表信息
+                        WeixinAppMessage weixinAppMessage = weixinAppMessageService.getById(weixinTemplateDetail.getMsgContent());
+                        jsonObject.put("templateShow", weixinAppMessage);
+                    }
+                    jsonObjectList.add(jsonObject);
+                }
             }
-            weixinTemplateParams.add(weixinTemplateParam);
+            data.put("weixinTemplateDetail", jsonObjectList);
         }
-        return weixinTemplateParams;
+        return datas;
     }
 
     @Transactional
