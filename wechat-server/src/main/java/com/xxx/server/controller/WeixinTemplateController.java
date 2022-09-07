@@ -56,12 +56,6 @@ public class WeixinTemplateController {
         return RespBean.sucess("查询成功", weixinTemplateService.queryList(new WeixinTemplate().setTemplateName(templateName).setTemplateType(templateType)));
     }
 
- /*   @ApiOperation("构建群发模板")
-    @PostMapping("groupChat")
-    public JSONObject groupChat(@RequestBody GroupChatParam groupChat){
-        return weixinTemplateService.groupChat(groupChat.getChatRoomNames(), groupChat.getWxId(), groupChat.getTemplateIds(), groupChat.getFixedTime());
-    }*/
-
     @ApiOperation("删除模板")
     @GetMapping("deleteByName")
     public RespBean deleteByName( String templateName){

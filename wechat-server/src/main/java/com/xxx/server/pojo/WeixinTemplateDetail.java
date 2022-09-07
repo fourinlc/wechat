@@ -51,5 +51,4 @@ public class WeixinTemplateDetail implements Serializable {
     @TableField("msg_role")
     private String msgRole;
 
-
 }

@@ -9,11 +9,11 @@ import com.google.common.collect.Lists;
 import com.xxx.server.mapper.WeixinFileMapper;
 import com.xxx.server.pojo.WeixinFile;
 import com.xxx.server.service.IWeixinFileService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 /**
@@ -26,12 +26,13 @@ import java.util.List;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class WeixinFileServiceImpl extends ServiceImpl<WeixinFileMapper, WeixinFile> implements IWeixinFileService {
 
     @Value("${wechat.file.basePath}")
     private String basePath;
-    @Resource
-    private WeixinFileMapper weixinFileMapper;
+
+    private final WeixinFileMapper weixinFileMapper;
 
     // 文件上传至本地
     public String uploadFile(byte[] datas, String filePath, String filename){
