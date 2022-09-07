@@ -10,9 +10,11 @@ import com.xxx.server.constant.ResConstant;
 import com.xxx.server.enums.WechatApiHelper;
 import com.xxx.server.pojo.WeixinAsyncEventCall;
 import com.xxx.server.pojo.WeixinBaseInfo;
+import com.xxx.server.pojo.WeixinDictionary;
 import com.xxx.server.pojo.WeixinGroupSendDetail;
 import com.xxx.server.service.IWeixinAsyncEventCallService;
 import com.xxx.server.service.IWeixinBaseInfoService;
+import com.xxx.server.service.IWeixinDictionaryService;
 import com.xxx.server.service.IWeixinGroupSendDetailService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.common.message.Message;
@@ -52,6 +54,9 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    private IWeixinDictionaryService weixinDictionaryService;
 
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
@@ -148,12 +153,21 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                 if (flag) {
                     // 延迟几分钟自动进群,获取对应的配置项
                     // 根据发送者、接收者以及群名，获取一个时刻唯一一条邀请链接，并将状态置为自动处理
+                    List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
+                    // Assert.isTrue(scanIntoUrlGroupTimes.size() >= 2, "系统进群消息配置异常");
+                    // 获取对应随机数字1-5, 默认2-4秒
+                    JSONObject dices = new JSONObject();
+                    scanIntoUrlGroupTimes.forEach(scanIntoUrlGroupTime -> {
+                        dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
+                    });
                     for (String slaveWxId : slaveWxIds) {
                         byte[] nickNameDecode = Base64.getEncoder().encode(nickName.getBytes(StandardCharsets.UTF_8));
                         JSONObject paramVo = JSONObject.of("toUserWxId", slaveWxId, "fromUserWxId", wxId, "chatroomName", new String(nickNameDecode));
                         // 分别进群并保存群聊至通讯录
                         // 模拟延时90秒到120秒进群
-                        Date delay = RandomUtil.randomDate(new Date(), DateField.SECOND, 60, 90);
+                        int delay_max = dices.getIntValue("delay_max", 90);
+                        int delay_min = dices.getIntValue("delay_min", 60);
+                        Date delay = RandomUtil.randomDate(new Date(), DateField.SECOND, delay_min, delay_max);
                         JSONObject msg = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(), "paramVo", paramVo);
                         // 用于回调子账号进群情况
                         msg.put("groupSendDetailId", groupSendDetailId);
@@ -191,7 +205,7 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
         // 更新原始数据进群详情信息,增加描述信息
         if (weixinAsyncEventCall != null) {
             weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult(message));
-            if (weixinAsyncEventCall.getPlanTime() != null && LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0 ) {
+            if (weixinAsyncEventCall.getPlanTime() != null && LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
                 log.info("该拉群完成");
                 weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setFinishTime(LocalDateTime.now()));
             }

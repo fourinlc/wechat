@@ -161,7 +161,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         // 增加批次号入参
         result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
         // 开始组装发送信息
-        List<WeixinDictionary> weixinDictionaries = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("groupSend"));
+        List<WeixinDictionary> weixinDictionaries = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
         // 获取对应随机数字1-5, 默认2-4秒
         JSONObject dices = new JSONObject();
         weixinDictionaries.forEach(scanIntoUrlGroupTime -> {
@@ -222,6 +222,8 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 throw new BusinessException("mq消息发送失败，请检测网络情况");
             }
         }
+        int delay_max = dices.getIntValue("delay_max", 90);
+        delay = DateUtils.addSeconds(delay, delay_max);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
         result.put("planTime", weixinAsyncEventCall.getPlanTime());
         return result;

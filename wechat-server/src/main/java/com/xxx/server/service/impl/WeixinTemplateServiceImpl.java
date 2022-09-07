@@ -227,7 +227,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             List<Long> ids = weixinTemplateVos.stream().map(WeixinTemplate::getTemplateId).collect(Collectors.toList());
             templateIdVos.put(templateType, ids);
         });
-        Assert.isTrue(templateIdVos.size() == 2, "需同时包含单人双人模板");
+        // Assert.isTrue(templateIdVos.size() == 2, "需同时包含单人双人模板");
         // 构建回调参数，用于额外操作
         // 获取父节点id信息
         log.info("1、构建批次号开始");
