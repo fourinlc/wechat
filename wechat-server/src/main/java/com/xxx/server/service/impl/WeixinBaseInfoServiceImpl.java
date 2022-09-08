@@ -384,10 +384,15 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         }while (true);
         //过滤出好友和群
         JSONArray detailsList = detailsJson.getJSONObject("Data").getJSONArray("contactList");
+        int index = 0;
         for (Object o : detailsList) {
             JSONObject detailJson = JSONObject.parseObject(o.toString());
             WeixinContactDetailedInfo contactDetailedInfo = new WeixinContactDetailedInfo();
-            contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
+            if (detailJson.getString("userName").length() > 7) {
+                contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
+            }else {
+                contactDetailedInfo.setWxId(wxIds.get(index));
+            }
             if (detailJson.getString("nickName").length() > 7) {
                 contactDetailedInfo.setUserName(detailJson.getString("nickName").substring(8,detailJson.getString("nickName").length()-2));
             }
@@ -402,6 +407,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
                 contactDetailedInfo.setBigHeadImgUrl(detailJson.getString("bigHeadImgUrl"));
                 contactDetailedInfoMap.get("friendsDetail").add(contactDetailedInfo);
             }
+            index++;
         }
         return contactDetailedInfoMap;
     }
