@@ -164,15 +164,14 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         List<WeixinDictionary> weixinDictionaries = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
         // 获取对应随机数字1-5, 默认2-4秒
         JSONObject dices = new JSONObject();
-        weixinDictionaries.forEach(scanIntoUrlGroupTime -> {
-            dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue());
-        });
+        weixinDictionaries.forEach(scanIntoUrlGroupTime -> dices.put(scanIntoUrlGroupTime.getDicKey(), scanIntoUrlGroupTime.getDicValue()));
         // 进群间隔时间
         int max = dices.getIntValue("max", 15);
         int min = dices.getIntValue("min", 10);
         int sheaves = dices.getIntValue("sheaves", 2);
         int rate = dices.getIntValue("rate", 10);
-        int between = dices.getIntValue("between", 1);
+        // 默认两小时后再次进群，每次进群20个
+        int between = dices.getIntValue("between", 120);
         // 开始循环进群操作
         long l = System.currentTimeMillis();
         log.info("拉群配置信息{}", dices);
@@ -180,6 +179,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             if ((i + 1) % (sheaves * rate) == 0) {
                 // log.info("新的一轮操作：{}", i);
                 // 说明一轮数据完成，增加间隔时间
+                log.info("一轮操作完成,延时：{}分钟后发送", between);
                 delay = DateUtils.addSeconds(delay, between * 60);
             }
             WeixinContactDetailedInfo weixinContactDetailedInfo = weixinContactDetailedInfos.get(i);
@@ -221,10 +221,15 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 // baseMapper.updateById(weixinGroupSendDetail.setStatus("5"));
                 throw new BusinessException("mq消息发送失败，请检测网络情况");
             }
+
         }
-        int delay_max = dices.getIntValue("delay_max", 90);
-        delay = DateUtils.addSeconds(delay, delay_max);
+        if(flag){
+            // 存在子号进群时增加延时
+            int delay_max = dices.getIntValue("delay_max", 90);
+            delay = DateUtils.addSeconds(delay, delay_max);
+        }
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
+        // 设置延时时间需要把时间延时90秒，不然容易出现提前结束问题
         result.put("planTime", weixinAsyncEventCall.getPlanTime());
         return result;
     }
