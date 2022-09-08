@@ -22,13 +22,13 @@ import com.xxx.server.service.IWeixinAsyncEventCallService;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import com.xxx.server.service.IWeixinDictionaryService;
 import com.xxx.server.service.IWeixinGroupLinkDetailService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.rocketmq.common.message.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -45,16 +45,14 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLinkDetailMapper, WeixinGroupLinkDetail> implements IWeixinGroupLinkDetailService {
 
-    @Resource
-    private IWeixinDictionaryService weixinDictionaryService;
+    private final IWeixinDictionaryService weixinDictionaryService;
 
-    @Resource
-    private DelayMqProducer delayMqProducer;
+    private final DelayMqProducer delayMqProducer;
 
-    @Resource
-    private IWeixinAsyncEventCallService weixinAsyncEventCallService;
+    private final IWeixinAsyncEventCallService weixinAsyncEventCallService;
 
     @Value("${spring.rocketmq.consumer-topic}")
     private String consumerTopic;
@@ -62,8 +60,7 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
     @Value("${spring.rocketmq.tags.qunGroupNew}")
     private String consumerQunGroupTag;
 
-    @Resource
-    private IWeixinBaseInfoService weixinBaseInfoService;
+    private final IWeixinBaseInfoService weixinBaseInfoService;
 
     private static final String COMPANY_STATUS = "openim";
 

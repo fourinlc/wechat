@@ -81,7 +81,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                     .collect(Collectors.toList());
             Assert.isTrue(slaveWxIds.size() > 0, "请至少选择一个在线的邀请号码");
         }
-        JSONObject result = JSONObject.of("code", 200, "msg", "发送消息成功");
+        JSONObject result = JSONObject.of("code", 200, "msg", "发送拉群消息成功");
         WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
         WeixinAsyncEventCall old = weixinAsyncEventCallService.getOne(
                 Wrappers.lambdaQuery(WeixinAsyncEventCall.class)
@@ -161,7 +161,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         // 增加批次号入参
         result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
         // 开始组装发送信息
-        List<WeixinDictionary> weixinDictionaries = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("groupSend"));
+        List<WeixinDictionary> weixinDictionaries = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("scanIntoUrlGroupTime"));
         // 获取对应随机数字1-5, 默认2-4秒
         JSONObject dices = new JSONObject();
         weixinDictionaries.forEach(scanIntoUrlGroupTime -> {
@@ -174,6 +174,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         int rate = dices.getIntValue("rate", 10);
         int between = dices.getIntValue("between", 1);
         // 开始循环进群操作
+        long l = System.currentTimeMillis();
         log.info("拉群配置信息{}", dices);
         for (int i = 0; i < weixinContactDetailedInfos.size(); i++) {
             if ((i + 1) % (sheaves * rate) == 0) {
@@ -190,7 +191,9 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             );
             msg.put("chatRoomId", chatRoomId);
             msg.put("flag", flag);
-
+            msg.put("count", weixinContactDetailedInfos.size());
+            // 增加时间戳入参
+            msg.put("current", l);
             // 异步更新返回成功时或者失败时更新群链接状态
             try {
                 // 缓存中获取进群间隔时间，分发mq延时任务进行消费
@@ -219,6 +222,8 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
                 throw new BusinessException("mq消息发送失败，请检测网络情况");
             }
         }
+        int delay_max = dices.getIntValue("delay_max", 90);
+        delay = DateUtils.addSeconds(delay, delay_max);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
         result.put("planTime", weixinAsyncEventCall.getPlanTime());
         return result;

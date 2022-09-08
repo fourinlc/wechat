@@ -1,9 +1,11 @@
 package com.xxx.server.mq;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.XmlUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -18,6 +20,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.w3c.dom.Document;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -50,6 +53,9 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
 
     @Resource
     private IWeixinDictionaryService weixinDictionaryService;
+
+    @Resource
+    private IWeixinAppMessageService weixinAppMessageService;
 
     @Value("${wechat.file.basePath}")
     private String basePath;
@@ -227,7 +233,8 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                             e.printStackTrace();
                         }
                     }
-                } else {
+                    // 发送图片信息
+                } else if("0".equals(weixinTemplateDetail.getMsgType())){
                     paramVo = JSONObject.of("MsgItem", jsonObjectList);
                     param.put("TextContent", "");
                     // 获取图片信息用于展示
@@ -245,6 +252,31 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                         log.error("账号发送图片信息异常 key:{}, 终止整个流程", key);
                         weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("账号发送图片信息异常key" + key));
                         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("账号发送图片信息异常key:" + key).setRealTime(LocalDateTime.now()));
+                        // 重置计数器模板计数器
+                        return true;
+                    } else {
+                        // 随机延时两秒进行下一个话术操作
+                        try {
+                            Thread.sleep(RandomUtil.randomInt(min, max));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    // 组装链接方式发送信息
+                }else if("2".equals(weixinTemplateDetail.getMsgType())){
+                    // 获取对应的拼接的链接信息
+                    String msgContent = weixinTemplateDetail.getMsgContent();
+                    WeixinAppMessage weixinAppMessage = weixinAppMessageService.getById(msgContent);
+                    // 组装对应的xml数据信息
+                    Document document = XmlUtil.mapToXml(BeanUtil.beanToMap(weixinAppMessage/*.setThumburl(basePath + weixinAppMessage.getThumburl())*/, false, false), "appmsg");
+                    String msg = XmlUtil.toStr(document);
+                    paramVo = JSONObject.of("AppList", JSONArray.of(JSONObject.of("ToUserName", "19976248534@chatroom", "ContentXML", msg, "ContentType", 49)));
+                    JSONObject sendAppMessage = WechatApiHelper.SEND_APP_MESSAGE.invoke(paramVo, query);
+                    if (!ResConstant.CODE_SUCCESS.equals(sendAppMessage.getInteger(ResConstant.CODE))) {
+                        // TODO 细化具体异常处理
+                        log.error("账号链接信息异常 key:{}, 终止整个流程", key);
+                        weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("账号发送链接信息异常key" + key));
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("账号发送链接信息异常key:" + key).setRealTime(LocalDateTime.now()));
                         // 重置计数器模板计数器
                         return true;
                     } else {
@@ -283,7 +315,6 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             e.printStackTrace();
             return true;
         }
-
     }
 
 }

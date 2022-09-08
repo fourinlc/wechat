@@ -32,6 +32,8 @@ public enum WechatApiHelper {
     SEND_TEXT_MESSAGE("发送文字消息", "/v1/message/SendTextMessage", HttpMethod.POST),
     SEND_IMAGE_MESSAGE("发送图片", "/v1/message/SendImageMessage", HttpMethod.POST),
     SEND_APP_MESSAGE("链接类型消息", "/v1/message/SendAppMessage", HttpMethod.POST),
+    FORWARD_VIDEO_MESSAGE("视频类型消息", "/v1/message/ForwardVideoMessage", HttpMethod.POST),
+    CDN_UPLOAD_VIDEO("上传视频类数据", "/v1/message/CdnUploadVideo", HttpMethod.POST),
     GET_REDIS_SYNC_MSG("长链接订阅同步消息", "/v1/user/GetRedisSyncMsg", HttpMethod.POST),
     NEW_SYNC_HISTORY_MESSAGE("短链接同步消息", "/v1/user/NewSyncHistoryMessage", HttpMethod.POST),
     SCAN_INTO_URL_GROUP("同意进群", "/v1/group/ScanIntoUrlGroup", HttpMethod.POST),

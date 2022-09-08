@@ -28,7 +28,7 @@ public class WeixinGroupSendDetailController {
 
     private IWeixinGroupSendDetailService weixinGroupSendDetailService;
 
-    @GetMapping("batchGroupSendDetail")
+    @PostMapping("batchGroupSendDetail")
     @ApiOperation("批量拉群")
     public JSONObject groupSendDetail(@RequestBody GroupSendParam groupSendParam){
         return weixinGroupSendDetailService.groupSendDetail(groupSendParam.getWeixinContactDetailedInfos(), groupSendParam.getMasterWxId(), groupSendParam.getSlaveWxIds(), groupSendParam.isFlag(), new Date());

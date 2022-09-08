@@ -122,6 +122,11 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             // 额外校验群链接生效情况
             JSONObject data = WechatApiHelper.SCAN_INTO_URL_GROUP.invoke(JSONObject.of("Url", weixinGroupLinkDetail.getContent()), multiValueMap);
             log.info("4、开始群链接进群,返回值：{}", data);
+            // 进群失败,该群聊邀请已过期！这种是异常群信息，跳过该群，应该是群被封了之类
+            if (ResConstant.CODE_SUCCESS.equals(data.getInteger(ResConstant.CODE)) && "进群失败,该群聊邀请已过期！".equals(data.getString("Text"))) {
+                return writeLog(weixinGroupLinkDetail, null, "该群群状态异常", start);
+            }
+
             if (!(ResConstant.CODE_SUCCESS.equals(data.getInteger(ResConstant.CODE)) && "进群成功".equals(data.getString("Text")))) {
                 return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "群链接进群失败", start);
             }
@@ -210,8 +215,10 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
 
     private boolean writeLog(WeixinGroupLinkDetail weixinGroupLinkDetail, WeixinAsyncEventCall weixinAsyncEventCall, String msg, long start) {
         log.info(msg);
+        if(weixinAsyncEventCall != null){
+            weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult(msg));
+        }
         weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setResult(msg).setLinkStatus("500"));
-        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult(msg));
         log.info("异常结束：耗时{}", System.currentTimeMillis() -start);
         return true;
     }
