@@ -66,4 +66,10 @@ public class WeixinBaseInfoController{
     public RespBean deviceLogin(String wxid, String passWord){
         return weixinBaseInfoService.deviceLogin(wxid,passWord);
     }
+
+    @ApiOperation(value = "获取距上次登录时长")
+    @GetMapping("/querySinceLastLogin")
+    public RespBean querySinceLastLogin(String wxid){
+        return weixinBaseInfoService.querySinceLastLogin(wxid);
+    }
 }

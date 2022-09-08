@@ -13,7 +13,9 @@ import com.xxx.server.mapper.WeixinRelatedContactsMapper;
 import com.xxx.server.pojo.RespBean;
 import com.xxx.server.pojo.WeixinBaseInfo;
 import com.xxx.server.pojo.WeixinContactDetailedInfo;
+import com.xxx.server.pojo.WeixinDictionary;
 import com.xxx.server.service.IWeixinBaseInfoService;
+import com.xxx.server.service.IWeixinDictionaryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
@@ -26,6 +28,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +56,8 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
     WeixinBaseInfoMapper weixinBaseInfoMapper;
     @Autowired
     ThreadPoolTaskExecutor threadPoolTaskExecutor;
+    @Autowired
+    IWeixinDictionaryService weixinDictionaryService;
 
     @Override
     public RespBean getLoginQrcode() {
@@ -184,6 +189,37 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
         } else {
             return RespBean.error("登录失败",resultJson);
         }
+    }
+
+    @Override
+    public RespBean querySinceLastLogin(String wxid) {
+        JSONObject resultJson = new JSONObject();
+        WeixinBaseInfo weixinBaseInfo = weixinBaseInfoMapper.selectById(wxid);
+        if(weixinBaseInfo.getLastTime() == null){
+            resultJson.put("lastTime","");
+            resultJson.put("loginCycle","");
+            resultJson.put("sinceLastLogin","");
+            resultJson.put("overTime",false);
+            return RespBean.sucess("查询成功",resultJson);
+        }
+        Long  lastTime = weixinBaseInfo.getLastTime().toInstant(ZoneOffset.of("+8")).toEpochMilli();
+        Long  currentTime = LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli();
+        WeixinDictionary weixinDictionary = new WeixinDictionary();
+        weixinDictionary.setDicGroup("system")
+                .setDicCode("login")
+                .setDicKey("loginCycle");
+        WeixinDictionary dictionary = weixinDictionaryService.query(weixinDictionary).get(0);
+        long loginCycle = Long.valueOf(dictionary.getDicValue())*1000*24*60*60;
+        long sinceLastLogin = currentTime - lastTime;
+        resultJson.put("lastTime",weixinBaseInfo.getLastTime());
+        resultJson.put("loginCycle",dictionary.getDicValue());
+        resultJson.put("sinceLastLoginMinute",sinceLastLogin/1000/60);
+        if(sinceLastLogin - loginCycle > 0){
+            resultJson.put("overTime",true);
+        }else{
+            resultJson.put("overTime",false);
+        }
+        return RespBean.sucess("查询成功",resultJson);
     }
 
     @Override

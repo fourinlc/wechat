@@ -29,4 +29,6 @@ public interface IWeixinBaseInfoService extends IService<WeixinBaseInfo> {
     RespBean logOut(String key);
 
     RespBean deviceLogin(String wxid, String passWord);
+
+    RespBean querySinceLastLogin(String wxid);
 }
