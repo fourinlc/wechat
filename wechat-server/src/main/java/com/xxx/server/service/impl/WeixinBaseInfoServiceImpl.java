@@ -16,6 +16,7 @@ import com.xxx.server.pojo.WeixinContactDetailedInfo;
 import com.xxx.server.pojo.WeixinDictionary;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import com.xxx.server.service.IWeixinDictionaryService;
+import com.xxx.server.util.CommonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
@@ -391,7 +392,7 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             if (detailJson.getString("userName").length() > 7) {
                 contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
             }else {
-                contactDetailedInfo.setWxId(wxIds.get(index));
+                continue;
             }
             if (detailJson.getString("nickName").length() > 7) {
                 contactDetailedInfo.setUserName(detailJson.getString("nickName").substring(8,detailJson.getString("nickName").length()-2));
