@@ -35,20 +35,21 @@ public class WeixinFileServiceImpl extends ServiceImpl<WeixinFileMapper, WeixinF
     private final WeixinFileMapper weixinFileMapper;
 
     // 文件上传至本地
-    public String uploadFile(byte[] datas, String filePath, String filename){
+    public String uploadFile(byte[] datas, String filePath, String filename) {
         filePath = filePath.replaceAll("/", "");
         // 暂时不支持直接放在根文件夹下
         Assert.isTrue(StrUtil.isNotEmpty(filePath), "暂时不支持根文件夹上传");
         // 默认非追加模式，即为覆盖方式,失败时统一异常捕获
-        FileUtil.writeBytes(datas, basePath + filePath + "/" + filename);
+        // 增加时间戳区分唯一性
+        FileUtil.writeBytes(datas, basePath + filePath + "/" + System.currentTimeMillis() + "/" + filename);
         // 成功时记录文件信息
         WeixinFile weixinFile = new WeixinFile().setFileName(filename).setFilePath(filePath);
         Assert.isTrue(weixinFileMapper.insert(weixinFile) > 0, "文件上传失败");
-        return "/" + filePath + "/" + filename;
+        return "/" + filePath + "/" + System.currentTimeMillis() + "/" + filename;
     }
 
     // 文件本地下载
-    public JSONObject downFile(Long fileId){
+    public JSONObject downFile(Long fileId) {
         // 暂时默认设置为主键下载
         WeixinFile weixinFileVo = weixinFileMapper.selectById(fileId);
         Assert.notNull(weixinFileVo, "文件不存在");
@@ -59,7 +60,7 @@ public class WeixinFileServiceImpl extends ServiceImpl<WeixinFileMapper, WeixinF
         return jsonObject;
     }
 
-    public List<JSONObject> downFile(List<Long> fileIds){
+    public List<JSONObject> downFile(List<Long> fileIds) {
         List<JSONObject> jsonObjects = Lists.newArrayList();
         for (Long fileId : fileIds) {
             jsonObjects.add(downFile(fileId));
