@@ -16,6 +16,7 @@ import com.xxx.server.mapper.WeixinTemplateMapper;
 import com.xxx.server.pojo.*;
 import com.xxx.server.service.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.rocketmq.common.message.Message;
 import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.annotation.Value;
@@ -340,9 +341,11 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
                                 .setWxId(wxId.toString())
                                 .setChatRoomId(weixinContactDetailedInfo.getWxId())
                                 .setHeadImgUrl(weixinContactDetailedInfo.getSmallHeadImgUrl())
-                                .setChatRoomName(new String(Base64.getEncoder().encode(weixinContactDetailedInfo.getUserName().getBytes(StandardCharsets.UTF_8))))
                                 .setStatus("99")
                                 .setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId());
+                if(StrUtil.isNotEmpty(weixinContactDetailedInfo.getUserName())){
+                    weixinTemplateSendDetail.setChatRoomName(new String(Base64.getEncoder().encode(weixinContactDetailedInfo.getUserName().getBytes(StandardCharsets.UTF_8))));
+                }
                 // 先保存数据防止批量保存数据过多
                 weixinTemplateSendDetailService.save(weixinTemplateSendDetail);
                 // weixinTemplateSendDetails.add(weixinTemplateSendDetail);
@@ -355,6 +358,8 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         }
         // 设置预期完成时间，用于后置添加进来的数据处理
         // 后边加入的微信进群操作需要
+        // 增加最大操作延时时间
+        delay = DateUtils.addMilliseconds(delay, max * 2);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
         result.put("planTime", weixinAsyncEventCall.getPlanTime());
         result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());

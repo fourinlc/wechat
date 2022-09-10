@@ -228,6 +228,8 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             int delay_max = dices.getIntValue("delay_max", 90);
             delay = DateUtils.addSeconds(delay, delay_max);
         }
+        // 增加最大操作延时时间
+        delay = DateUtils.addSeconds(delay, max * 2);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
         // 设置延时时间需要把时间延时90秒，不然容易出现提前结束问题
         result.put("planTime", weixinAsyncEventCall.getPlanTime());

@@ -181,16 +181,26 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                     e.printStackTrace();
                 }
                 // 获取子账号信息，如果不存在，则无须邀请进群了
-                if (!(wxIds == null || wxIds.isEmpty())) {
-                    log.info("7、开始子号进群");
-                    JSONObject jsonObject2 = JSONObject.of("ChatRoomName", chatroomName, "UserList", wxIds);
-                    // TODO 判断群是否是验证群，验证群跳过,或者是不是好友关系跳过
-                    JSONObject addChatroomMembers = WechatApiHelper.INVITE_CHATROOM_MEMBERS.invoke(jsonObject2, multiValueMap);
-                    if (!ResConstant.CODE_SUCCESS.equals(addChatroomMembers.getInteger(ResConstant.CODE))) {
-                        return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "邀请子号进群失败", start);
+                if (wxIds != null && !wxIds.isEmpty()) {
+                    // 剔除空的字符信息
+                    wxIds.removeIf(StrUtil::isEmpty);
+                    if(wxIds.size() == 0){
+                        log.info("7、没有子号进群，流程结束");
+                        // 更新群聊消息状态
+                        weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功"));
+                        weixinAsyncEventCall.setResultCode(200);
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
+                    }else {
+                        log.info("7、开始子号进群");
+                        JSONObject jsonObject2 = JSONObject.of("ChatRoomName", chatroomName, "UserList", wxIds);
+                        // TODO 判断群是否是验证群，验证群跳过,或者是不是好友关系跳过
+                        JSONObject addChatroomMembers = WechatApiHelper.INVITE_CHATROOM_MEMBERS.invoke(jsonObject2, multiValueMap);
+                        if (!ResConstant.CODE_SUCCESS.equals(addChatroomMembers.getInteger(ResConstant.CODE))) {
+                            return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "邀请子号进群失败", start);
+                        }
+                        weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功").setLinkStatus("500"));
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200));
                     }
-                    weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功").setLinkStatus("500"));
-                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200));
                 }else {
                     log.info("7、没有子号进群，流程结束");
                     // 更新群聊消息状态

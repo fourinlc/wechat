@@ -182,7 +182,10 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
             }
         }
         // 后边加入的微信进群操作需要
+        // 增加最大操作延时时间
+        delay = DateUtils.addSeconds(delay, max * 2);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
+        // 增加默认执行时间设置
         result.put("planTime", weixinAsyncEventCall.getPlanTime());
         return result;
     }

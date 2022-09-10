@@ -66,6 +66,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             log.info("1、开始处理群聊操作=======");
             Long asyncEventCallId = message.getLong("asyncEventCallId");
             String chatRoomName = message.getString("chatRoomName");
+
             WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
             if (Objects.isNull(weixinAsyncEventCall) || StrUtil.isEmpty(chatRoomName)) {
                 log.info("数据格式不正确,忽略该数据流程提前结束:{}", message);
@@ -214,7 +215,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 if ("1".equals(weixinTemplateDetail.getMsgType())) {
                     param.put("AtWxIDList", null);
                     param.put("MsgType", 1);
-                    param.put("TextContent", weixinTemplateDetail.getMsgContent() + ",执行时间："+DateUtil.formatDateTime(new Date()));
+                    param.put("TextContent", weixinTemplateDetail.getMsgContent() /*+ ",执行时间："+DateUtil.formatDateTime(new Date())*/);
                     // 发送文字信息
                     JSONObject textMessage = WechatApiHelper.SEND_TEXT_MESSAGE.invoke(paramVo, query);
                     log.info("6.2、发送文本消息：当前时间：{}，发送内容：{}， 返回值：{}，", new Date(), weixinTemplateDetail.getMsgContent(), textMessage);
