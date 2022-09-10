@@ -391,13 +391,14 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             if (detailJson.getString("userName").length() > 7) {
                 contactDetailedInfo.setWxId(detailJson.getString("userName").substring(8,detailJson.getString("userName").length()-2));
             }else {
-                contactDetailedInfo.setWxId(wxIds.get(index));
+                continue;
             }
             if (detailJson.getString("nickName").length() > 7) {
                 contactDetailedInfo.setUserName(detailJson.getString("nickName").substring(8,detailJson.getString("nickName").length()-2));
             }
             contactDetailedInfo.setSex(detailJson.getString("sex"));
             contactDetailedInfo.setSmallHeadImgUrl(detailJson.getString("smallHeadImgUrl"));
+            System.out.println(detailJson);
             if (contactDetailedInfo.getWxId().endsWith("@chatroom")){
                 contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
                 contactDetailedInfo.setChatroomAccessType(detailJson.getString("chatroomAccessType"));
