@@ -285,7 +285,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                     // 组装对应的xml数据信息
                     Document document = XmlUtil.mapToXml(BeanUtil.beanToMap(weixinAppMessage/*.setThumburl(basePath + weixinAppMessage.getThumburl())*/, false, false), "appmsg");
                     String msg = XmlUtil.toStr(document);
-                    paramVo = JSONObject.of("AppList", JSONArray.of(JSONObject.of("ToUserName", "19976248534@chatroom", "ContentXML", msg, "ContentType", 49)));
+                    paramVo = JSONObject.of("AppList", JSONArray.of(JSONObject.of("ToUserName", chatRoomName, "ContentXML", msg, "ContentType", 49)));
                     JSONObject sendAppMessage = WechatApiHelper.SEND_APP_MESSAGE.invoke(paramVo, query);
                     if (!ResConstant.CODE_SUCCESS.equals(sendAppMessage.getInteger(ResConstant.CODE))) {
                         // TODO 细化具体异常处理
