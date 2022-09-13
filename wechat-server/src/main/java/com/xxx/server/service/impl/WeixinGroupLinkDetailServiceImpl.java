@@ -75,9 +75,10 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                         // 获取正在处理的该微信数据
                         .eq(WeixinAsyncEventCall::getResultCode, "99"));
         if (old != null) {
-            log.info("校验上次微信执行是否完成");
+            log.info("上次微信执行未完成");
             LocalDateTime planTime = old.getPlanTime();
             if (planTime == null) {
+                log.info("上次微信执行计划完成时间为空");
                 // 结束上次异常群聊
                 weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
                 // 生成对应的批次号，重新赋值
@@ -92,14 +93,15 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                 weixinAsyncEventCallService.save(weixinAsyncEventCall);
             } else if (planTime.compareTo(LocalDateTime.now()) > 0) {
                 // 直接提醒还存在待完成的数据，返回开始预计开始时间和预计完成时间
-                log.info("该微信上次群聊还没执行完成：{}", wxId);
+                log.info("该微信上次链接进群还没执行完成：{}", wxId);
                 result.put("code", 500);
                 result.put("planTime", weixinAsyncEventCall.getPlanTime());
                 result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
-                result.put("msg", "该微信上次批量拉群还没执行完成");
+                result.put("msg", "该微信上次链接进群还没执行完成");
                 result.put("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId());
                 return result;
             } else {
+                log.info("上次微信执行计划已完成，更新上次执行时间");
                 // 更新这条异常数据
                 // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
                 weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
@@ -120,6 +122,7 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                 weixinAsyncEventCallService.save(weixinAsyncEventCall);
             }
         }else {
+            log.info("首次微信执行计划，生成新的批次信息");
             // 生成对应的批次号
             weixinAsyncEventCall
                     // 群邀请类型
@@ -145,14 +148,11 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
         int rate = dices.getIntValue("rate", 10);
         int between = dices.getIntValue("between", 1);
         log.info("群邀请配置信息：{}", dices);
-        if (weixinAsyncEventCall.getPlanTime() != null) {
-            // 重置老数据直接添加至队尾
-            delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
-        }
         // 获取群链接列表
+        long l = System.currentTimeMillis();
         List<WeixinGroupLinkDetail> weixinGroupLinkDetailList = listByIds(linkIds);
         for (int i = 0; i < weixinGroupLinkDetailList.size(); i++) {
-            if ((i + 1) % (sheaves * rate) == 0) {
+            if ((i + 1) % (sheaves * rate +1) == 0) {
                 // log.info("新的一轮操作：{}", i);
                 // 说明一轮数据完成，增加间隔时间
                 delay = DateUtils.addSeconds(delay, between * 60);
@@ -162,6 +162,10 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
             JSONObject msg = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
                     "linkId", weixinGroupLinkDetail.getLinkId(),
                     "wxIds", wxIds);
+            msg.put("count", weixinGroupLinkDetailList.size());
+            // 增加时间戳入参
+            msg.put("current", l);
+            msg.put("wxId", wxId);
             Message message = new Message(consumerTopic, consumerQunGroupTag, JSON.toJSONBytes(msg));
             // 异步更新返回成功时或者失败时更新群链接状态
             // 设置随机时间
@@ -177,18 +181,23 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                 log.error("消息处理失败:{}", e.getMessage());
                 // 重置回调参数异步回调参数，更新为处理失败
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("mq发送消息失败"));
-                baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("5"));
+                baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("500"));
                 throw new BusinessException("mq消息发送失败，请检测网络情况");
             }
         }
         // 后边加入的微信进群操作需要
+        // 增加最大操作延时时间
+        // delay = DateUtils.addSeconds(delay, max * 2);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
+        // 增加默认执行时间设置
+        log.info("生成批次号情况：{}", weixinAsyncEventCall);
         result.put("planTime", weixinAsyncEventCall.getPlanTime());
         return result;
     }
 
     @Override
     public boolean saveBatch(List<WeixinGroupLinkDetail> weixinGroupLinkDetails) {
+        // 去重，剔除
         log.info("开始保存群聊以及更新文本信息：{}", weixinGroupLinkDetails);
         for (WeixinGroupLinkDetail weixinGroupLinkDetail : weixinGroupLinkDetails) {
             if (Objects.isNull(weixinGroupLinkDetail.getThumbUrl())) {
