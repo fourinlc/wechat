@@ -72,31 +72,36 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
      */
     @Override
     public boolean process(JSONObject message) {
+        Long count = 0L;
+        Long current = 0L;
+        Long currentCount = 0L;
+        String wxId = "";
+        Boolean flag = false;
+        WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
         try {
             log.info("1、批量拉群开始");
             long start = System.currentTimeMillis();
             // 操作群链接对应的id
             MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
-            String wxId = message.getString("wxId");
+            wxId = message.getString("wxId");
             List<String> slaveWxIds = message.getList("slaveWxIds", String.class);
             String chatRoomId = message.getString("chatRoomId");
-            Boolean flag = message.getBoolean("flag");
-            Integer count = message.getInteger("count");
+            flag = message.getBoolean("flag");
+            count = message.getLong("count");
             // 唯一区分标识
-            Long current = message.getLong("current");
+            current = message.getLong("current");
             // 保存至redis,记录当前完成个数
-            Integer currentCount = (Integer) redisTemplate.opsForValue().get("count::currentCount" + wxId + current);
+            currentCount = (Long) redisTemplate.opsForValue().get("count::currentCount" + wxId + current);
             // 初次进来即为一
             if (currentCount == null) {
-                currentCount = 0;
+                currentCount = 1L;
             }
-            redisTemplate.opsForValue().set("count::currentCount" + wxId + current, ++currentCount);
             log.info("拉群进度：总群数：{}，当前执行个数：{}", count, currentCount);
             // Date delay = new Date();
             // 校验该批次是否还是有些状态
             Long asyncEventCallId = message.getLong("asyncEventCallId");
             Long groupSendDetailId = message.getLong("groupSendDetailId");
-            WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
+            weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
             WeixinGroupSendDetail weixinGroupSendDetail = weixinGroupSendDetailService.getById(groupSendDetailId);
             if (Objects.isNull(weixinAsyncEventCall) || Objects.isNull(weixinGroupSendDetail) || weixinAsyncEventCall.getResultCode() == 500) {
                 return writeLog("异常数据", weixinAsyncEventCall, weixinGroupSendDetail, start);
@@ -182,20 +187,22 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                 }
             }
             // 更新群聊消息状态
-            log.info("计划完成时间：{}, 当前时间：{}", weixinAsyncEventCall.getPlanTime(), LocalDateTime.now());
-            if (weixinAsyncEventCall.getPlanTime() != null && LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0 && currentCount.equals(count)) {
-                log.info("该拉群完成");
-                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("拉群完成").setRealTime(LocalDateTime.now()));
-                weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setResult("处理成功").setStatus("200"));
-                log.info("拉群耗时：{} ms", System.currentTimeMillis() - start);
-                return true;
-            }
             log.info("拉群耗时：{} ms, 群名：{} ", System.currentTimeMillis() - start, nickName);
             weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setFinishTime(LocalDateTime.now()).setResult("处理成功").setStatus("200"));
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             return true;
+        } finally {
+            // 没有子号进群时，可以认为流程接收
+            if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString()) && !flag) {
+                log.info("更新拉群完成标识,并更新真实完成时间,释放currentCount信息");
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
+                redisTemplate.delete("count::currentCount" + wxId + current);
+            } else {
+                redisTemplate.opsForValue().set("count::currentCount" + wxId + current, ++currentCount);
+            }
+
         }
     }
 

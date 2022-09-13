@@ -1,5 +1,7 @@
 package com.xxx.server.mq;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -16,6 +18,7 @@ import com.xxx.server.service.IWeixinGroupLinkDetailService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -40,27 +43,41 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
 
     private IWeixinBaseInfoService weixinBaseInfoService;
 
+    private RedisTemplate<String, Object> redisTemplate;
+
     @Override
     public boolean process(JSONObject message) {
+        Long count = 0L;
+        Long current = 0L;
+        Long currentCount = 0L;
+        String wxId = "";
+        WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
+        Long linkId = null;
         try {
             log.info("1、开始群链接进群");
             long start = System.currentTimeMillis();
-            MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap<>();
+            MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
             // 操作群链接对应的id
-            Long linkId = message.getLong("linkId");
+            linkId = message.getLong("linkId");
             // 批量拉群特有字段
             WeixinGroupLinkDetail weixinGroupLinkDetail;
             Long asyncEventCallId = message.getLong("asyncEventCallId");
+            wxId = message.getString("wxId");
+            // 记录总的链接数和已完成的链接数用于最终完成情况判断
+            count = message.getLong("count");
+            // 唯一区分标识
+            current = message.getLong("current");
+            // 保存至redis,记录当前完成个数
+            currentCount = (Long) redisTemplate.opsForValue().get("count::currentCount" + wxId + current);
+            // 初次进来即为一
+            if (currentCount == null) {
+                currentCount = 1L;
+            }
+            log.info("链接进群进度：总群数：{}，当前执行个数：{}", count, currentCount);
             // 子号信息
             List<String> wxIds = message.getList("wxIds", String.class);
-            WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
-            if (Objects.isNull(weixinAsyncEventCall)  || weixinAsyncEventCall.getResultCode() == 500) {
-                log.info("流程提前结束：{}", message);
-                // 更新原始数据进群详情信息,增加描述信息
-                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("流程提前结束"));
-                return true;
-            }
-            if(linkId == null){
+            weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
+            if (linkId == null) {
                 log.info("2、批量拉群自动进群方式开始");
                 // 自动进群操作
                 JSONObject paramVo = message.getJSONObject("paramVo");
@@ -72,25 +89,23 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                         .eq(WeixinGroupLinkDetail::getFromUserWxId, fromUserWxId)
                         .eq(WeixinGroupLinkDetail::getChatroomName, chatroomName)
                         .eq(WeixinGroupLinkDetail::getLinkStatus, 0));
-                if(weixinGroupLinkDetails.size() > 0){
+                if (weixinGroupLinkDetails.size() > 0) {
                     weixinGroupLinkDetail = weixinGroupLinkDetails.get(0);
                     Long groupSendDetailId = message.getLong("groupSendDetailId");
                     // 批量拉群特殊标识字段
                     weixinGroupLinkDetail.setGroupSendDetailId(groupSendDetailId);
-                }else {
-                    // 结束自动进群
-                    log.info("获取群链接失败");
-                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("获取群链接失败"));
-                    return true;
+                } else {
+                    return writeLog(null, weixinAsyncEventCall, "获取群链接失败,一般账号异常，结束整个流程", start);
                 }
-            }else {
+            } else {
                 log.info("2、普通链接进群");
                 weixinGroupLinkDetail = weixinGroupLinkDetailService.getById(linkId);
             }
-            if(weixinGroupLinkDetail == null){
-                log.info("获取群链接失败");
-                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("获取群链接失败"));
-                return true;
+            if (Objects.isNull(weixinAsyncEventCall) || weixinAsyncEventCall.getResultCode() == 500) {
+                return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "流程提前结束", start);
+            }
+            if (weixinGroupLinkDetail == null) {
+                return writeLog(null, weixinAsyncEventCall, "获取群链接失败,一般账号异常，结束整个流程", start);
             }
             // Date delay = new Date();
             // 校验该批次是否还是有些状态
@@ -104,13 +119,13 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             // 增加验证邀请人是否还是主号好友验证，如果不是结束流程，当然排除拉群的
             JSONObject friendRelation = WechatApiHelper.GET_FRIEND_RELATION.invoke(JSONObject.of("UserName", weixinGroupLinkDetail.getFromUserWxId()), multiValueMap);
             if (!(ResConstant.CODE_SUCCESS.equals(friendRelation.getInteger(ResConstant.CODE)))) {
-               // 异常状态
+                // 异常状态
                 return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "好友关系判断异常", start);
             }
             //判断好友关系，1//删除 4/自己拉黑 5/被拉黑 0/正常
             Integer friendRelationVo = friendRelation.getJSONObject(ResConstant.DATA).getInteger("FriendRelation");
             log.info("3、校验好友关系,返回值：{}", friendRelationVo);
-            if(friendRelationVo != null && (friendRelationVo.equals(1) || friendRelationVo.equals(5))){
+            if (friendRelationVo != null && (friendRelationVo.equals(1) || friendRelationVo.equals(5))) {
                 return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "好友关系判断异常", start);
             }
             try {
@@ -122,13 +137,13 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             // 额外校验群链接生效情况
             JSONObject data = WechatApiHelper.SCAN_INTO_URL_GROUP.invoke(JSONObject.of("Url", weixinGroupLinkDetail.getContent()), multiValueMap);
             log.info("4、开始群链接进群,返回值：{}", data);
-            // 进群失败,该群聊邀请已过期！这种是异常群信息，跳过该群，应该是群被封了之类
+            // 进群失败,该群聊邀请已过期！这种是异常群信息，跳过该群，应该是群被封了之类以及这个群已经在群里
             if (ResConstant.CODE_SUCCESS.equals(data.getInteger(ResConstant.CODE)) && "进群失败,该群聊邀请已过期！".equals(data.getString("Text"))) {
-                return writeLog(weixinGroupLinkDetail, null, "该群群状态异常", start);
+                return writeLog(weixinGroupLinkDetail, null, "该群群状态异常,单个群状态异常", start);
             }
 
             if (!(ResConstant.CODE_SUCCESS.equals(data.getInteger(ResConstant.CODE)) && "进群成功".equals(data.getString("Text")))) {
-                return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "群链接进群失败", start);
+                return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "群链接进群失败，可能为整个账号异常，提前结束", start);
             }
             // 更新链接状态为进群完成
             weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("1"));
@@ -184,13 +199,13 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                 if (wxIds != null && !wxIds.isEmpty()) {
                     // 剔除空的字符信息
                     wxIds.removeIf(StrUtil::isEmpty);
-                    if(wxIds.size() == 0){
+                    if (wxIds.size() == 0) {
                         log.info("7、没有子号进群，流程结束");
                         // 更新群聊消息状态
                         weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功"));
-                        weixinAsyncEventCall.setResultCode(200);
-                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
-                    }else {
+                       /* weixinAsyncEventCall.setResultCode(200);
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall);*/
+                    } else {
                         log.info("7、开始子号进群");
                         JSONObject jsonObject2 = JSONObject.of("ChatRoomName", chatroomName, "UserList", wxIds);
                         // TODO 判断群是否是验证群，验证群跳过,或者是不是好友关系跳过
@@ -198,38 +213,45 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                         if (!ResConstant.CODE_SUCCESS.equals(addChatroomMembers.getInteger(ResConstant.CODE))) {
                             return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "邀请子号进群失败", start);
                         }
-                        weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功").setLinkStatus("500"));
-                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200));
+                        weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("链接进群成功"));
+                        // weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200));
                     }
-                }else {
+                } else {
                     log.info("7、没有子号进群，流程结束");
                     // 更新群聊消息状态
                     weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("4").setResult("进群成功"));
-                    weixinAsyncEventCall.setResultCode(200);
-                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall);
-                }
-                if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
-                    log.info("该轮进群拉群完成");
-                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("进群完成").setRealTime(LocalDateTime.now()));
                 }
             }
             log.info("8、共耗费时间：{} ms", System.currentTimeMillis() - start);
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             log.info("异常信息{}", ExceptionUtil.getCausedBy(e));
             return true;
+        } finally {
+            log.info("更新当前状态批次具体状态,区分自动进群和手动进群");
+            if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString())) {
+                log.info("更新链接进群完成标识,并更新真实完成时间，释放对应的count信息");
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
+                redisTemplate.delete("count::currentCount" + wxId + current);
+            }else {
+                if(linkId !=null){
+                    log.info("非自动进群，更新对应的当前完成情况");
+                    redisTemplate.opsForValue().set("count::currentCount" + wxId + current, ++currentCount);
+                }
+            }
         }
-
     }
 
     private boolean writeLog(WeixinGroupLinkDetail weixinGroupLinkDetail, WeixinAsyncEventCall weixinAsyncEventCall, String msg, long start) {
         log.info(msg);
-        if(weixinAsyncEventCall != null){
+        if (weixinAsyncEventCall != null) {
             weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult(msg));
         }
-        weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setResult(msg).setLinkStatus("500"));
-        log.info("异常结束：耗时{}", System.currentTimeMillis() -start);
+        if(weixinGroupLinkDetail != null){
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setResult(msg).setLinkStatus("500"));
+        }
+        log.info("异常结束：耗时{}", System.currentTimeMillis() - start);
         return true;
     }
 

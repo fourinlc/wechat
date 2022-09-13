@@ -1,7 +1,6 @@
 package com.xxx.server.mq;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -24,7 +23,6 @@ import org.w3c.dom.Document;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,12 +60,29 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
 
     @Override
     public boolean process(JSONObject message) {
+        Long count = 0L;
+        Long current = 0L;
+        Long currentCount = 0L;
+        String wxId = "";
+        WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
         try {
             log.info("1、开始处理群聊操作=======");
             Long asyncEventCallId = message.getLong("asyncEventCallId");
             String chatRoomName = message.getString("chatRoomName");
+            wxId = message.getString("wxId");
+            // 记录总的链接数和已完成的链接数用于最终完成情况判断
+            count = message.getLong("count");
+            // 唯一区分标识
+            current = message.getLong("current");
+            // 保存至redis,记录当前完成个数
+            currentCount = (Long) redisTemplate.opsForValue().get("count::currentCount" + wxId + current);
+            // 初次进来即为一
+            if (currentCount == null) {
+                currentCount = 1L;
+            }
+            log.info("群聊进度：总群数：{}，当前执行个数：{}", count, currentCount);
 
-            WeixinAsyncEventCall weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
+            weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
             if (Objects.isNull(weixinAsyncEventCall) || StrUtil.isEmpty(chatRoomName)) {
                 log.info("数据格式不正确,忽略该数据流程提前结束:{}", message);
                 return true;
@@ -98,8 +113,8 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             List<String> keys = Lists.newArrayList();
             // 二次校验在线情况并构造对应的keys
             log.info("2、校验微信号在线情况");
-            for (String wxId : wxIds) {
-                WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(wxId);
+            for (String wxId0 : wxIds) {
+                WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(wxId0);
                 // 校验其是否依然在线
                 if(weixinBaseInfo != null && StrUtil.equals("1", weixinBaseInfo.getState())){
                     keys.add(weixinBaseInfo.getKey());
@@ -164,9 +179,8 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             List<Long> types = templateIds.getList(type, Long.class);
             // 双人模板话术
             // 维护至redis中，标识当前微信执行到的模板次序
-            String wxId = message.getString("wxId");
-            Integer count = (Integer) redisTemplate.opsForValue().get("count::" + type + wxId);
-            if (count == null) count = 0;
+            Integer count0 = (Integer) redisTemplate.opsForValue().get("count::" + type + wxId);
+            if (count0 == null) count0 = 0;
             // 校验该批次是否还是有些状态
             // 获取对应文件信息
             log.info("5、 选择，模板类型 wxId : {} 模板方式：{}", wxId, type);
@@ -176,7 +190,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             Collection<List<WeixinTemplateDetail>> values = WeixinTemplateDetailMap.values();
             List<List<WeixinTemplateDetail>> lists = Lists.newArrayList(values);
             // step one 遍历模板列表
-            List<WeixinTemplateDetail> weixinTemplateDetails = lists.get(count % lists.size());
+            List<WeixinTemplateDetail> weixinTemplateDetails = lists.get(count0 % lists.size());
             // 获取模板id和模板名称
             WeixinTemplate weixinTemplate = new WeixinTemplate();
             if (weixinTemplateDetails.size() > 0) {
@@ -184,7 +198,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 weixinTemplate = weixinTemplateService.getById(weixinTemplateDetail1.getTemplateId());
                 log.info("当前具体模板信息：{}", weixinTemplate);
             }
-            log.info("当前count值：{}", count);
+            log.info("当前count值：{}", count0);
             // 每隔两秒执行一次
             log.info("6、开始发送具体模板数据");
             for (int i = 0; i < weixinTemplateDetails.size(); i++) {
@@ -294,27 +308,29 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 query.clear();
             }
             // 未出现异常时将群模板顺序移动至下一个节点
-            redisTemplate.opsForValue().set("count::" + type + wxId, ++count);
+            redisTemplate.opsForValue().set("count::" + type + wxId, ++count0);
             weixinTemplateSendDetailService.updateById(
                     weixinTemplateSendDetail
                             .setTemplateId(weixinTemplate.getTemplateId())
                             .setFinishTime(LocalDateTime.now())
                             .setStatus("200")
                             .setResult("群发完成"));
-            // 当前时间大于计划完成时间
-            if (LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
-                log.info("整轮群发完成");
-                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setResult("群发完成").setRealTime(LocalDateTime.now()));
-                // 重置count
-                redisTemplate.opsForValue().set("count::double" + wxId, 0);
-                redisTemplate.opsForValue().set("count::single" + wxId, 0);
-                return true;
-            }
             return true;
         }catch (Exception e){
             log.info("该群出现未知异常信息");
             e.printStackTrace();
             return true;
+        }finally {
+            log.info("群聊更新当前状态批次具体状态currentCount：{}count :{}", currentCount, count);
+            if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString())) {
+                log.info("更新链接进群完成标识,并更新真实完成时间，重置模板批次");
+                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
+                redisTemplate.opsForValue().set("count::double" + wxId, 0);
+                redisTemplate.opsForValue().set("count::single" + wxId, 0);
+                redisTemplate.delete("count::currentCount" + wxId + current);
+            }else {
+                redisTemplate.opsForValue().set("count::currentCount" + wxId + current, ++currentCount);
+            }
         }
     }
 

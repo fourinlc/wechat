@@ -97,9 +97,9 @@ public class AsyncGroupLinkDetail implements CommandLineRunner {
                                     // 如果存在直接添加至邀请连接中
                                     if (fromWeixinBaseInfo != null) {
                                         // 移除自己本身发出去的消息
-                                     /*   if (StrUtil.equals(fromWeixinBaseInfo.getKey(), ((JSONObject) data).getString("UUID"))) {
+                                        if (StrUtil.equals(fromWeixinBaseInfo.getKey(), ((JSONObject) data).getString("UUID"))) {
                                             continue;
-                                        }*/
+                                        }
                                         jsonObject.put("from_user_name", fromWeixinBaseInfo.getNickname());
                                     } else {
                                         // 调用微信接口

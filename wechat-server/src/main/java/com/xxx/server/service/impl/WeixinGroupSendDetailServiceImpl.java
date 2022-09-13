@@ -176,7 +176,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         long l = System.currentTimeMillis();
         log.info("拉群配置信息{}", dices);
         for (int i = 0; i < weixinContactDetailedInfos.size(); i++) {
-            if ((i + 1) % (sheaves * rate) == 0) {
+            if ((i + 1) % (sheaves * rate + 1) == 0) {
                 // log.info("新的一轮操作：{}", i);
                 // 说明一轮数据完成，增加间隔时间
                 log.info("一轮操作完成,延时：{}分钟后发送", between);
@@ -229,7 +229,7 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
             delay = DateUtils.addSeconds(delay, delay_max);
         }
         // 增加最大操作延时时间
-        delay = DateUtils.addSeconds(delay, max * 2);
+        // delay = DateUtils.addSeconds(delay, max * 2);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
         // 设置延时时间需要把时间延时90秒，不然容易出现提前结束问题
         result.put("planTime", weixinAsyncEventCall.getPlanTime());

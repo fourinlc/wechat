@@ -40,12 +40,13 @@ public class WeixinFileServiceImpl extends ServiceImpl<WeixinFileMapper, WeixinF
         // 暂时不支持直接放在根文件夹下
         Assert.isTrue(StrUtil.isNotEmpty(filePath), "暂时不支持根文件夹上传");
         // 默认非追加模式，即为覆盖方式,失败时统一异常捕获
+        long l = System.currentTimeMillis();
         // 增加时间戳区分唯一性
-        FileUtil.writeBytes(datas, basePath + filePath + "/" + System.currentTimeMillis() + "/" + filename);
+        FileUtil.writeBytes(datas, basePath + filePath + "/" + l + filename);
         // 成功时记录文件信息
         WeixinFile weixinFile = new WeixinFile().setFileName(filename).setFilePath(filePath);
         Assert.isTrue(weixinFileMapper.insert(weixinFile) > 0, "文件上传失败");
-        return "/" + filePath + "/" + System.currentTimeMillis() + "/" + filename;
+        return "/" + filePath  + "/" + l + filename;
     }
 
     // 文件本地下载

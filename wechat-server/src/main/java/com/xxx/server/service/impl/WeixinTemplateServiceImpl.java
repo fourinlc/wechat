@@ -228,6 +228,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             List<Long> ids = weixinTemplateVos.stream().map(WeixinTemplate::getTemplateId).collect(Collectors.toList());
             templateIdVos.put(templateType, ids);
         });
+        // 如果只有一个有效微信号则必须包含一个单人模板
+        if(wxIds.size() == 1){
+            Assert.isTrue(templateIdVos.containsKey("single"), "必须包含单人模板");
+        }
         // Assert.isTrue(templateIdVos.size() == 2, "需同时包含单人双人模板");
         // 构建回调参数，用于额外操作
         // 获取父节点id信息
@@ -304,10 +308,10 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             weixinAsyncEventCallService.save(weixinAsyncEventCall);
         }
         // 组装消息体
-        if (weixinAsyncEventCall.getPlanTime() != null) {
+   /*     if (weixinAsyncEventCall.getPlanTime() != null) {
             // 重置老数据直接添加至队尾
             delay = DateUtil.date(weixinAsyncEventCall.getPlanTime());
-        }
+        }*/
         List<WeixinDictionary> scanIntoUrlGroupTimes = weixinDictionaryService.query(new WeixinDictionary().setDicGroup("system").setDicCode("groupChat"));
         // 获取对应随机数字1-5, 默认2-4秒
         JSONObject dices = new JSONObject();
@@ -319,14 +323,19 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         int min = dices.getIntValue("mass_min", 8000);
         log.info("群发群间隔配置时间min:{},max:{}", min, max);
         Assert.isTrue(max > min, "群发间隔时间配置有误");
+        long l = System.currentTimeMillis();
         for (WeixinContactDetailedInfo weixinContactDetailedInfo : weixinContactDetailedInfos) {
             // 构建延时消息操作，暂时按照一个群5秒操作
             JSONObject jsonObject = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(),
                     "chatRoomName", weixinContactDetailedInfo.getWxId(),
                     "templateIds", templateIdVos);
             jsonObject.put("wxIds", wxIds);
-            jsonObject.put("wxId", wxId);
+            jsonObject.put("wxId", wxId.toString());
+            jsonObject.put("count", weixinContactDetailedInfos.size());
+            // 增加时间戳入参
+            jsonObject.put("current", l);
             // 开始构建延时消息
+            log.info("群发组装消息体：{}", jsonObject);
             Message message = new Message(consumerTopic, groupChatTag, JSON.toJSONBytes(jsonObject));
             // 每个群发之间的间隔时间
             // 设置随机时间10-15秒执行时间
@@ -359,7 +368,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         // 设置预期完成时间，用于后置添加进来的数据处理
         // 后边加入的微信进群操作需要
         // 增加最大操作延时时间
-        delay = DateUtils.addMilliseconds(delay, max * 2);
+        // delay = DateUtils.addMilliseconds(delay, max * 2);
         weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setPlanTime(LocalDateTimeUtil.of(delay)));
         result.put("planTime", weixinAsyncEventCall.getPlanTime());
         result.put("planStartTime", weixinAsyncEventCall.getPlanStartTime());
