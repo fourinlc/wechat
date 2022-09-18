@@ -1,3 +1,4 @@
+/*
 package com.xxx.server.mq;
 
 import cn.hutool.core.date.DateField;
@@ -33,9 +34,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+*/
 /**
  * 批量拉群操作
- */
+ *//*
+
 @Component("groupSendTag")
 @Slf4j
 public class GroupSendMqMessageHandler implements MqMessageHandler {
@@ -64,12 +67,14 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
     @Value("${spring.rocketmq.tags.qunGroupNew}")
     private String qunGroupNew;
 
-    /**
+    */
+/**
      * 批量拉群消息处理类
      *
      * @param message
      * @return
-     */
+     *//*
+
     @Override
     public boolean process(JSONObject message) {
         Long count = 0L;
@@ -222,3 +227,4 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
         return true;
     }
 }
+*/

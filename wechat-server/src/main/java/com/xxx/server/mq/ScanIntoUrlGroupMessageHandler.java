@@ -1,3 +1,4 @@
+/*
 package com.xxx.server.mq;
 
 import cn.hutool.core.util.RandomUtil;
@@ -24,9 +25,11 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+*/
 /**
  * 进群成功失败信息处理，tag为scanIntoUrlGroup处理类
- */
+ *//*
+
 @Component("scanIntoUrlGroupTag")
 @Slf4j
 @AllArgsConstructor
@@ -148,3 +151,4 @@ public class ScanIntoUrlGroupMessageHandler implements MqMessageHandler {
     }
 
 }
+*/

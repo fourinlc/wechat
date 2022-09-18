@@ -1,7 +1,5 @@
 package com.xxx.server.mq;
 
-import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -23,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -107,6 +106,8 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             if (weixinGroupLinkDetail == null) {
                 return writeLog(null, weixinAsyncEventCall, "获取群链接失败,一般账号异常，结束整个流程", start);
             }
+            // 增加批次号入参
+            weixinGroupLinkDetail.setAsyncEventCallId(asyncEventCallId);
             // Date delay = new Date();
             // 校验该批次是否还是有些状态
             String toUserWxId = weixinGroupLinkDetail.getToUserWxId();
@@ -146,7 +147,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                 return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "群链接进群失败，可能为整个账号异常，提前结束", start);
             }
             // 更新链接状态为进群完成
-            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("1"));
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("1").setUpdateTime(new Date(System.currentTimeMillis())));
             JSONObject jsonObject = data.getJSONObject(ResConstant.DATA);
             String chatroomUrl = jsonObject.getString("chatroomUrl");
             Matcher matcher = Pattern.compile(ResConstant.PATTERN).matcher(chatroomUrl);
