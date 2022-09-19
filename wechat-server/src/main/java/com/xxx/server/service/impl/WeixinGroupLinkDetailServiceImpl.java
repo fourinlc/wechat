@@ -239,7 +239,8 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                 .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getVerifyStatus()), WeixinGroupLinkDetail::getVerifyStatus, weixinGroupLinkDetail.getVerifyStatus())
                 .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getRepeatStatus()), WeixinGroupLinkDetail::getRepeatStatus, weixinGroupLinkDetail.getRepeatStatus())
                 .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getCompanyStatus()), WeixinGroupLinkDetail::getCompanyStatus, weixinGroupLinkDetail.getCompanyStatus())
-                .eq(Objects.nonNull(weixinGroupLinkDetail.getAsyncEventCallId()), WeixinGroupLinkDetail::getAsyncEventCallId, weixinGroupLinkDetail.getAsyncEventCallId()));
+                .eq(Objects.nonNull(weixinGroupLinkDetail.getAsyncEventCallId()), WeixinGroupLinkDetail::getAsyncEventCallId, weixinGroupLinkDetail.getAsyncEventCallId())
+                .eq(Objects.nonNull(weixinGroupLinkDetail.getUpdateTime()), WeixinGroupLinkDetail::getUpdateTime, weixinGroupLinkDetail.getUpdateTime()));
     }
 
 }
