@@ -211,7 +211,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             if(StrUtil.isNotEmpty(wxId)){
                 Assert.notNull(weixinBaseInfo, "该微信id有误:" + wxId);
             }
-            return !(StrUtil.isNotEmpty(weixinBaseInfo.getKey()) && StrUtil.equals(weixinBaseInfo.getState(), "1"));
+            return !(weixinBaseInfo != null && StrUtil.isNotEmpty(weixinBaseInfo.getKey()) && StrUtil.equals(weixinBaseInfo.getState(), "1"));
         });
         JSONObject result = JSONObject.of("code", 200, "msg", "群发送消息成功");
         // 增加开始时间返回以及预计完成时间
