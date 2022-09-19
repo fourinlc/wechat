@@ -398,7 +398,6 @@ public class WeixinBaseInfoServiceImpl extends ServiceImpl<WeixinBaseInfoMapper,
             }
             contactDetailedInfo.setSex(detailJson.getString("sex"));
             contactDetailedInfo.setSmallHeadImgUrl(detailJson.getString("smallHeadImgUrl"));
-            System.out.println(detailJson);
             if (contactDetailedInfo.getWxId().endsWith("@chatroom")){
                 contactDetailedInfo.setChatRoomOwner(detailJson.getString("chatRoomOwner"));
                 contactDetailedInfo.setChatroomAccessType(detailJson.getString("chatroomAccessType"));
