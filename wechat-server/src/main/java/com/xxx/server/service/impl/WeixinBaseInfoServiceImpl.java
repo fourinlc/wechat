@@ -16,7 +16,6 @@ import com.xxx.server.pojo.WeixinContactDetailedInfo;
 import com.xxx.server.pojo.WeixinDictionary;
 import com.xxx.server.service.IWeixinBaseInfoService;
 import com.xxx.server.service.IWeixinDictionaryService;
-import com.xxx.server.util.CommonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
