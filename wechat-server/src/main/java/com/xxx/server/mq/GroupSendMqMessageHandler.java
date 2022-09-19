@@ -33,10 +33,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-*/
 /**
  * 批量拉群操作
- *//*
+ */
 
 @Component("groupSendTag")
 @Slf4j
@@ -66,13 +65,12 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
     @Value("${spring.rocketmq.tags.qunGroupNew}")
     private String qunGroupNew;
 
-    */
-/**
+    /**
      * 批量拉群消息处理类
      *
      * @param message
      * @return
-     *//*
+     */
 
     @Override
     public boolean process(JSONObject message) {
@@ -82,6 +80,7 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
         String wxId = "";
         Boolean flag = false;
         WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
+        WeixinGroupSendDetail weixinGroupSendDetail = new WeixinGroupSendDetail();
         try {
             log.info("1、批量拉群开始");
             long start = System.currentTimeMillis();
@@ -106,7 +105,7 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
             Long asyncEventCallId = message.getLong("asyncEventCallId");
             Long groupSendDetailId = message.getLong("groupSendDetailId");
             weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
-            WeixinGroupSendDetail weixinGroupSendDetail = weixinGroupSendDetailService.getById(groupSendDetailId);
+            weixinGroupSendDetail = weixinGroupSendDetailService.getById(groupSendDetailId);
             if (Objects.isNull(weixinAsyncEventCall) || Objects.isNull(weixinGroupSendDetail) || weixinAsyncEventCall.getResultCode() == 500) {
                 return writeLog("异常数据", weixinAsyncEventCall, weixinGroupSendDetail, start);
             }
@@ -192,13 +191,15 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
             }
             // 更新群聊消息状态
             log.info("拉群耗时：{} ms, 群名：{} ", System.currentTimeMillis() - start, nickName);
-            weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setFinishTime(LocalDateTime.now()).setResult("处理成功").setStatus("200"));
+            weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setResult("处理成功").setStatus("200"));
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             return true;
         } finally {
             // 没有子号进群时，可以认为流程接收
+            // 设置完成时间
+            weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setFinishTime(LocalDateTime.now()));
             if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString()) && !flag) {
                 log.info("更新拉群完成标识,并更新真实完成时间,释放currentCount信息");
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
@@ -216,14 +217,12 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
         // 更新原始数据进群详情信息,增加描述信息
         if (weixinAsyncEventCall != null) {
             weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult(message));
-            if (weixinAsyncEventCall.getPlanTime() != null && LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
+         /*   if (weixinAsyncEventCall.getPlanTime() != null && LocalDateTime.now().compareTo(weixinAsyncEventCall.getPlanTime()) >= 0) {
                 log.info("该拉群完成");
                 weixinGroupSendDetailService.updateById(weixinGroupSendDetail.setFinishTime(LocalDateTime.now()));
-            }
+            }*/
         }
         log.info("拉群异常耗时：{} ms", System.currentTimeMillis() - start);
-
         return true;
     }
 }
-*/

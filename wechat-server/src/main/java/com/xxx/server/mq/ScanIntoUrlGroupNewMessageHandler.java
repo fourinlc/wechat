@@ -1,5 +1,6 @@
 package com.xxx.server.mq;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -21,8 +22,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.sql.Date;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -52,6 +53,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
         String wxId = "";
         WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
         Long linkId = null;
+        WeixinGroupLinkDetail weixinGroupLinkDetail = new WeixinGroupLinkDetail();
         try {
             log.info("1、开始群链接进群");
             long start = System.currentTimeMillis();
@@ -59,7 +61,6 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             // 操作群链接对应的id
             linkId = message.getLong("linkId");
             // 批量拉群特有字段
-            WeixinGroupLinkDetail weixinGroupLinkDetail;
             Long asyncEventCallId = message.getLong("asyncEventCallId");
             wxId = message.getString("wxId");
             // 记录总的链接数和已完成的链接数用于最终完成情况判断
@@ -147,7 +148,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                 return writeLog(weixinGroupLinkDetail, weixinAsyncEventCall, "群链接进群失败，可能为整个账号异常，提前结束", start);
             }
             // 更新链接状态为进群完成
-            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("1").setUpdateTime(new Date(System.currentTimeMillis())));
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setLinkStatus("1"));
             JSONObject jsonObject = data.getJSONObject(ResConstant.DATA);
             String chatroomUrl = jsonObject.getString("chatroomUrl");
             Matcher matcher = Pattern.compile(ResConstant.PATTERN).matcher(chatroomUrl);
@@ -231,6 +232,8 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             return true;
         } finally {
             log.info("更新当前状态批次具体状态,区分自动进群和手动进群");
+            // 更新进群时间
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setUpdateTime(new Date(System.currentTimeMillis())));
             if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString())) {
                 log.info("更新链接进群完成标识,并更新真实完成时间，释放对应的count信息");
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));

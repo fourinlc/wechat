@@ -65,6 +65,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
         Long currentCount = 0L;
         String wxId = "";
         WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
+        WeixinTemplateSendDetail weixinTemplateSendDetail = new WeixinTemplateSendDetail();
         try {
             log.info("1、开始处理群聊操作=======");
             Long asyncEventCallId = message.getLong("asyncEventCallId");
@@ -90,7 +91,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 log.info("流程已结束，无须处理");
                 return true;
             }
-            WeixinTemplateSendDetail weixinTemplateSendDetail = weixinTemplateSendDetailService.getOne(Wrappers.lambdaQuery(WeixinTemplateSendDetail.class)
+            weixinTemplateSendDetail = weixinTemplateSendDetailService.getOne(Wrappers.lambdaQuery(WeixinTemplateSendDetail.class)
                     .eq(WeixinTemplateSendDetail::getAsyncEventCallId, weixinAsyncEventCall.getAsyncEventCallId())
                     .eq(WeixinTemplateSendDetail::getWxId, weixinAsyncEventCall.getWxId())
                     .eq(WeixinTemplateSendDetail::getChatRoomId, chatRoomName));
@@ -355,7 +356,6 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             weixinTemplateSendDetailService.updateById(
                     weixinTemplateSendDetail
                             .setTemplateId(weixinTemplate.getTemplateId())
-                            .setFinishTime(LocalDateTime.now())
                             .setStatus("200")
                             .setResult("群发完成"));
             return true;
@@ -365,6 +365,8 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
             return true;
         }finally {
             log.info("群聊更新当前状态批次具体状态currentCount：{}count :{}", currentCount, count);
+            // 设置完成时间，不管是否完成
+            weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setFinishTime(LocalDateTime.now()));
             if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString())) {
                 log.info("更新链接进群完成标识,并更新真实完成时间，重置模板批次");
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
