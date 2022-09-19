@@ -45,7 +45,8 @@ public class WeixinGroupLinkDetailController {
                     @ApiImplicitParam(value = "验证群标识", name = "verifyStatus", paramType = "query"),
                     @ApiImplicitParam(value = "企业微信群标识", name = "companyStatus", paramType = "query"),
                     @ApiImplicitParam(value = "重复标识", name = "repeatStatus", paramType = "query"),
-                    @ApiImplicitParam(value = "批次号", name = "asyncEventCallId", paramType = "query")
+                    @ApiImplicitParam(value = "批次号", name = "asyncEventCallId", paramType = "query"),
+                    @ApiImplicitParam(value = "进群时间", name = "updateTime", paramType = "query")
             }
     )
     public RespBean query(@ApiIgnore WeixinGroupLinkDetail weixinGroupLinkDetail, @ApiIgnore @RequestParam("linkStatus") List<String> linkStatus) {
