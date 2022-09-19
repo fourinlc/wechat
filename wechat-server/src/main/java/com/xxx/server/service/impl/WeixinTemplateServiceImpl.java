@@ -207,7 +207,9 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
         // 校验两个小号是否在线
         wxIds.removeIf(wxId -> {
             WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(wxId);
-            return !(weixinBaseInfo != null && StrUtil.isNotEmpty(weixinBaseInfo.getKey()) && StrUtil.equals(weixinBaseInfo.getState(), "1"));
+            // 为空的情况下说明选择的wxId有误
+            Assert.notNull(weixinBaseInfo, "该微信id有误:" + wxId);
+            return !(StrUtil.isNotEmpty(weixinBaseInfo.getKey()) && StrUtil.equals(weixinBaseInfo.getState(), "1"));
         });
         JSONObject result = JSONObject.of("code", 200, "msg", "群发送消息成功");
         // 增加开始时间返回以及预计完成时间
