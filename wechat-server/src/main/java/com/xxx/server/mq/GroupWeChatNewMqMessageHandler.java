@@ -301,6 +301,33 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                             e.printStackTrace();
                         }
                     }
+                } else if ("3".equals(weixinTemplateDetail.getMsgType())){
+                    JSONObject videoParam = JSONObject.of("ToUserName", chatRoomName);
+                    // 获取图片信息用于展示
+                    try {
+                        File file = new File(basePath + weixinTemplateDetail.getMsgContent());
+                        videoParam.put("VideoData", FileUtil.readBytes(file));
+                    }catch (Exception e){
+                        paramVo.clear();
+                        query.clear();
+                        log.error("视频获取异常，跳过本次发送");
+                        continue;
+                    }
+                    JSONObject imageMessage = WechatApiHelper.CDN_UPLOAD_VIDEO.invoke(videoParam, query);
+                    if (!ResConstant.CODE_SUCCESS.equals(imageMessage.getInteger(ResConstant.CODE))) {
+                        log.error("账号发送视频信息异常 key:{}, 终止整个流程", key);
+                        weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("账号发送视频信息异常key" + key));
+                        weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setResult("账号发送视频信息异常key:" + key).setRealTime(LocalDateTime.now()));
+                        // 重置计数器模板计数器
+                        return true;
+                    } else {
+                        // 随机延时两秒进行下一个话术操作
+                        try {
+                            Thread.sleep(RandomUtil.randomInt(min, max));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
                 // 清空param、query参数
                 paramVo.clear();
