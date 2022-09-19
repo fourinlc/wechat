@@ -81,7 +81,6 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                 currentCount = 1L;
             }
             log.info("群聊进度：总群数：{}，当前执行个数：{}", count, currentCount);
-
             weixinAsyncEventCall = weixinAsyncEventCallService.getById(asyncEventCallId);
             if (Objects.isNull(weixinAsyncEventCall) || StrUtil.isEmpty(chatRoomName)) {
                 log.info("数据格式不正确,忽略该数据流程提前结束:{}", message);
@@ -96,7 +95,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                     .eq(WeixinTemplateSendDetail::getWxId, weixinAsyncEventCall.getWxId())
                     .eq(WeixinTemplateSendDetail::getChatRoomId, chatRoomName));
             if (weixinAsyncEventCall.getResultCode() == 500) {
-                log.info("数据格式不正确,忽略该数据流程提前结束:{}", message);
+                log.info("中间提前结束流程信息:{}", message);
                 // 更新话术详情
                 if (weixinTemplateSendDetail != null) {
                     weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult(weixinAsyncEventCall.getResult()));
@@ -285,7 +284,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                     // 组装对应的xml数据信息
                     Document document = XmlUtil.mapToXml(BeanUtil.beanToMap(weixinAppMessage/*.setThumburl(basePath + weixinAppMessage.getThumburl())*/, false, false), "appmsg");
                     String msg = XmlUtil.toStr(document);
-                    paramVo = JSONObject.of("AppList", JSONArray.of(JSONObject.of("ToUserName", "19976248534@chatroom", "ContentXML", msg, "ContentType", 49)));
+                    paramVo = JSONObject.of("AppList", JSONArray.of(JSONObject.of("ToUserName", chatRoomName, "ContentXML", msg, "ContentType", 49)));
                     JSONObject sendAppMessage = WechatApiHelper.SEND_APP_MESSAGE.invoke(paramVo, query);
                     if (!ResConstant.CODE_SUCCESS.equals(sendAppMessage.getInteger(ResConstant.CODE))) {
                         // TODO 细化具体异常处理

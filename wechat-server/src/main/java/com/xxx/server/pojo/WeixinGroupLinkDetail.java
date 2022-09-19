@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.sql.Date;
 
 /**
  * <p>
@@ -25,7 +26,7 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("t_weixin_group_link_detail")
-@ApiModel(value = "WeixinGroupLinkDetail对象", description = "")
+@ApiModel(value = "WeixinGroupLinkDetail对象")
 public class WeixinGroupLinkDetail implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
@@ -40,7 +41,7 @@ public class WeixinGroupLinkDetail implements Serializable, Cloneable {
     @TableField("msg_id")
     private Long msgId;
 
-    @ApiModelProperty(value = "群链接状态0：未操作，1：进群成功，2:保存群聊，3：邀请子账号完成 4：处理完成 5：处理失败 99：处理中")
+    @ApiModelProperty(value = "群链接状态0：未操作，1：进群成功，2:保存群聊，3：邀请子账号完成 4：处理完成 500：处理失败 99：处理中")
     @TableField("link_status")
     @Dict
     private String linkStatus;
@@ -106,6 +107,12 @@ public class WeixinGroupLinkDetail implements Serializable, Cloneable {
 
     @TableField("group_send_detail_id")
     private Long groupSendDetailId;
+
+    @TableField("async_event_call_id")
+    private Long asyncEventCallId;
+
+    @TableField("update_time")
+    private Date updateTime;
 
 
     @Override

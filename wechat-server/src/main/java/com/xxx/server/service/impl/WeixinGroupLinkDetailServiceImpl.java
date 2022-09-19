@@ -19,7 +19,6 @@ import com.xxx.server.pojo.WeixinAsyncEventCall;
 import com.xxx.server.pojo.WeixinDictionary;
 import com.xxx.server.pojo.WeixinGroupLinkDetail;
 import com.xxx.server.service.IWeixinAsyncEventCallService;
-import com.xxx.server.service.IWeixinBaseInfoService;
 import com.xxx.server.service.IWeixinDictionaryService;
 import com.xxx.server.service.IWeixinGroupLinkDetailService;
 import lombok.RequiredArgsConstructor;
@@ -59,8 +58,6 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
 
     @Value("${spring.rocketmq.tags.qunGroupNew}")
     private String consumerQunGroupTag;
-
-    private final IWeixinBaseInfoService weixinBaseInfoService;
 
     private static final String COMPANY_STATUS = "openim";
 
@@ -233,7 +230,7 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
 
     public Object query(WeixinGroupLinkDetail weixinGroupLinkDetail, List<String> linkStatus) {
         // 填充之邀请链接中
-        List<WeixinGroupLinkDetail> weixinGroupLinkDetails = list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
+        return list(Wrappers.<WeixinGroupLinkDetail>lambdaQuery()
                 .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvitationTime()), WeixinGroupLinkDetail::getInvitationTime, weixinGroupLinkDetail.getInvitationTime())
                 .like(StrUtil.isNotEmpty(weixinGroupLinkDetail.getFromUserName()), WeixinGroupLinkDetail::getFromUserName, weixinGroupLinkDetail.getFromUserName())
                 .in(StrUtil.isNotEmpty(weixinGroupLinkDetail.getLinkStatus()), WeixinGroupLinkDetail::getLinkStatus, linkStatus)
@@ -241,74 +238,8 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                 .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getInvalidStatus()), WeixinGroupLinkDetail::getInvalidStatus, weixinGroupLinkDetail.getInvalidStatus())
                 .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getVerifyStatus()), WeixinGroupLinkDetail::getVerifyStatus, weixinGroupLinkDetail.getVerifyStatus())
                 .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getRepeatStatus()), WeixinGroupLinkDetail::getRepeatStatus, weixinGroupLinkDetail.getRepeatStatus())
-                .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getCompanyStatus()), WeixinGroupLinkDetail::getCompanyStatus, weixinGroupLinkDetail.getCompanyStatus()));
-        // 解析每个群的子账户进群情况,
-        // 先校验子账号绑定情况，如果都没绑定跳过这个步骤
-       /* String wxId = weixinGroupLinkDetail.getToUserWxId();
-        WeixinRelatedContacts weixinRelatedContacts = weixinRelatedContactsService.getById(wxId);
-        if(weixinRelatedContacts == null) return weixinGroupLinkDetails;
-        String related2 = weixinRelatedContacts.getRelated2();
-        String related1 = weixinRelatedContacts.getRelated1();
-        List<String> wxIds = Lists.newArrayList(wxId);
-        if(StrUtil.isNotEmpty(related1)){
-            wxIds.add(related1);
-        }
-        if(StrUtil.isNotEmpty(related2)){
-            wxIds.add(related2);
-        }
-        if (wxIds.size() > 1) {
-            // 存在子号情况，过滤操作成功的群，查看具体进群情况
-            List<String> weixinGroupLinkDetailList = weixinGroupLinkDetails.stream()
-                    //.filter(weixinGroupLinkDetail1 -> StrUtil.equals("1", weixinGroupLinkDetail1.getLinkStatus()))
-                    .map(WeixinGroupLinkDetail::getChatroomName)
-                    .distinct()
-                    .collect(Collectors.toList());
-            if(weixinGroupLinkDetailList.size() == 0) return weixinGroupLinkDetails;
-            // 组装查询微信群列表信息
-            JSONObject chatRoomInfo = JSONObject.of("ChatRoomWxIdList", Lists.newArrayList(weixinGroupLinkDetailList));
-            MultiValueMap<String,String> multiValueMap = new LinkedMultiValueMap();
-            WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(wxId);
-            JSONObject userNamesVo = JSONObject.of();
-            // 校验其在线状态
-            if(weixinBaseInfo != null && StrUtil.equals("1", weixinBaseInfo.getState())){
-                multiValueMap.add("key", weixinBaseInfo.getKey());
-                JSONObject jsonObject = WechatApiHelper.GET_CHAT_ROOM_INFO.invoke(chatRoomInfo, multiValueMap);
-                if(ResConstant.CODE_SUCCESS.equals(jsonObject.getInteger(ResConstant.CODE))){
-                    JSONArray contactList = jsonObject.getJSONObject(ResConstant.DATA).getJSONArray("contactList");
-                    for (Object o1 : contactList) {
-                        Map map = (Map)o1;
-                        JSONObject jsonObject1 = new JSONObject(map);
-                        String chatRoomId = jsonObject1.getString("userName");
-                        // 真正的群成员列表
-                        JSONArray jsonArray = jsonObject1.getJSONObject("newChatroomData").getJSONArray("chatroom_member_list");
-                        // 校验这个群的子账号是否都在其中
-                        List<String> userNames = jsonArray.stream().filter(o -> {
-                            Map map2 = (Map)o;
-                            JSONObject data = new JSONObject(map2);
-                            return wxIds.contains(data.getString("user_name"));
-                        }).map(o -> {
-                            Map map2 = (Map)o;
-                            JSONObject data = new JSONObject(map2);
-                            return data.getString("user_name");
-                        }).collect(Collectors.toList());
-                        // 顺便构造对应的基本参数列表
-                        List<WeixinBaseInfo> weixinBaseInfoList = weixinBaseInfoService.listByIds(userNames);
-                        userNamesVo.put(chatRoomId, weixinBaseInfoList);
-                    }
-                }
-            }
-
-            JSONArray jsonArray = new JSONArray();
-            for (WeixinGroupLinkDetail groupLinkDetail : weixinGroupLinkDetails) {
-                String chatroomName = groupLinkDetail.getChatroomName();
-                JSONObject jsonObject = JSONObject.parseObject(JSONObject.toJSONString(groupLinkDetail));
-                // 从中获取存在的好友信息 userNamesVo
-                jsonObject.put("userNames", userNamesVo.get(chatroomName));
-                jsonArray.add(jsonObject);
-            }
-            return jsonArray;
-        }*/
-        return weixinGroupLinkDetails;
+                .eq(StrUtil.isNotEmpty(weixinGroupLinkDetail.getCompanyStatus()), WeixinGroupLinkDetail::getCompanyStatus, weixinGroupLinkDetail.getCompanyStatus())
+                .eq(Objects.nonNull(weixinGroupLinkDetail.getAsyncEventCallId()), WeixinGroupLinkDetail::getAsyncEventCallId, weixinGroupLinkDetail.getAsyncEventCallId()));
     }
 
 }

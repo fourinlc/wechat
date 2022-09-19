@@ -120,7 +120,7 @@ public class WeixinTemplateServiceImpl extends ServiceImpl<WeixinTemplateMapper,
             } else {
                 // 更新这条异常数据
                 // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
-                weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResult("系统异常").setResultCode(500));
+                weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
                 if (fixedTime != null) {
                     if (fixedTime.compareTo(new Date()) > 0) {
                         delay = fixedTime;
