@@ -1,6 +1,5 @@
 package com.xxx.server.mq;
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -54,6 +53,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
         WeixinAsyncEventCall weixinAsyncEventCall = new WeixinAsyncEventCall();
         Long linkId = null;
         WeixinGroupLinkDetail weixinGroupLinkDetail = new WeixinGroupLinkDetail();
+        Long groupSendDetailId = message.getLong("groupSendDetailId");
         try {
             log.info("1、开始群链接进群");
             long start = System.currentTimeMillis();
@@ -91,9 +91,6 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                         .eq(WeixinGroupLinkDetail::getLinkStatus, 0));
                 if (weixinGroupLinkDetails.size() > 0) {
                     weixinGroupLinkDetail = weixinGroupLinkDetails.get(0);
-                    Long groupSendDetailId = message.getLong("groupSendDetailId");
-                    // 批量拉群特殊标识字段
-                    weixinGroupLinkDetail.setGroupSendDetailId(groupSendDetailId);
                 } else {
                     return writeLog(null, weixinAsyncEventCall, "获取群链接失败,一般账号异常，结束整个流程", start);
                 }
@@ -233,13 +230,15 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
         } finally {
             log.info("更新当前状态批次具体状态,区分自动进群和手动进群");
             // 更新进群时间
-            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setUpdateTime(new Date(System.currentTimeMillis())));
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId()).setUpdateTime(new Date(System.currentTimeMillis())));
             if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString())) {
                 log.info("更新链接进群完成标识,并更新真实完成时间，释放对应的count信息");
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
                 redisTemplate.delete("count::currentCount" + wxId + current);
             }else {
                 if(linkId !=null){
+                    // 更新关联批次信息
+                    weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setGroupSendDetailId(groupSendDetailId));
                     log.info("非自动进群，更新对应的当前完成情况");
                     redisTemplate.opsForValue().set("count::currentCount" + wxId + current, ++currentCount);
                 }
