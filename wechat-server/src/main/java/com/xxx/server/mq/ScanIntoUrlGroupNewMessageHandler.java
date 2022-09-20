@@ -105,6 +105,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
                 return writeLog(null, weixinAsyncEventCall, "获取群链接失败,一般账号异常，结束整个流程", start);
             }
             // 增加批次号入参
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setAsyncEventCallId(asyncEventCallId));
             weixinGroupLinkDetail.setAsyncEventCallId(asyncEventCallId);
             // Date delay = new Date();
             // 校验该批次是否还是有些状态
@@ -230,7 +231,7 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
         } finally {
             log.info("更新当前状态批次具体状态,区分自动进群和手动进群");
             // 更新进群时间
-            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId()).setUpdateTime(new Date(System.currentTimeMillis())));
+            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setUpdateTime(new Date(System.currentTimeMillis())));
             if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString())) {
                 log.info("更新链接进群完成标识,并更新真实完成时间，释放对应的count信息");
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
