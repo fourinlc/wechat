@@ -104,8 +104,6 @@ public class ScanIntoUrlGroupNewMessageHandler implements MqMessageHandler {
             if (weixinGroupLinkDetail == null) {
                 return writeLog(null, weixinAsyncEventCall, "获取群链接失败,一般账号异常，结束整个流程", start);
             }
-            // 增加批次号入参
-            weixinGroupLinkDetailService.updateById(weixinGroupLinkDetail.setAsyncEventCallId(asyncEventCallId));
             weixinGroupLinkDetail.setAsyncEventCallId(asyncEventCallId);
             // Date delay = new Date();
             // 校验该批次是否还是有些状态

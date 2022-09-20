@@ -102,11 +102,6 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                 // 更新这条异常数据
                 // 如果计划完成时间小于当前完成时间，直接将该计划停止，并标明原因
                 weixinAsyncEventCallService.updateById(old.setResult("系统异常").setResultCode(500));
-                /*if (fixedTime != null) {
-                    if (fixedTime.compareTo(new Date()) > 0) {
-                        delay = fixedTime;
-                    }
-                }*/
                 // 生成对应的批次号，重新赋值
                 weixinAsyncEventCall = new WeixinAsyncEventCall()
                         // 群邀请类型
@@ -171,8 +166,8 @@ public class WeixinGroupLinkDetailServiceImpl extends ServiceImpl<WeixinGroupLin
                 // 缓存中获取进群间隔时间，分发mq延时任务进行消费
                 log.info("发送延时消息延时时间为：{}", delay);
                 delayMqProducer.sendDelay(message, delay);
-                // 更新消息处理状态为消息正在处理中
-                baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("99"));
+                // 更新消息处理状态为消息正在处理中,并设置批次号
+                baseMapper.updateById(weixinGroupLinkDetail.setLinkStatus("99").setAsyncEventCallId(weixinAsyncEventCall.getAsyncEventCallId()));
                 // 设置状态为等待处理中
             } catch (Exception e) {
                 log.error("消息处理失败:{}", e.getMessage());
