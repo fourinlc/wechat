@@ -179,6 +179,8 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                         JSONObject msg = JSONObject.of("asyncEventCallId", weixinAsyncEventCall.getAsyncEventCallId(), "paramVo", paramVo);
                         // 用于回调子账号进群情况
                         msg.put("groupSendDetailId", groupSendDetailId);
+                        msg.put("current", current);
+                        msg.put("count", count);
                         Message param = new Message(consumerTopic, qunGroupNew, JSON.toJSONBytes(msg));
                         try {
                             delayMqProducer.sendDelay(param, delay);
@@ -204,6 +206,12 @@ public class GroupSendMqMessageHandler implements MqMessageHandler {
                 log.info("更新拉群完成标识,并更新真实完成时间,释放currentCount信息");
                 weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(200).setRealTime(LocalDateTime.now()));
                 redisTemplate.delete("count::currentCount" + wxId + current);
+            } else if (count.equals(currentCount) && StrUtil.equals("99", weixinAsyncEventCall.getResultCode().toString()) && flag) {
+                if (StrUtil.equals(weixinGroupSendDetail.getStatus(), "500")) {
+                    log.info("更新拉群完成标识,并更新真实完成时间,释放currentCount信息");
+                    weixinAsyncEventCallService.updateById(weixinAsyncEventCall.setResultCode(500).setRealTime(LocalDateTime.now()));
+                    redisTemplate.delete("count::currentCount" + wxId + current);
+                }
             } else {
                 redisTemplate.opsForValue().set("count::currentCount" + wxId + current, ++currentCount);
             }
