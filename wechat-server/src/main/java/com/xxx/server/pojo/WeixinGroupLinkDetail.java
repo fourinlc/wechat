@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -112,6 +113,7 @@ public class WeixinGroupLinkDetail implements Serializable, Cloneable {
     private Long asyncEventCallId;
 
     @TableField("update_time")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date updateTime;
 
 

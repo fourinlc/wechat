@@ -68,9 +68,11 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
     private String groupSendTag;
 
     public JSONObject groupSendDetail(List<WeixinContactDetailedInfo> weixinContactDetailedInfos, String masterWxId, List<String> slaveWxIds, boolean flag, Date fixedTime) {
+        Assert.isTrue(weixinContactDetailedInfos.size() > 0, "请先选择群聊");
         WeixinBaseInfo weixinBaseInfo = weixinBaseInfoService.getById(masterWxId);
         Assert.isTrue(weixinBaseInfo != null && StrUtil.equals("1", weixinBaseInfo.getState()), "主账号已不在线");
         // 校验slaveWxIdA slaveWxIdB是否正常状态，查看是否需要自动进群
+        slaveWxIds.removeIf(StrUtil::isEmpty);
         Assert.isTrue(slaveWxIds.size() > 0, "请至少选择一个邀请号码");
         List<WeixinBaseInfo> weixinBaseInfoList = weixinBaseInfoService.listByIds(slaveWxIds);
         if (flag) {
