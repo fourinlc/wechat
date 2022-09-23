@@ -23,6 +23,6 @@ public interface IWeixinGroupSendDetailService extends IService<WeixinGroupSendD
 
     JSONArray queryList(Long asyncEventCallId);
 
-    JSONArray queryList(String createTime);
+    JSONArray queryList(String createTime, String wxId);
 
 }

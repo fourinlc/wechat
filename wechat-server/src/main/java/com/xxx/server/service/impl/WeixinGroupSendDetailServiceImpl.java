@@ -265,10 +265,12 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         return jsonArray;
     }
 
-    public JSONArray queryList(String createTime) {
+    public JSONArray queryList(String createTime, String wxId) {
         // 获取该批次所有的列表
         JSONArray jsonArray = JSONArray.of();
-        List<WeixinGroupSendDetail> weixinGroupSendDetails = weixinGroupSendDetailService.list(Wrappers.lambdaQuery(WeixinGroupSendDetail.class).eq(StrUtil.isNotEmpty(createTime), WeixinGroupSendDetail::getCreateTime, createTime));
+        List<WeixinGroupSendDetail> weixinGroupSendDetails = weixinGroupSendDetailService.list(Wrappers.lambdaQuery(WeixinGroupSendDetail.class)
+                .eq(StrUtil.isNotEmpty(createTime), WeixinGroupSendDetail::getCreateTime, createTime)
+                .eq(WeixinGroupSendDetail::getMasterWxId, wxId));
         for (WeixinGroupSendDetail weixinGroupSendDetail : weixinGroupSendDetails) {
             // 组装子号成功失败信息
             Long groupSendDetailId = weixinGroupSendDetail.getGroupSendDetailId();

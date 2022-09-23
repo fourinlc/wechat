@@ -1,6 +1,8 @@
 package com.xxx.server.controller;
 
 
+import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.xxx.server.pojo.GroupSendParam;
 import com.xxx.server.pojo.RespBean;
@@ -10,6 +12,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotEmpty;
 import java.util.Date;
 import java.util.List;
 
@@ -42,8 +45,9 @@ public class WeixinGroupSendDetailController {
 
     @GetMapping("queryListByCrateTime")
     @ApiOperation("拉群详情")
-    public RespBean queryListByCrateTime(String crateTime){
-        return RespBean.sucess("获取拉群详情成功", weixinGroupSendDetailService.queryList(crateTime));
+    public RespBean queryListByCrateTime(String crateTime, String wxId){
+        Assert.isTrue(StrUtil.isNotEmpty(wxId), "微信id为空");
+        return RespBean.sucess("获取拉群详情成功", weixinGroupSendDetailService.queryList(crateTime, wxId));
     }
 
 }
