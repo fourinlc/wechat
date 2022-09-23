@@ -40,4 +40,10 @@ public class WeixinGroupSendDetailController {
         return RespBean.sucess("获取拉群详情成功", weixinGroupSendDetailService.queryList(asyncEventCallId));
     }
 
+    @GetMapping("queryListByCrateTime")
+    @ApiOperation("拉群详情")
+    public RespBean queryListByCrateTime(String crateTime){
+        return RespBean.sucess("获取拉群详情成功", weixinGroupSendDetailService.queryList(crateTime));
+    }
+
 }

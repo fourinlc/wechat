@@ -263,6 +263,7 @@ public class GroupWeChatNewMqMessageHandler implements MqMessageHandler {
                         continue;
                     }
                     JSONObject imageMessage = WechatApiHelper.SEND_IMAGE_MESSAGE.invoke(paramVo, query);
+                    log.info("发送图片返回信息：{}", imageMessage);
                     if (!ResConstant.CODE_SUCCESS.equals(imageMessage.getInteger(ResConstant.CODE))) {
                         log.error("账号发送图片信息异常 key:{}, 终止整个流程", key);
                         weixinTemplateSendDetailService.updateById(weixinTemplateSendDetail.setStatus("500").setResult("账号发送图片信息异常key" + key));

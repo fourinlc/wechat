@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -246,6 +247,28 @@ public class WeixinGroupSendDetailServiceImpl extends ServiceImpl<WeixinGroupSen
         // 获取该批次所有的列表
         JSONArray jsonArray = JSONArray.of();
         List<WeixinGroupSendDetail> weixinGroupSendDetails = weixinGroupSendDetailService.list(Wrappers.lambdaQuery(WeixinGroupSendDetail.class).eq(WeixinGroupSendDetail::getAsyncEventCallId, weixinAsyncEventCall.getAsyncEventCallId()));
+        for (WeixinGroupSendDetail weixinGroupSendDetail : weixinGroupSendDetails) {
+            // 组装子号成功失败信息
+            Long groupSendDetailId = weixinGroupSendDetail.getGroupSendDetailId();
+            List<WeixinGroupLinkDetail> weixinGroupLinkDetails = weixinGroupLinkDetailService.list(Wrappers.lambdaQuery(WeixinGroupLinkDetail.class).eq(WeixinGroupLinkDetail::getGroupSendDetailId, groupSendDetailId));
+            JSONObject jsonObject = JSONObject.parseObject(JSON.toJSONString(weixinGroupSendDetail));
+            if (weixinGroupLinkDetails.size() > 0) {
+                // 增加子号信息基本信息至数据单条数据,提取被邀请人昵称以及处理状态
+                List<JSONObject> collect = weixinGroupLinkDetails
+                        .stream()
+                        .map(weixinGroupLinkDetail -> JSONObject.of("linkStatus", weixinGroupLinkDetail.getLinkStatus(), "toUserName", weixinGroupLinkDetail.getToUserName()))
+                        .collect(Collectors.toList());
+                jsonObject.put("child", collect);
+            }
+            jsonArray.add(jsonObject);
+        }
+        return jsonArray;
+    }
+
+    public JSONArray queryList(String createTime) {
+        // 获取该批次所有的列表
+        JSONArray jsonArray = JSONArray.of();
+        List<WeixinGroupSendDetail> weixinGroupSendDetails = weixinGroupSendDetailService.list(Wrappers.lambdaQuery(WeixinGroupSendDetail.class).eq(StrUtil.isNotEmpty(createTime), WeixinGroupSendDetail::getCreateTime, createTime));
         for (WeixinGroupSendDetail weixinGroupSendDetail : weixinGroupSendDetails) {
             // 组装子号成功失败信息
             Long groupSendDetailId = weixinGroupSendDetail.getGroupSendDetailId();

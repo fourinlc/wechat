@@ -63,7 +63,6 @@ public enum WechatApiHelper {
 
     // 通用调用参数处理
     public JSONObject invoke(Object param, MultiValueMap<String,String> multiValueMap){
-        log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, query:{}", getDesc(), param, multiValueMap);
         JSONObject o = JSONObject.of();
         try {
             switch (getHttpMethod()){
@@ -101,17 +100,17 @@ public enum WechatApiHelper {
             Message message = new Message(consumerTopic, wechatLogTag, JSON.toJSONBytes(jsonObject));
             delayMqProducer.sendOneway(message);
         }
-        log.debug("调用wechat统一返回结果：{}", o);
         return o;
     }
 
- /*   // 增加重试机制包装
-    public Object invoke(Object param, MultiValueMap<String,String> multiValueMap, Integer repeat){
-        // 对通用异常如延时，服务器调用异常，进行选择性重试
-        Object invoke = invoke(param, multiValueMap);
-
-        return invoke(param, multiValueMap);
-    }*/
+    public JSONObject invoke(Object param, MultiValueMap<String,String> multiValueMap, boolean flag){
+        if(flag)
+        log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, query:{}", getDesc(), param, multiValueMap);
+        JSONObject invoke = invoke(param, multiValueMap);
+        if(flag)
+        log.info("调用wechat统一入参信息：接口名称描述：{} param:{}, 统一返回数据:{}", getDesc(), param, invoke);
+        return invoke;
+    }
 
     WechatApiHelper(String desc, String code, HttpMethod httpMethod){
         this.code = code;
